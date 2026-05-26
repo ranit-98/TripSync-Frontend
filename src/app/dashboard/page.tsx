@@ -6,9 +6,9 @@ import AddIcon from '@mui/icons-material/Add';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import CollectionsIcon from '@mui/icons-material/Collections';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import EventAvailableIcon from '@mui/icons-material/EventAvailable';
-import ExploreIcon from '@mui/icons-material/Explore';
 import FlightTakeoffIcon from '@mui/icons-material/FlightTakeoff';
 import GroupIcon from '@mui/icons-material/Group';
 import MapIcon from '@mui/icons-material/Map';
@@ -21,6 +21,7 @@ import IconButton from '@mui/material/IconButton';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
+import Link from 'next/link';
 
 const iconMap = {
   add: AddIcon,
@@ -60,7 +61,7 @@ export default function DashboardPage() {
                 size="small"
               />
             </Box>
-            <IconButton className="notification_btn" aria-label="Open notifications">
+            <IconButton className="notification_btn" component={Link} href="/notifications" aria-label="Open notifications">
               <NotificationsIcon />
               <span className="notification_badge" />
             </IconButton>
@@ -122,7 +123,12 @@ export default function DashboardPage() {
                     </Box>
                   </Stack>
                 </Box>
-                <Button className="open_trip_btn" endIcon={<ArrowForwardIcon />}>
+                <Button
+                  className="open_trip_btn"
+                  component={Link}
+                  endIcon={<ArrowForwardIcon />}
+                  href="/trips/paris-loire/itinerary"
+                >
                   Open Trip
                 </Button>
               </Stack>
@@ -141,7 +147,13 @@ export default function DashboardPage() {
 
             <Box className="trips_scroller">
               {recentTrips.map((trip) => (
-                <Box className="trip_card" key={trip.title}>
+                <Box
+                  className="trip_card"
+                  component={Link}
+                  href={trip.detailHref}
+                  key={trip.title}
+                  sx={{ textDecoration: 'none' }}
+                >
                   <Box className="trip_media">
                     <Box alt={trip.title} className="trip_img" component="img" src={trip.image} />
                     <span className={`trip_status ${trip.statusTone}`}>{trip.status}</span>
@@ -196,9 +208,9 @@ export default function DashboardPage() {
             <AddIcon />
           </Button>
         </Box>
-        <Box className="mobile_nav_link" component="a" href="#">
-          <ExploreIcon />
-          <span>Explore</span>
+        <Box className="mobile_nav_link" component="a" href="/albums">
+          <CollectionsIcon />
+          <span>Album</span>
         </Box>
         <Box className="mobile_nav_link" component="a" href="#">
           <Box

@@ -8,9 +8,9 @@ export const dashboardStats = [
 
 export const dashboardNavItems = [
   { href: '/dashboard', icon: 'dashboard', label: 'Dashboard', active: true, separated: false },
-  { href: '/trips/settlements', icon: 'flight_takeoff', label: 'My Trips', active: false, separated: false },
-  { href: '#', icon: 'explore', label: 'Explore', active: false, separated: false },
-  { href: '#', icon: 'notifications', label: 'Notifications', active: false, separated: false },
+  { href: '/trips', icon: 'flight_takeoff', label: 'My Trips', active: false, separated: false },
+  { href: '/albums', icon: 'collections', label: 'Album', active: false, separated: false },
+  { href: '/notifications', icon: 'notifications', label: 'Notifications', active: false, separated: false },
   { href: '/settings', icon: 'settings', label: 'Settings', active: false, separated: true },
   { href: '#', icon: 'logout', label: 'Logout', active: false, separated: false },
 ] as const;
@@ -18,6 +18,7 @@ export const dashboardNavItems = [
 export const recentTrips = [
   {
     date: 'Oct 12 - Oct 20, 2024',
+    detailHref: '/trips/bali-spiritual-retreat/itinerary',
     image: dashboardAssets.bali,
     progress: 45,
     progressLabel: '45% Planned',
@@ -29,6 +30,7 @@ export const recentTrips = [
   },
   {
     date: 'Nov 05 - Nov 12, 2024',
+    detailHref: '/trips/tokyo-tech-expo/itinerary',
     image: dashboardAssets.tokyo,
     progress: 100,
     progressLabel: '100% Ready',
@@ -40,6 +42,7 @@ export const recentTrips = [
   },
   {
     date: 'Aug 10 - Aug 18, 2024',
+    detailHref: '/trips/paris-loire/itinerary',
     image: dashboardAssets.paris,
     progress: 100,
     progressLabel: 'Archive Access',

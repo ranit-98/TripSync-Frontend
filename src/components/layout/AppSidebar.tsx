@@ -1,7 +1,7 @@
 import { AppSidebarWrapper } from '@/styles/layout/appSidebar.styles';
 import AddIcon from '@mui/icons-material/Add';
+import CollectionsIcon from '@mui/icons-material/Collections';
 import DashboardIcon from '@mui/icons-material/Dashboard';
-import ExploreIcon from '@mui/icons-material/Explore';
 import FlightTakeoffIcon from '@mui/icons-material/FlightTakeoff';
 import LogoutIcon from '@mui/icons-material/Logout';
 import NotificationsIcon from '@mui/icons-material/Notifications';
@@ -10,7 +10,7 @@ import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
 
-type SidebarKey = 'dashboard' | 'trips' | 'explore' | 'notifications' | 'settings';
+type SidebarKey = 'dashboard' | 'trips' | 'albums' | 'notifications' | 'settings';
 
 type AppSidebarProps = {
   active: SidebarKey;
@@ -20,9 +20,9 @@ type AppSidebarProps = {
 
 const navItems = [
   { href: '/dashboard', icon: DashboardIcon, key: 'dashboard', label: 'Dashboard' },
-  { href: '/trips/itinerary', icon: FlightTakeoffIcon, key: 'trips', label: 'My Trips' },
-  { href: '#', icon: ExploreIcon, key: 'explore', label: 'Explore' },
-  { href: '#', icon: NotificationsIcon, key: 'notifications', label: 'Notifications' },
+  { href: '/trips', icon: FlightTakeoffIcon, key: 'trips', label: 'My Trips' },
+  { href: '/albums', icon: CollectionsIcon, key: 'albums', label: 'Album' },
+  { href: '/notifications', icon: NotificationsIcon, key: 'notifications', label: 'Notifications' },
   { href: '/settings', icon: SettingsIcon, key: 'settings', label: 'Settings' },
 ] as const;
 
@@ -64,7 +64,7 @@ export default function AppSidebar({
         </Box>
 
         {showNewTrip && (
-          <Button className="new_trip_btn" startIcon={<AddIcon />} variant="contained">
+          <Button className="new_trip_btn" href="/trips/create" startIcon={<AddIcon />} variant="contained">
             New Trip
           </Button>
         )}

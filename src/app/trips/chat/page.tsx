@@ -1,5 +1,5 @@
-import TripWorkspacePage from '@/components/trips/TripWorkspacePage';
+import { redirect } from 'next/navigation';
 
 export default function TripChatPage() {
-  return <TripWorkspacePage activeTab="Chat" />;
+  redirect('/trips/paris-loire/chat');
 }

@@ -1,5 +1,5 @@
-import TripWorkspacePage from '@/components/trips/TripWorkspacePage';
+import { redirect } from 'next/navigation';
 
 export default function TripMapPage() {
-  return <TripWorkspacePage activeTab="Map" />;
+  redirect('/trips/paris-loire/map');
 }

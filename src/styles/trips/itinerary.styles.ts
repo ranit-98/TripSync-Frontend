@@ -1210,6 +1210,169 @@ export const TripItineraryWrapper = styled(Box)`
     box-shadow: 0 16px 30px rgba(0, 104, 95, 0.28);
   }
 
+  .expense_modal_overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 130;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background-color: rgba(23, 29, 28, 0.28);
+    backdrop-filter: blur(8px);
+  }
+
+  .expense_modal {
+    display: flex;
+    width: min(100%, 720px);
+    max-height: min(92vh, 820px);
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid rgba(188, 201, 198, 0.45);
+    border-radius: 16px;
+    background-color: rgba(255, 255, 255, 0.94);
+    box-shadow: 0 24px 48px rgba(23, 29, 28, 0.2);
+    backdrop-filter: blur(20px);
+  }
+
+  .expense_modal_header,
+  .expense_modal_footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 20px 24px;
+  }
+
+  .expense_modal_header {
+    border-bottom: 1px solid rgba(188, 201, 198, 0.28);
+
+    h3 {
+      color: ${({ theme }) => theme.palette.text.primary};
+      font-size: 24px;
+      font-weight: 800;
+      line-height: 32px;
+    }
+
+    p {
+      color: #6d7a77;
+      font-size: 14px;
+      line-height: 20px;
+    }
+  }
+
+  .expense_modal_body {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 18px;
+    row-gap: 16px;
+    overflow-y: auto;
+    padding: 24px;
+
+    .MuiOutlinedInput-root {
+      border-radius: 8px;
+      background-color: #f5faf8;
+    }
+
+    .MuiInputBase-input,
+    .MuiSelect-select {
+      min-height: 24px;
+      padding-top: 13px;
+      padding-bottom: 13px;
+    }
+
+    .MuiFormHelperText-root {
+      margin-left: 0;
+      font-weight: 700;
+    }
+  }
+
+  .expense_field.full {
+    grid-column: 1 / -1;
+  }
+
+  .expense_select_option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .expense_modal_label {
+    display: block;
+    margin-bottom: 8px;
+    color: #6d7a77;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    line-height: 16px;
+    text-transform: uppercase;
+  }
+
+  .split_member_grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .split_member {
+    position: relative;
+    display: flex;
+    min-height: 78px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    padding: 10px;
+    border: 1px solid #bcc9c6;
+    border-radius: 8px;
+    background-color: #f5faf8;
+    color: #3d4947;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 800;
+    text-align: center;
+    transition:
+      border-color 160ms ease,
+      background-color 160ms ease,
+      color 160ms ease;
+
+    input {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    &.active {
+      border-color: ${({ theme }) => theme.palette.primary.main};
+      background-color: rgba(0, 131, 120, 0.1);
+      color: ${({ theme }) => theme.palette.primary.main};
+    }
+  }
+
+  .split_avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+  }
+
+  .expense_error {
+    display: block;
+    margin-top: 6px;
+  }
+
+  .expense_modal_footer {
+    justify-content: flex-end;
+    border-top: 1px solid rgba(188, 201, 198, 0.28);
+    background-color: #f0f5f2;
+
+    .MuiButton-root {
+      min-width: 120px;
+      border-radius: 8px;
+      font-weight: 800;
+    }
+  }
+
   .map_canvas {
     position: relative;
     flex: 1;
@@ -1747,6 +1910,624 @@ export const TripItineraryWrapper = styled(Box)`
     text-transform: none;
   }
 
+  .files_header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 24px;
+    margin-bottom: 24px;
+  }
+
+  .files_subtitle {
+    margin-top: 6px;
+    color: #6d7a77;
+    font-size: 14px;
+    line-height: 22px;
+  }
+
+  .files_actions {
+    gap: 12px;
+    white-space: nowrap;
+
+    .MuiButton-root {
+      border-radius: 8px;
+      font-weight: 800;
+    }
+  }
+
+  .trip_gallery_showcase {
+    position: relative;
+    min-height: 380px;
+    overflow: hidden;
+    margin-bottom: 28px;
+    border-radius: 12px;
+    background-color: #172124;
+    box-shadow: 0 18px 38px rgba(23, 29, 28, 0.14);
+  }
+
+  .trip_gallery_cover {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .trip_gallery_overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, rgba(23, 29, 28, 0.88), rgba(23, 29, 28, 0.36), transparent);
+  }
+
+  .trip_gallery_content {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    width: min(100%, 620px);
+    min-height: inherit;
+    flex-direction: column;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 32px;
+
+    > span {
+      width: fit-content;
+      padding: 5px 14px;
+      border-radius: 999px;
+      background-color: rgba(137, 245, 231, 0.16);
+      color: #89f5e7;
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    h2 {
+      color: #ffffff;
+      font-size: 42px;
+      font-weight: 800;
+      line-height: 50px;
+    }
+
+    p {
+      color: rgba(255, 255, 255, 0.82);
+      font-size: 15px;
+      line-height: 24px;
+    }
+
+    .MuiButton-root {
+      width: fit-content;
+      margin-top: 8px;
+      border-radius: 8px;
+      font-weight: 800;
+    }
+  }
+
+  .trip_gallery_strip {
+    position: absolute;
+    right: 24px;
+    bottom: 24px;
+    z-index: 2;
+    display: grid;
+    width: min(36%, 430px);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+
+    img {
+      width: 100%;
+      aspect-ratio: 1;
+      border: 2px solid rgba(255, 255, 255, 0.58);
+      border-radius: 10px;
+      object-fit: cover;
+      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.18);
+    }
+  }
+
+  .trip_gallery_toolbar {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 18px;
+
+    .MuiButton-root {
+      border-radius: 8px;
+      font-weight: 800;
+    }
+  }
+
+  .trip_gallery_grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 18px;
+  }
+
+  .trip_gallery_card {
+    overflow: hidden;
+    border: 1px solid rgba(188, 201, 198, 0.35);
+    border-radius: 12px;
+    background-color: #ffffff;
+    box-shadow: 0 6px 20px rgba(23, 29, 28, 0.06);
+
+    img {
+      display: block;
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      object-fit: cover;
+    }
+
+    > div {
+      padding: 14px 16px;
+    }
+
+    strong,
+    span {
+      display: block;
+    }
+
+    strong {
+      color: ${({ theme }) => theme.palette.text.primary};
+      font-size: 14px;
+      font-weight: 800;
+      line-height: 20px;
+    }
+
+    span {
+      color: #6d7a77;
+      font-size: 13px;
+      line-height: 20px;
+    }
+  }
+
+  .add_photo_overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 140;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background-color: rgba(23, 29, 28, 0.28);
+    backdrop-filter: blur(8px);
+  }
+
+  .add_photo_modal {
+    display: flex;
+    width: min(100%, 560px);
+    max-height: min(92vh, 760px);
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid rgba(188, 201, 198, 0.45);
+    border-radius: 16px;
+    background-color: rgba(255, 255, 255, 0.96);
+    box-shadow: 0 24px 48px rgba(23, 29, 28, 0.2);
+  }
+
+  .add_photo_header,
+  .add_photo_footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 20px 24px;
+  }
+
+  .add_photo_header {
+    border-bottom: 1px solid rgba(188, 201, 198, 0.28);
+
+    h3 {
+      color: ${({ theme }) => theme.palette.text.primary};
+      font-size: 24px;
+      font-weight: 800;
+      line-height: 32px;
+    }
+
+    p {
+      color: #6d7a77;
+      font-size: 14px;
+      line-height: 20px;
+    }
+  }
+
+  .add_photo_body {
+    display: grid;
+    gap: 18px;
+    overflow-y: auto;
+    padding: 24px;
+  }
+
+  .photo_dropzone {
+    display: grid;
+    min-height: 172px;
+    place-items: center;
+    gap: 8px;
+    border: 1px dashed rgba(0, 104, 95, 0.42);
+    border-radius: 12px;
+    background-color: rgba(0, 131, 120, 0.06);
+    color: ${({ theme }) => theme.palette.primary.main};
+    text-align: center;
+    text-transform: none;
+
+    svg {
+      width: 38px;
+      height: 38px;
+    }
+
+    strong,
+    span {
+      display: block;
+    }
+
+    strong {
+      color: ${({ theme }) => theme.palette.text.primary};
+      font-size: 18px;
+      font-weight: 800;
+    }
+
+    span {
+      color: #6d7a77;
+      font-size: 13px;
+    }
+  }
+
+  .add_photo_footer {
+    justify-content: flex-end;
+    border-top: 1px solid rgba(188, 201, 198, 0.28);
+    background-color: #f0f5f2;
+
+    .MuiButton-root {
+      min-width: 120px;
+      border-radius: 8px;
+      font-weight: 800;
+    }
+  }
+
+  .files_grid {
+    display: grid;
+    grid-template-columns: 360px minmax(0, 1fr);
+    gap: 24px;
+  }
+
+  .folder_panel,
+  .documents_panel {
+    border: 1px solid rgba(188, 201, 198, 0.35);
+    border-radius: 12px;
+    background-color: #ffffff;
+    box-shadow: 0 6px 20px rgba(23, 29, 28, 0.06);
+  }
+
+  .folder_panel {
+    overflow: hidden;
+  }
+
+  .folder_panel_header,
+  .documents_header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 20px 24px;
+    border-bottom: 1px solid rgba(188, 201, 198, 0.24);
+    background-color: #f0f5f2;
+
+    h3 {
+      color: ${({ theme }) => theme.palette.text.primary};
+      font-size: 20px;
+      font-weight: 800;
+      line-height: 28px;
+    }
+
+    span,
+    p {
+      color: #6d7a77;
+      font-size: 13px;
+      line-height: 20px;
+    }
+  }
+
+  .folder_list {
+    display: grid;
+    gap: 10px;
+    padding: 16px;
+  }
+
+  .folder_card {
+    display: grid;
+    grid-template-columns: 46px minmax(0, 1fr) auto;
+    align-items: center;
+    justify-content: stretch;
+    gap: 12px;
+    padding: 14px;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    background-color: #f5faf8;
+    color: inherit;
+    text-align: left;
+    text-transform: none;
+
+    &:hover,
+    &.active {
+      border-color: rgba(0, 104, 95, 0.35);
+      background-color: rgba(0, 131, 120, 0.08);
+    }
+  }
+
+  .folder_icon {
+    display: grid;
+    width: 46px;
+    height: 46px;
+    place-items: center;
+    border-radius: 10px;
+    background-color: #dae2fd;
+    color: #565e74;
+  }
+
+  .folder_card.active .folder_icon {
+    background-color: rgba(0, 104, 95, 0.12);
+    color: ${({ theme }) => theme.palette.primary.main};
+  }
+
+  .folder_copy {
+    min-width: 0;
+
+    strong,
+    span,
+    small {
+      display: block;
+    }
+
+    strong {
+      overflow: hidden;
+      color: ${({ theme }) => theme.palette.text.primary};
+      font-size: 14px;
+      font-weight: 800;
+      line-height: 20px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    span,
+    small {
+      color: #6d7a77;
+      font-size: 12px;
+      line-height: 18px;
+    }
+  }
+
+  .folder_count {
+    text-align: right;
+
+    strong,
+    span {
+      display: block;
+    }
+
+    strong {
+      color: ${({ theme }) => theme.palette.primary.main};
+      font-size: 18px;
+      font-weight: 800;
+      line-height: 24px;
+    }
+
+    span {
+      color: #6d7a77;
+      font-size: 11px;
+      line-height: 16px;
+    }
+  }
+
+  .documents_panel {
+    overflow: hidden;
+  }
+
+  .documents_header .MuiButton-root {
+    border-radius: 8px;
+    font-weight: 800;
+  }
+
+  .scan_dropzone {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin: 20px 24px;
+    padding: 18px;
+    border: 1px dashed rgba(0, 104, 95, 0.38);
+    border-radius: 10px;
+    background-color: rgba(0, 131, 120, 0.06);
+    color: ${({ theme }) => theme.palette.primary.main};
+
+    svg {
+      width: 34px;
+      height: 34px;
+    }
+
+    strong,
+    span {
+      display: block;
+    }
+
+    strong {
+      color: ${({ theme }) => theme.palette.text.primary};
+      font-size: 15px;
+      font-weight: 800;
+      line-height: 22px;
+    }
+
+    span {
+      color: #6d7a77;
+      font-size: 13px;
+      line-height: 20px;
+    }
+  }
+
+  .document_table {
+    overflow-x: auto;
+  }
+
+  .document_row {
+    display: grid;
+    grid-template-columns: minmax(280px, 1fr) minmax(220px, 0.7fr);
+    align-items: center;
+    min-width: 560px;
+    min-height: 76px;
+    border-top: 1px solid rgba(188, 201, 198, 0.24);
+
+    > * {
+      padding: 0 20px;
+    }
+  }
+
+  .document_head {
+    min-height: 52px;
+    background-color: #f0f5f2;
+    color: #3d4947;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .document_name {
+    align-items: center;
+    gap: 12px;
+
+    strong,
+    small {
+      display: block;
+    }
+
+    strong {
+      color: ${({ theme }) => theme.palette.text.primary};
+      font-size: 14px;
+      font-weight: 800;
+      line-height: 20px;
+    }
+
+    small {
+      color: #6d7a77;
+      font-size: 12px;
+      line-height: 18px;
+    }
+  }
+
+  .document_icon {
+    display: grid;
+    width: 42px;
+    height: 42px;
+    flex: 0 0 42px;
+    place-items: center;
+    border-radius: 8px;
+    background-color: rgba(0, 104, 95, 0.1);
+    color: ${({ theme }) => theme.palette.primary.main};
+  }
+
+  .document_modal_overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 140;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background-color: rgba(23, 29, 28, 0.28);
+    backdrop-filter: blur(8px);
+  }
+
+  .document_modal {
+    display: flex;
+    width: min(100%, 520px);
+    max-height: min(92vh, 720px);
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid rgba(188, 201, 198, 0.45);
+    border-radius: 16px;
+    background-color: rgba(255, 255, 255, 0.96);
+    box-shadow: 0 24px 48px rgba(23, 29, 28, 0.2);
+  }
+
+  .document_modal_header,
+  .document_modal_footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 20px 24px;
+  }
+
+  .document_modal_header {
+    border-bottom: 1px solid rgba(188, 201, 198, 0.28);
+
+    h3 {
+      color: ${({ theme }) => theme.palette.text.primary};
+      font-size: 24px;
+      font-weight: 800;
+      line-height: 32px;
+    }
+
+    p {
+      color: #6d7a77;
+      font-size: 14px;
+      line-height: 20px;
+    }
+  }
+
+  .document_modal_body {
+    display: grid;
+    gap: 18px;
+    overflow-y: auto;
+    padding: 24px;
+
+    .MuiOutlinedInput-root {
+      border-radius: 8px;
+      background-color: #f5faf8;
+    }
+  }
+
+  .document_file_dropzone {
+    display: grid;
+    min-height: 150px;
+    place-items: center;
+    gap: 8px;
+    border: 1px dashed rgba(0, 104, 95, 0.42);
+    border-radius: 12px;
+    background-color: rgba(0, 131, 120, 0.06);
+    color: ${({ theme }) => theme.palette.primary.main};
+    text-align: center;
+    text-transform: none;
+
+    svg {
+      width: 36px;
+      height: 36px;
+    }
+
+    strong,
+    span {
+      display: block;
+    }
+
+    strong {
+      color: ${({ theme }) => theme.palette.text.primary};
+      font-size: 17px;
+      font-weight: 800;
+    }
+
+    span {
+      color: #6d7a77;
+      font-size: 13px;
+    }
+  }
+
+  .document_modal_footer {
+    justify-content: flex-end;
+    border-top: 1px solid rgba(188, 201, 198, 0.28);
+    background-color: #f0f5f2;
+
+    .MuiButton-root {
+      min-width: 120px;
+      border-radius: 8px;
+      font-weight: 800;
+    }
+  }
+
   .placeholder_panel {
     padding: 40px;
 
@@ -1760,6 +2541,105 @@ export const TripItineraryWrapper = styled(Box)`
     }
   }
 
+  @media (max-width: 1040px) {
+    .files_grid {
+      grid-template-columns: 1fr;
+    }
+
+    .trip_gallery_grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .trip_gallery_strip {
+      display: none;
+    }
+  }
+
+  @media (max-width: 720px) {
+    .trip_gallery_showcase {
+      min-height: 420px;
+    }
+
+    .trip_gallery_content {
+      padding: 24px;
+
+      h2 {
+        font-size: 30px;
+        line-height: 38px;
+      }
+    }
+
+    .trip_gallery_toolbar {
+      align-items: stretch;
+      flex-direction: column;
+    }
+
+    .trip_gallery_grid {
+      grid-template-columns: 1fr;
+    }
+
+    .add_photo_overlay {
+      align-items: flex-end;
+      padding: 12px;
+    }
+
+    .add_photo_modal {
+      max-height: 94vh;
+    }
+
+    .add_photo_footer {
+      flex-direction: column-reverse;
+
+      .MuiButton-root {
+        width: 100%;
+      }
+    }
+
+    .document_modal_overlay {
+      align-items: flex-end;
+      padding: 12px;
+    }
+
+    .document_modal {
+      max-height: 94vh;
+    }
+
+    .document_modal_footer {
+      flex-direction: column-reverse;
+
+      .MuiButton-root {
+        width: 100%;
+      }
+    }
+
+    .files_header,
+    .documents_header {
+      align-items: stretch;
+      flex-direction: column;
+    }
+
+    .files_actions {
+      flex-direction: column;
+
+      .MuiButton-root {
+        width: 100%;
+      }
+    }
+
+    .folder_card {
+      grid-template-columns: 46px minmax(0, 1fr);
+    }
+
+    .folder_count {
+      grid-column: 2;
+      text-align: left;
+    }
+
+    .scan_dropzone {
+      align-items: flex-start;
+    }
+  }
+
   .invite_overlay {
     position: fixed;
     inset: 0;
@@ -1770,6 +2650,37 @@ export const TripItineraryWrapper = styled(Box)`
     background-color: rgba(23, 29, 28, 0.25);
     padding: 24px;
     backdrop-filter: blur(8px);
+  }
+
+  @media (max-width: 720px) {
+    .expense_modal_overlay {
+      align-items: flex-end;
+      padding: 12px;
+    }
+
+    .expense_modal {
+      max-height: 94vh;
+      border-radius: 16px;
+    }
+
+    .expense_modal_header,
+    .expense_modal_footer,
+    .expense_modal_body {
+      padding: 18px;
+    }
+
+    .expense_modal_body,
+    .split_member_grid {
+      grid-template-columns: 1fr;
+    }
+
+    .expense_modal_footer {
+      flex-direction: column-reverse;
+
+      .MuiButton-root {
+        width: 100%;
+      }
+    }
   }
 
   .invite_modal {

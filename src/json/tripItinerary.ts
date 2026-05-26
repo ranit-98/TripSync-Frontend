@@ -2,9 +2,9 @@ import { tripItineraryAssets } from './assets';
 
 export const tripNavItems = [
   { href: '/dashboard', icon: 'dashboard', label: 'Dashboard', active: false },
-  { href: '/trips/settlements', icon: 'flight_takeoff', label: 'My Trips', active: true },
-  { href: '#', icon: 'explore', label: 'Explore', active: false },
-  { href: '#', icon: 'notifications', label: 'Notifications', active: false },
+  { href: '/trips', icon: 'flight_takeoff', label: 'My Trips', active: true },
+  { href: '/albums', icon: 'collections', label: 'Album', active: false },
+  { href: '/notifications', icon: 'notifications', label: 'Notifications', active: false },
   { href: '/settings', icon: 'settings', label: 'Settings', active: false },
 ] as const;
 
@@ -13,6 +13,7 @@ export const tripTabs = [
   { icon: 'payments', label: 'Expenses', active: false },
   { icon: 'map', label: 'Map', active: false },
   { icon: 'chat', label: 'Chat', active: false },
+  { icon: 'collections', label: 'Gallery', active: false },
   { icon: 'folder_open', label: 'Files', active: false },
 ] as const;
 

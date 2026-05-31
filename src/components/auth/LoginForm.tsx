@@ -1,5 +1,6 @@
 'use client';
 
+import { useAuthLogin } from '@/api/hooks';
 import FormTextField from '@/components/Forms/FormTextField';
 import { LoginFormWrapper } from '@/styles/auth/login.styles';
 import GoogleIcon from '@mui/icons-material/Google';
@@ -8,6 +9,7 @@ import Button from '@mui/material/Button';
 import Divider from '@mui/material/Divider';
 import Link from '@mui/material/Link';
 import Typography from '@mui/material/Typography';
+import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 
 type LoginFormValues = {
@@ -16,6 +18,7 @@ type LoginFormValues = {
 };
 
 export default function LoginForm() {
+  const router = useRouter();
   const { control, handleSubmit } = useForm<LoginFormValues>({
     defaultValues: {
       email: '',
@@ -23,7 +26,14 @@ export default function LoginForm() {
     },
   });
 
-  const onSubmit = handleSubmit(() => undefined);
+  const { mutate: loginMutation, isPending } = useAuthLogin({
+    optionalCallback: () => {
+      router.push("/settings");
+    },
+  });
+  const onSubmit = handleSubmit((formData) => {
+    loginMutation(formData);
+  });
 
   return (
     <LoginFormWrapper noValidate onSubmit={onSubmit}>
@@ -71,11 +81,12 @@ export default function LoginForm() {
       <Button
         className="auth_submit_btn"
         fullWidth
+        disabled={isPending}
         size="large"
         type="submit"
         variant="contained"
       >
-        Login
+        {isPending ? "Logging in..." : "Login"}
       </Button>
 
       <Box className="auth_divider_wrap">
@@ -98,7 +109,7 @@ export default function LoginForm() {
 
       <Typography className="auth_signup_text">
         Don&apos;t have an account?{' '}
-        <Link className="auth_link" href="#">
+        <Link className="auth_link" href="/auth/register">
           Sign up
         </Link>
       </Typography>

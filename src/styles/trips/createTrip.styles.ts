@@ -216,9 +216,35 @@ export const CreateTripPageWrapper = styled(Box)`
     text-transform: uppercase;
   }
 
+  .form_field_header {
+    margin-bottom: 8px;
+  }
+
+  .form_field_label {
+    color: #6d7a77;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    line-height: 16px;
+    text-transform: uppercase;
+  }
+
   .MuiOutlinedInput-root {
     border-radius: 8px;
     background-color: #f5faf8;
+  }
+
+  .MuiOutlinedInput-input {
+    min-height: 48px;
+    box-sizing: border-box;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+
+  textarea.MuiOutlinedInput-input {
+    min-height: 96px;
+    padding-top: 14px;
+    padding-bottom: 14px;
   }
 
   .MuiOutlinedInput-notchedOutline {
@@ -271,6 +297,10 @@ export const CreateTripPageWrapper = styled(Box)`
 
   .invite_role {
     width: 150px;
+  }
+
+  .invite_role_wrap {
+    flex: 0 0 150px;
   }
 
   .review_grid {
@@ -386,6 +416,11 @@ export const CreateTripPageWrapper = styled(Box)`
     }
 
     .invite_role {
+      width: 100%;
+    }
+
+    .invite_role_wrap {
+      flex-basis: auto;
       width: 100%;
     }
 

@@ -17,7 +17,7 @@ import {
 import type { IMutationHookOptions } from "@/api/hooks/types";
 import { isSuccessResponse } from "@/api/hooks/types";
 import { listOfQueryKeys } from "@/lib/functions/listOfQueryKeys";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export const useTripsList = () => {
   return useQuery({
@@ -43,11 +43,14 @@ export const useTripMembers = (tripId?: string) => {
 };
 
 export const useTripsCreate = ({ optionalCallback }: IMutationHookOptions) => {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationKey: [listOfQueryKeys.trips.create],
     mutationFn: tripsCreateFn,
     onSuccess: (res) => {
       if (isSuccessResponse(res?.data.statusCode)) {
+        queryClient.invalidateQueries({ queryKey: [listOfQueryKeys.trips.list] });
         optionalCallback();
       }
     },
@@ -55,11 +58,15 @@ export const useTripsCreate = ({ optionalCallback }: IMutationHookOptions) => {
 };
 
 export const useTripsUpdate = ({ optionalCallback }: IMutationHookOptions) => {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationKey: [listOfQueryKeys.trips.update],
     mutationFn: tripsUpdateFn,
-    onSuccess: (res) => {
+    onSuccess: (res, variables) => {
       if (isSuccessResponse(res?.data.statusCode)) {
+        queryClient.invalidateQueries({ queryKey: [listOfQueryKeys.trips.list] });
+        queryClient.invalidateQueries({ queryKey: [listOfQueryKeys.trips.details, variables.tripId] });
         optionalCallback();
       }
     },
@@ -79,11 +86,15 @@ export const useTripsArchive = ({ optionalCallback }: IMutationHookOptions) => {
 };
 
 export const useTripsUploadCover = ({ optionalCallback }: IMutationHookOptions) => {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationKey: [listOfQueryKeys.trips.cover],
     mutationFn: tripsUploadCoverFn,
-    onSuccess: (res) => {
+    onSuccess: (res, variables) => {
       if (isSuccessResponse(res?.data.statusCode)) {
+        queryClient.invalidateQueries({ queryKey: [listOfQueryKeys.trips.list] });
+        queryClient.invalidateQueries({ queryKey: [listOfQueryKeys.trips.details, variables.tripId] });
         optionalCallback();
       }
     },
@@ -91,11 +102,14 @@ export const useTripsUploadCover = ({ optionalCallback }: IMutationHookOptions) 
 };
 
 export const useTripsInvite = ({ optionalCallback }: IMutationHookOptions) => {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationKey: [listOfQueryKeys.trips.invite],
     mutationFn: tripsInviteFn,
-    onSuccess: (res) => {
+    onSuccess: (res, variables) => {
       if (isSuccessResponse(res?.data.statusCode)) {
+        queryClient.invalidateQueries({ queryKey: [listOfQueryKeys.trips.members, variables.tripId] });
         optionalCallback();
       }
     },

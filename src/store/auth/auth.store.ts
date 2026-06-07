@@ -1,6 +1,6 @@
 import type { IUser } from "@/typescript/interface/api";
 import { create } from "zustand";
-import { createJSONStorage, persist } from "zustand/middleware";
+import { createJSONStorage, devtools, persist } from "zustand/middleware";
 
 interface IAuthStore {
   isAuthenticated: boolean;
@@ -10,26 +10,39 @@ interface IAuthStore {
 }
 
 export const useAuthStore = create<IAuthStore>()(
-  persist(
-    (set) => ({
-      isAuthenticated: false,
-      user: null,
-      clearAuth: () => {
-        set({
-          isAuthenticated: false,
-          user: null,
-        });
-      },
-      setAuthUser: (user) => {
-        set({
-          isAuthenticated: true,
-          user,
-        });
-      },
-    }),
+  devtools(
+    persist(
+      (set) => ({
+        isAuthenticated: false,
+        user: null,
+        clearAuth: () => {
+          set(
+            {
+              isAuthenticated: false,
+              user: null,
+            },
+            false,
+            "auth/clearAuth"
+          );
+        },
+        setAuthUser: (user) => {
+          set(
+            {
+              isAuthenticated: true,
+              user,
+            },
+            false,
+            "auth/setAuthUser"
+          );
+        },
+      }),
+      {
+        name: "tripsync-auth",
+        storage: createJSONStorage(() => localStorage),
+      }
+    ),
     {
-      name: "tripsync-auth",
-      storage: createJSONStorage(() => localStorage),
+      name: "TripSync Auth Store",
     }
   )
 );

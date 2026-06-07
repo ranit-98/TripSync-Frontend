@@ -128,6 +128,13 @@ export const TripListPageWrapper = styled(Box)`
     line-height: 48px;
   }
 
+  .hero_meta {
+    color: rgba(255, 255, 255, 0.78);
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 24px;
+  }
+
   .hero_actions {
     display: flex;
     gap: 12px;
@@ -313,6 +320,31 @@ export const TripListPageWrapper = styled(Box)`
     height: 100%;
     border-radius: inherit;
     background-color: #00685f;
+  }
+
+  .empty_state {
+    display: grid;
+    min-height: 240px;
+    place-items: center;
+    gap: 10px;
+    padding: 32px;
+    border: 1px solid rgba(188, 201, 198, 0.36);
+    border-radius: 12px;
+    background-color: #ffffff;
+    text-align: center;
+  }
+
+  .empty_title {
+    color: #172124;
+    font-size: 22px;
+    font-weight: 800;
+    line-height: 30px;
+  }
+
+  .empty_copy {
+    color: #5f6f74;
+    font-size: 14px;
+    line-height: 20px;
   }
 
   @media (max-width: 1199px) {

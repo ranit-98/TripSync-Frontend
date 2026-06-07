@@ -7,8 +7,8 @@ import ItineraryTab from './tabs/ItineraryTab';
 import MapTab from './tabs/MapTab';
 import PlaceholderTab from './tabs/PlaceholderTab';
 
-export default function ActiveTab({ activeTab }: { activeTab: TripWorkspaceTab }) {
-  if (activeTab === 'Itinerary') return <ItineraryTab />;
+export default function ActiveTab({ activeTab, tripId }: { activeTab: TripWorkspaceTab; tripId: string }) {
+  if (activeTab === 'Itinerary') return <ItineraryTab tripId={tripId} />;
   if (activeTab === 'Expenses') return <ExpensesTab />;
   if (activeTab === 'Map') return <MapTab />;
   if (activeTab === 'Chat') return <ChatTab />;

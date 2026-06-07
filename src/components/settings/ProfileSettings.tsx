@@ -1,30 +1,69 @@
-import AppSidebar from '@/components/layout/AppSidebar';
-import { dashboardAssets, tripItineraryAssets } from '@/json/assets';
-import { ProfileSettingsWrapper } from '@/styles/settings/profileSettings.styles';
-import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
-import DashboardIcon from '@mui/icons-material/Dashboard';
-import DeleteIcon from '@mui/icons-material/Delete';
-import ExploreIcon from '@mui/icons-material/Explore';
-import FlightIcon from '@mui/icons-material/Flight';
-import MapIcon from '@mui/icons-material/Map';
-import NotificationsIcon from '@mui/icons-material/Notifications';
-import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
-import PublicIcon from '@mui/icons-material/Public';
-import SaveIcon from '@mui/icons-material/Save';
-import SettingsIcon from '@mui/icons-material/Settings';
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import IconButton from '@mui/material/IconButton';
-import Stack from '@mui/material/Stack';
-import Typography from '@mui/material/Typography';
+"use client";
 
-const stats = [
-  { icon: MapIcon, label: 'Trips Planned', tone: 'primary', value: '24' },
-  { icon: PublicIcon, label: 'Countries Visited', tone: 'secondary', value: '12' },
-  { icon: FlightIcon, label: 'Total Distance', tone: 'tertiary', value: '42,850 km' },
-] as const;
+import { useUsersMe, useUsersUploadAvatar } from "@/api/hooks/users/useUsers.hooks";
+import AppSidebar from "@/components/layout/AppSidebar";
+import ChangePasswordCard from "@/components/settings/profile/ChangePasswordCard";
+import DeleteAccountCard from "@/components/settings/profile/DeleteAccountCard";
+import PersonalInfoForm from "@/components/settings/profile/PersonalInfoForm";
+import ProfileImageCard from "@/components/settings/profile/ProfileImageCard";
+import ProfileStats from "@/components/settings/profile/ProfileStats";
+import { useImageUpload } from "@/hooks/useImageUpload";
+import { dashboardAssets } from "@/json/assets";
+import { useAuthStore } from "@/store";
+import { ProfileSettingsWrapper } from "@/styles/settings/profileSettings.styles";
+import DashboardIcon from "@mui/icons-material/Dashboard";
+import ExploreIcon from "@mui/icons-material/Explore";
+import NotificationsIcon from "@mui/icons-material/Notifications";
+import SettingsIcon from "@mui/icons-material/Settings";
+import Box from "@mui/material/Box";
+import IconButton from "@mui/material/IconButton";
+import Stack from "@mui/material/Stack";
+import Typography from "@mui/material/Typography";
+import { useCallback, useMemo, useState } from "react";
+
+// ─── Component ───────────────────────────────────────────────────────────────
 
 export default function ProfileSettings() {
+  const storedUser = useAuthStore((state) => state.user);
+  const [isProfileEditing, setIsProfileEditing] = useState(false);
+
+  // ── Data ─────────────────────────────────────────────────────────────────
+  const { data: profileResponse, isLoading } = useUsersMe();
+  const user = useMemo(
+    () => profileResponse?.data.data ?? storedUser,
+    [profileResponse?.data.data, storedUser]
+  );
+
+  // ── Avatar Upload hook ──────────────────────────────────────────────────
+  const { mutateAsync: uploadAvatarFn } = useUsersUploadAvatar({
+    optionalCallback: () => undefined,
+  });
+  const { isUploading, uploadedUrl, previewUrl, upload: uploadAvatar, reset: resetUpload } =
+    useImageUpload(uploadAvatarFn);
+
+  const handleEditModeChange = useCallback((isEditing: boolean) => {
+    setIsProfileEditing(isEditing);
+  }, []);
+
+  // File selected → immediately upload to backend
+  const handleFileSelected = useCallback(
+    (file: File) => {
+      uploadAvatar(file, "avatar", {
+        name: user?.name || "",
+      });
+    },
+    [uploadAvatar, user?.name]
+  );
+
+  // After profile is saved, clear avatar upload state
+  const handleProfileSaved = useCallback(() => {
+    resetUpload();
+  }, [resetUpload]);
+
+  // ── Derived Values ───────────────────────────────────────────────────────
+  const avatarSrc = previewUrl || user?.avatarUrl || dashboardAssets.userAvatar;
+  const displayName = user?.name;
+
   return (
     <ProfileSettingsWrapper>
       <AppSidebar active="settings" />
@@ -39,145 +78,36 @@ export default function ProfileSettings() {
             <IconButton aria-label="Open notifications">
               <NotificationsIcon />
             </IconButton>
-            <Box
-              alt="User profile avatar"
-              className="topbar_avatar"
-              component="img"
-              src={tripItineraryAssets.profile}
-            />
+            <Box alt="User profile avatar" className="topbar_avatar" component="img" src={avatarSrc} />
           </Stack>
         </Box>
 
         <Box className="content_area">
           <Box className="settings_grid">
             <Stack className="identity_col">
-              <Box className="profile_card">
-                <Box className="profile_photo_wrap">
-                  <Box
-                    alt="Alex Thompson"
-                    className="profile_photo"
-                    component="img"
-                    src={dashboardAssets.userAvatar}
-                  />
-                  <span className="camera_badge">
-                    <PhotoCameraIcon />
-                  </span>
-                </Box>
-                <Typography className="profile_name" component="h2">
-                  Alex Thompson
-                </Typography>
-                <Typography className="profile_role">
-                  Product Designer &amp; World Explorer
-                </Typography>
-                <Typography className="member_since">
-                  <CalendarTodayIcon />
-                  Member since March 2023
-                </Typography>
-              </Box>
-
-              <Box className="stats_card">
-                <Typography className="section_title" component="h2">
-                  My Travel Stats
-                </Typography>
-                <Stack className="stats_list">
-                  {stats.map((stat) => {
-                    const Icon = stat.icon;
-
-                    return (
-                      <Stack className="stat_item" direction="row" key={stat.label}>
-                        <Box className={`stat_icon ${stat.tone}`}>
-                          <Icon />
-                        </Box>
-                        <Box>
-                          <Typography className="stat_label">{stat.label}</Typography>
-                          <Typography className="stat_value">{stat.value}</Typography>
-                        </Box>
-                      </Stack>
-                    );
-                  })}
-                </Stack>
-              </Box>
+              <ProfileImageCard
+                avatarPreviewUrl={avatarSrc}
+                isEditing={isProfileEditing}
+                isLoading={isLoading}
+                name={displayName}
+                onFileSelected={handleFileSelected}
+                user={user}
+              />
+              <ProfileStats />
             </Stack>
 
             <Stack className="forms_col">
-              <Box className="panel">
-                <Box className="panel_header">
-                  <Typography className="section_title" component="h2">
-                    Personal Information
-                  </Typography>
-                  <Button className="save_btn" startIcon={<SaveIcon />} variant="contained">
-                    Save Changes
-                  </Button>
-                </Box>
-
-                <Box className="form_grid" component="form">
-                  <label>
-                    <span>First Name</span>
-                    <input defaultValue="Alex" type="text" />
-                  </label>
-                  <label>
-                    <span>Last Name</span>
-                    <input defaultValue="Thompson" type="text" />
-                  </label>
-                  <label className="wide">
-                    <span>Email Address</span>
-                    <input defaultValue="alex.thompson@example.com" type="email" />
-                  </label>
-                  <label className="wide">
-                    <span>Biography</span>
-                    <textarea
-                      defaultValue="Passionate traveler and UI/UX designer focused on creating meaningful digital experiences. Currently planning my next big adventure through Southeast Asia."
-                      rows={4}
-                    />
-                  </label>
-                  <label>
-                    <span>Phone Number</span>
-                    <input defaultValue="+1 (555) 000-0000" type="tel" />
-                  </label>
-                  <label>
-                    <span>Location</span>
-                    <input defaultValue="San Francisco, CA" type="text" />
-                  </label>
-                </Box>
-              </Box>
-
-              <Box className="panel">
-                <Box className="panel_header simple">
-                  <Typography className="section_title" component="h2">
-                    Security
-                  </Typography>
-                </Box>
-                <Box className="form_grid security_grid">
-                  <label>
-                    <span>Current Password</span>
-                    <input placeholder="••••••••••••" type="password" />
-                  </label>
-                  <span className="desktop_spacer" />
-                  <label>
-                    <span>New Password</span>
-                    <input placeholder="Enter new password" type="password" />
-                  </label>
-                  <label>
-                    <span>Confirm New Password</span>
-                    <input placeholder="Repeat new password" type="password" />
-                  </label>
-                </Box>
-                <Button className="outline_btn">Update Password</Button>
-              </Box>
-
-              <Box className="danger_panel">
-                <Box>
-                  <Typography className="danger_title" component="h2">
-                    Danger Zone
-                  </Typography>
-                  <Typography className="danger_copy">
-                    Once you delete your account, there is no going back. Please be certain.
-                  </Typography>
-                </Box>
-                <Button className="delete_btn" startIcon={<DeleteIcon />} variant="contained">
-                  Delete Account
-                </Button>
-              </Box>
+              <PersonalInfoForm
+                hasPendingAvatarUpload={Boolean(uploadedUrl)}
+                isAvatarUploading={isUploading}
+                isEditing={isProfileEditing}
+                isLoading={isLoading}
+                onEditModeChange={handleEditModeChange}
+                onProfileSaved={handleProfileSaved}
+                user={user}
+              />
+              <ChangePasswordCard />
+              <DeleteAccountCard />
             </Stack>
           </Box>
         </Box>

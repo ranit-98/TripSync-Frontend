@@ -7,7 +7,17 @@ export interface ISignUploadPayload {
 }
 
 export interface ISignedUpload {
-  url?: string;
+  apiKey?: string;
+  cloudName?: string;
   objectKey?: string;
-  fields?: Record<string, string>;
+  folder?: string;
+  publicId?: string;
+  signature?: string;
+  timestamp?: number;
+  uploadUrl?: string;
+}
+
+export interface ICloudinaryUploadResponse {
+  secure_url?: string;
+  url?: string;
 }

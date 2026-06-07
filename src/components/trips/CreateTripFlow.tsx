@@ -1,9 +1,14 @@
 'use client';
 
+import { useTripsCreate } from '@/api/hooks/trips/useTrips.hooks';
 import FormDatePicker from '@/components/Forms/FormDatePicker';
+import FormFileUpload from '@/components/Forms/FormFileUpload';
+import FormSelect from '@/components/Forms/FormSelect';
+import FormTextArea from '@/components/Forms/FormTextArea';
 import FormTextField from '@/components/Forms/FormTextField';
 import { dashboardAssets } from '@/json/assets';
 import { CreateTripPageWrapper } from '@/styles/trips/createTrip.styles';
+import type { ICreateTripPayload } from '@/typescript/interface/api';
 import { yupResolver } from '@hookform/resolvers/yup';
 import AddAPhotoIcon from '@mui/icons-material/AddAPhoto';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
@@ -23,9 +28,9 @@ import Button from '@mui/material/Button';
 import IconButton from '@mui/material/IconButton';
 import InputAdornment from '@mui/material/InputAdornment';
 import MenuItem from '@mui/material/MenuItem';
-import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import { Controller, FieldPath, SubmitHandler, useForm } from 'react-hook-form';
 import * as yup from 'yup';
@@ -46,7 +51,7 @@ const currencies = [
 
 type CreateTripFormValues = {
   budget: number;
-  coverPhoto: FileList | null;
+  coverPhoto: File | null;
   currency: string;
   destination: string;
   endDate: string;
@@ -64,7 +69,7 @@ const schema: yup.ObjectSchema<CreateTripFormValues> = yup.object({
     .typeError('Enter a valid budget')
     .positive('Budget must be greater than 0')
     .required('Budget is required'),
-  coverPhoto: yup.mixed<FileList>().nullable().defined(),
+  coverPhoto: yup.mixed<File>().nullable().defined(),
   currency: yup.string().required('Currency is required'),
   destination: yup.string().trim().required('Destination is required'),
   endDate: yup
@@ -112,8 +117,11 @@ const stepFields: Record<number, FieldPath<CreateTripFormValues>[]> = {
 };
 
 export default function CreateTripFlow() {
+  const router = useRouter();
   const [step, setStep] = useState(1);
-
+  const { mutateAsync: createTrip, isPending: isCreatingTrip } = useTripsCreate({
+    optionalCallback: () => undefined,
+  });
   const {
     control,
     formState: { errors },
@@ -133,11 +141,11 @@ export default function CreateTripFlow() {
   const progress = `${(step / 3) * 100}%`;
 
   const coverPhotoName = useMemo(() => {
-    if (!coverPhoto?.length) {
+    if (!coverPhoto) {
       return 'Upload Trip Cover Photo';
     }
 
-    return coverPhoto[0]?.name ?? 'Cover photo selected';
+    return coverPhoto.name ?? 'Cover photo selected';
   }, [coverPhoto]);
 
   const handleNext = async () => {
@@ -148,24 +156,28 @@ export default function CreateTripFlow() {
     }
   };
 
-  const onSubmit: SubmitHandler<CreateTripFormValues> = (values) => {
-    const payload = {
+  const onSubmit: SubmitHandler<CreateTripFormValues> = async (values) => {
+    const payload: ICreateTripPayload = {
       budget: values.budget,
-      coverPhotoName: values.coverPhoto?.[0]?.name ?? null,
       currency: values.currency,
       destination: values.destination.trim(),
       endDate: values.endDate,
-      invitedMembers: values.inviteEmail
-        ? [{ email: values.inviteEmail.trim(), role: values.inviteRole }]
-        : [],
-      notes: values.notes?.trim() ?? '',
+      cover: values.coverPhoto ?? undefined,
+      inviteEmail: values.inviteEmail.trim() || undefined,
+      inviteNotes: values.notes.trim() || undefined,
+      inviteRole: values.inviteEmail.trim() ? values.inviteRole : undefined,
       startDate: values.startDate,
+      styles: values.tripStyles,
       title: values.title.trim(),
-      tripStyles: values.tripStyles,
     };
 
-    console.log('Create trip payload:', payload);
+    const createResponse = await createTrip(payload);
+    const createdTrip = createResponse.data.data;
+
+    router.push(createdTrip?.id ? `/trips/${createdTrip.id}/itinerary` : '/trips');
   };
+
+  const isSubmitting = isCreatingTrip;
 
   return (
     <CreateTripPageWrapper>
@@ -197,26 +209,19 @@ export default function CreateTripFlow() {
         </Typography>
 
         <Box className="wizard_shell" component="form" onSubmit={handleSubmit(onSubmit)} noValidate>
-          <Box className="cover_upload">
-            <Box component="img" src={dashboardAssets.bali} alt="Tropical coastline at sunset" />
-            <Box className="cover_overlay" />
-            <Controller
-              name="coverPhoto"
-              control={control}
-              render={({ field: { onChange, ref } }) => (
-                <Button className="upload_prompt" component="label" startIcon={<AddAPhotoIcon />}>
-                  {coverPhotoName}
-                  <input
-                    ref={ref}
-                    hidden
-                    accept="image/*"
-                    type="file"
-                    onChange={(event) => onChange(event.target.files)}
-                  />
-                </Button>
-              )}
-            />
-          </Box>
+          <FormFileUpload
+            name="coverPhoto"
+            control={control}
+            acceptedFormats="image/*"
+            className="cover_upload"
+            overlayClassName="cover_overlay"
+            previewImageAlt="Tropical coastline at sunset"
+            previewImageSrc={dashboardAssets.bali}
+            showPreview={false}
+            uploadButtonClassName="upload_prompt"
+            uploadButtonLabel={coverPhotoName}
+            uploadButtonStartIcon={<AddAPhotoIcon />}
+          />
 
           <Box className="form_body">
             <Box className={`step_panel${step === 1 ? ' active' : ''}`}>
@@ -242,6 +247,7 @@ export default function CreateTripFlow() {
                   />
                 </Box>
                 <FormTextField
+                  className="full_span"
                   control={control}
                   labelName="Where to?"
                   name="destination"
@@ -286,29 +292,20 @@ export default function CreateTripFlow() {
               </Box>
 
               <Box className="field_grid">
-                <Controller
+                <FormSelect
                   name="currency"
                   control={control}
-                  render={({ field }) => (
-                    <Box>
-                      <Typography className="form_label" component="label">
-                        Currency
-                      </Typography>
-                      <TextField {...field} select fullWidth error={!!errors.currency}>
-                        {currencies.map((currency) => (
-                          <MenuItem key={currency.value} value={currency.value}>
-                            {currency.label}
-                          </MenuItem>
-                        ))}
-                      </TextField>
-                      {errors.currency?.message && (
-                        <Typography color="error" variant="caption">
-                          {errors.currency.message}
-                        </Typography>
-                      )}
-                    </Box>
-                  )}
-                />
+                  initialvalue="Select currency"
+                  labelClassName="form_label"
+                  labelName="Currency"
+                  showStaticLabel
+                >
+                  {currencies.map((currency) => (
+                    <MenuItem key={currency.value} value={currency.value}>
+                      {currency.label}
+                    </MenuItem>
+                  ))}
+                </FormSelect>
 
                 <FormTextField
                   control={control}
@@ -386,30 +383,27 @@ export default function CreateTripFlow() {
                     placeHolder="friend@example.com"
                     type="email"
                   />
-                  <Controller
+                  <FormSelect
                     name="inviteRole"
                     control={control}
-                    render={({ field }) => (
-                      <Box className="invite_role">
-                        <Typography className="form_label" component="label">
-                          Role
-                        </Typography>
-                        <TextField {...field} select fullWidth error={!!errors.inviteRole}>
-                          <MenuItem value="collaborator">Collaborator</MenuItem>
-                          <MenuItem value="viewer">Viewer</MenuItem>
-                        </TextField>
-                      </Box>
-                    )}
-                  />
+                    className="invite_role"
+                    initialvalue="Select role"
+                    labelClassName="form_label"
+                    labelName="Role"
+                    showStaticLabel
+                    wrapperClassName="invite_role_wrap"
+                  >
+                    <MenuItem value="collaborator">Collaborator</MenuItem>
+                    <MenuItem value="viewer">Viewer</MenuItem>
+                  </FormSelect>
                 </Box>
 
-                <FormTextField
+                <FormTextArea
                   control={control}
                   labelName="Trip notes"
-                  multiline
                   name="notes"
                   placeHolder="Add booking references, preferences, or reminders..."
-                  textFieldProps={{ minRows: 3 }}
+                  rows={3}
                 />
               </Box>
 
@@ -445,8 +439,8 @@ export default function CreateTripFlow() {
                   Continue
                 </Button>
               ) : (
-                <Button variant="contained" endIcon={<DoneIcon />} type="submit">
-                  Create Trip
+                <Button disabled={isSubmitting} variant="contained" endIcon={<DoneIcon />} type="submit">
+                  {isSubmitting ? 'Creating...' : 'Create Trip'}
                 </Button>
               )}
             </Box>

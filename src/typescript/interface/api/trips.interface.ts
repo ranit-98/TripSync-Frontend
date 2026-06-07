@@ -20,6 +20,7 @@ export interface ICreateTripPayload {
   destination: string;
   startDate: string;
   endDate: string;
+  cover?: File;
   currency?: string;
   budget?: number;
   coverUrl?: string;
@@ -34,7 +35,8 @@ export type IUpdateTripPayload = Partial<
 >;
 
 export interface IUploadCoverPayload {
-  coverUrl: string;
+  cover?: File;
+  coverUrl?: string;
 }
 
 export interface IInviteMemberPayload {

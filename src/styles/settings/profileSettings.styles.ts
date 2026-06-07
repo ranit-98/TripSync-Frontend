@@ -234,10 +234,15 @@ export const ProfileSettingsWrapper = styled(Box)`
     background-color: #00685f;
     color: #ffffff;
     box-shadow: 0 8px 16px rgba(0, 104, 95, 0.22);
+    opacity: 0.46;
 
     svg {
       width: 20px;
       height: 20px;
+    }
+
+    &.active {
+      opacity: 1;
     }
   }
 
@@ -270,17 +275,17 @@ export const ProfileSettingsWrapper = styled(Box)`
     }
   }
 
-  .stats_card {
-    border: 1px solid rgba(0, 131, 120, 0.12);
-    background-color: rgba(0, 131, 120, 0.04);
-    padding: 28px;
-  }
-
   .section_title {
     color: #171d1c;
     font-size: 24px;
     font-weight: 700;
     line-height: 32px;
+  }
+
+  .stats_card {
+    border: 1px solid rgba(0, 131, 120, 0.12);
+    background-color: rgba(0, 131, 120, 0.04);
+    padding: 28px;
   }
 
   .stats_card .section_title {
@@ -357,13 +362,33 @@ export const ProfileSettingsWrapper = styled(Box)`
     }
   }
 
-  .save_btn,
-  .delete_btn {
+  .save_btn {
+    display: inline-flex;
+    min-height: 44px;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
     border-radius: 999px;
+    border: 0;
     background-color: #00685f;
     color: #ffffff;
+    cursor: pointer;
     font-weight: 800;
+    padding: 8px 18px;
     text-transform: none;
+
+    svg {
+      width: 20px;
+      height: 20px;
+    }
+  }
+
+  .save_btn:disabled,
+  .outline_btn:disabled,
+  .delete_btn:disabled {
+    color: #6d7a77;
+    background-color: #e3ebe8;
+    cursor: not-allowed;
   }
 
   .form_grid {
@@ -394,6 +419,61 @@ export const ProfileSettingsWrapper = styled(Box)`
     }
   }
 
+  .form_grid > .wide {
+    grid-column: 1 / -1;
+  }
+
+  .form_field_header {
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+  }
+
+  .form_field_label {
+    color: #6d7a77;
+    font-size: 12px;
+    font-weight: 800;
+    line-height: 16px;
+    padding-left: 4px;
+  }
+
+  .form_field_error {
+    display: block;
+    margin-top: 6px;
+    padding-left: 4px;
+  }
+
+  .MuiOutlinedInput-root {
+    border-radius: 8px;
+    background-color: #f0f5f2;
+
+    .MuiOutlinedInput-notchedOutline {
+      border-color: #bcc9c6;
+    }
+
+    &:hover .MuiOutlinedInput-notchedOutline,
+    &.Mui-focused .MuiOutlinedInput-notchedOutline {
+      border-color: #00685f;
+    }
+
+    &.Mui-disabled {
+      background-color: #e3ebe8;
+      cursor: not-allowed;
+    }
+  }
+
+  .MuiOutlinedInput-input {
+    min-height: 48px;
+    box-sizing: border-box;
+    color: #171d1c;
+    padding: 0 16px;
+  }
+
+  .MuiInputBase-input.Mui-disabled {
+    -webkit-text-fill-color: #6d7a77;
+    color: #6d7a77;
+  }
+
   input,
   textarea {
     width: 100%;
@@ -411,6 +491,12 @@ export const ProfileSettingsWrapper = styled(Box)`
       border-color: #00685f;
       box-shadow: 0 0 0 1px #00685f;
     }
+
+    &:disabled {
+      color: #6d7a77;
+      background-color: #e3ebe8;
+      cursor: not-allowed;
+    }
   }
 
   input {
@@ -418,9 +504,19 @@ export const ProfileSettingsWrapper = styled(Box)`
     padding: 0 16px;
   }
 
-  textarea {
-    resize: none;
-    padding: 14px 16px;
+  .profile_form.is_editing .MuiOutlinedInput-root:not(.Mui-disabled) {
+    background-color: #ffffff;
+
+    .MuiOutlinedInput-notchedOutline {
+      border-color: rgba(0, 104, 95, 0.42);
+    }
+  }
+
+  .profile_form.is_readonly input:not(:disabled) {
+    color: #6d7a77;
+    background-color: #e3ebe8;
+    cursor: default;
+    user-select: none;
   }
 
   .security_grid {
@@ -475,6 +571,9 @@ export const ProfileSettingsWrapper = styled(Box)`
   .delete_btn {
     border-radius: 8px;
     background-color: #ba1a1a;
+    color: #ffffff;
+    font-weight: 800;
+    text-transform: none;
     white-space: nowrap;
   }
 

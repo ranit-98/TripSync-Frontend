@@ -26,6 +26,27 @@ export const tripsListFn = async (): ApiMutationResponse<ITrip[]> => {
 };
 
 export const tripsCreateFn = async (body: ICreateTripPayload): ApiMutationResponse<ITrip> => {
+  if (body.cover) {
+    const formData = new FormData();
+    formData.append("title", body.title);
+    formData.append("destination", body.destination);
+    formData.append("startDate", body.startDate);
+    formData.append("endDate", body.endDate);
+    formData.append("cover", body.cover);
+
+    if (body.currency) formData.append("currency", body.currency);
+    if (body.budget !== undefined) formData.append("budget", String(body.budget));
+    if (body.coverUrl) formData.append("coverUrl", body.coverUrl);
+    if (body.inviteEmail) formData.append("inviteEmail", body.inviteEmail);
+    if (body.inviteRole) formData.append("inviteRole", body.inviteRole);
+    if (body.inviteNotes) formData.append("inviteNotes", body.inviteNotes);
+    body.styles?.forEach((style) => formData.append("styles", style));
+
+    const res = await axiosInstance.post(endpoints.trips.create("v1"), formData);
+
+    return res;
+  }
+
   const res = await axiosInstance.post(endpoints.trips.create("v1"), body);
 
   return res;
@@ -56,7 +77,18 @@ export const tripsUploadCoverFn = async ({
   body,
   tripId,
 }: IBodyPayload<IUploadCoverPayload> & IWithTripId): ApiMutationResponse<ITrip> => {
-  const res = await axiosInstance.post(endpoints.trips.uploadCover("v1", tripId), body);
+  if (body.cover) {
+    const formData = new FormData();
+    formData.append("cover", body.cover);
+
+    const res = await axiosInstance.post(endpoints.trips.uploadCover("v1", tripId), formData);
+
+    return res;
+  }
+
+  const res = await axiosInstance.post(endpoints.trips.uploadCover("v1", tripId), {
+    coverUrl: body.coverUrl,
+  });
 
   return res;
 };

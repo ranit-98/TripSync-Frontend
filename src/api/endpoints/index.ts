@@ -51,6 +51,9 @@ export const endpoints = {
     me: (version: TAPIVersions) => {
       return `${version}/users/me`;
     },
+    avatarUpload: (version: TAPIVersions) => {
+      return `${version}/users/me/avatar`;
+    },
     changePassword: (version: TAPIVersions) => {
       return `${version}/users/me/password`;
     },

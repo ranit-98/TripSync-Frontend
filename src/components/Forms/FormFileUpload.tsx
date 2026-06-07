@@ -1,6 +1,8 @@
 'use client';
 
 import { Box, Typography } from '@mui/material';
+import Button from '@mui/material/Button';
+import type { ReactNode } from 'react';
 import { useEffect, useState } from 'react';
 import { Control, Controller, FieldPath, FieldValues, get, useFormState } from 'react-hook-form';
 
@@ -14,6 +16,13 @@ interface IFormFileUploadProps<T extends FieldValues> {
   description?: string;
   acceptedFormats?: string;
   showPreview?: boolean;
+  className?: string;
+  overlayClassName?: string;
+  previewImageAlt?: string;
+  previewImageSrc?: string;
+  uploadButtonClassName?: string;
+  uploadButtonLabel?: string;
+  uploadButtonStartIcon?: ReactNode;
 }
 
 const FormFileUpload = <T extends FieldValues>({
@@ -22,12 +31,19 @@ const FormFileUpload = <T extends FieldValues>({
   description = 'PDF, Excel, Word, or Image formats (Max 10MB)',
   acceptedFormats,
   showPreview = true,
+  className,
+  overlayClassName,
+  previewImageAlt = 'Uploaded file preview',
+  previewImageSrc,
+  uploadButtonClassName,
+  uploadButtonLabel = 'Choose File',
+  uploadButtonStartIcon,
 }: IFormFileUploadProps<T>) => {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
 
   const { errors: formErrors } = useFormState({ control });
-  const errorMessage = get(formErrors, 'files')?.[0]?.file.message as string | undefined;
+  const errorMessage = get(formErrors, name)?.message as string | undefined;
 
   useEffect(() => {
     return () => {
@@ -39,7 +55,7 @@ const FormFileUpload = <T extends FieldValues>({
     onChange(file);
     setFileName(file.name);
 
-    if (showPreview && file.type.startsWith('image/')) {
+    if ((showPreview || previewImageSrc) && file.type.startsWith('image/')) {
       if (previewUrl) URL.revokeObjectURL(previewUrl);
       setPreviewUrl(URL.createObjectURL(file));
     } else {
@@ -55,24 +71,52 @@ const FormFileUpload = <T extends FieldValues>({
   };
 
   return (
-    <Box>
+    <Box className={className}>
+      {(previewUrl || previewImageSrc) && (
+        <Box component='img' src={previewUrl || previewImageSrc} alt={previewImageAlt} />
+      )}
+      {overlayClassName && <Box className={overlayClassName} />}
       <Controller
         name={name}
         control={control}
-        render={({ field: { onChange, ...fieldProps } }) => (
+        render={({ field: { name: fieldName, onBlur, onChange, ref } }) => (
           <>
-            {!fileName && (
+            {uploadButtonClassName ? (
+              <Button
+                className={uploadButtonClassName}
+                component='label'
+                startIcon={uploadButtonStartIcon}
+              >
+                {fileName ?? uploadButtonLabel}
+                <input
+                  ref={ref}
+                  name={fieldName}
+                  hidden
+                  accept={acceptedFormats || '*'}
+                  type='file'
+                  onBlur={onBlur}
+                  onChange={(event) => {
+                    const file = event.target.files?.[0] ?? null;
+
+                    if (file) {
+                      handleFileChange(file, onChange);
+                    } else {
+                      handleRemoveFile(onChange);
+                    }
+                  }}
+                />
+              </Button>
+            ) : !fileName ? (
               <CommonFileInputNew
-                {...fieldProps}
                 btntitle='Choose File'
                 description={acceptedFormats || description}
                 onChange={(file: File) => handleFileChange(file, onChange)}
                 className='table-filechoose'
               />
-            )}
+            ) : null}
 
             {/* FILE PREVIEW (same style as image) */}
-            {fileName && !previewUrl && (
+            {fileName && !previewUrl && !uploadButtonClassName && (
               <Box
                 sx={{
                   mt: 1.5,

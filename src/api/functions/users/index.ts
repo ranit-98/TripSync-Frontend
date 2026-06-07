@@ -7,8 +7,8 @@ import { endpoints } from "@/api/endpoints";
 import type {
   ApiMutationResponse,
   IChangePasswordPayload,
-  IUpdateUserPayload,
   IUser,
+  IUpdateUserPayload,
 } from "@/typescript/interface/api";
 
 export const usersMeFn = async (): ApiMutationResponse<IUser> => {
@@ -19,6 +19,18 @@ export const usersMeFn = async (): ApiMutationResponse<IUser> => {
 
 export const usersUpdateMeFn = async (body: IUpdateUserPayload): ApiMutationResponse<IUser> => {
   const res = await axiosInstance.patch(endpoints.users.me("v1"), body);
+
+  return res;
+};
+
+export const usersUploadAvatarFn = async (
+  body: FormData
+): ApiMutationResponse<IUser> => {
+  const res = await axiosInstance.patch(endpoints.users.avatarUpload("v1"), body, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
 
   return res;
 };

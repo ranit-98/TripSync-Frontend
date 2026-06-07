@@ -2,9 +2,9 @@ import { tripTabs } from '@/json/tripItinerary';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Link from 'next/link';
-import { tabHrefMap, TripIcon, type TripWorkspaceTab } from './shared';
+import { getTripTabHref, TripIcon, type TripWorkspaceTab } from './shared';
 
-export default function TripTabBar({ activeTab }: { activeTab: TripWorkspaceTab }) {
+export default function TripTabBar({ activeTab, tripId }: { activeTab: TripWorkspaceTab; tripId: string }) {
   return (
     <Box className="tab_bar">
       <Box className="tab_inner">
@@ -12,7 +12,7 @@ export default function TripTabBar({ activeTab }: { activeTab: TripWorkspaceTab 
           <Button
             className={`tab_btn${activeTab === tab.label ? ' active' : ''}`}
             component={Link}
-            href={tabHrefMap[tab.label]}
+            href={getTripTabHref(tripId, tab.label)}
             key={tab.label}
           >
             <TripIcon name={tab.icon} />

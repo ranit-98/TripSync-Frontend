@@ -622,6 +622,18 @@ export const TripItineraryWrapper = styled(Box)`
     }
   }
 
+  .add_day_btn {
+    width: 100%;
+    margin-top: 18px;
+    padding: 16px;
+    border: 2px dashed rgba(0, 104, 95, 0.28);
+    border-radius: 16px;
+    background-color: rgba(0, 104, 95, 0.04);
+    color: ${({ theme }) => theme.palette.primary.main};
+    font-weight: 800;
+    text-transform: none;
+  }
+
   .live_card {
     position: sticky;
     top: 88px;
@@ -732,6 +744,41 @@ export const TripItineraryWrapper = styled(Box)`
     color: ${({ theme }) => theme.palette.primary.main};
     font-weight: 800;
     text-transform: none;
+  }
+
+  .empty_panel {
+    display: grid;
+    min-height: 260px;
+    place-items: center;
+    gap: 8px;
+    padding: 32px;
+    border: 1px solid rgba(188, 201, 198, 0.3);
+    border-radius: 16px;
+    background-color: #ffffff;
+    text-align: center;
+    box-shadow: 0 6px 20px rgba(23, 29, 28, 0.05);
+  }
+
+  .empty_title {
+    color: ${({ theme }) => theme.palette.text.primary};
+    font-size: 22px;
+    font-weight: 800;
+    line-height: 30px;
+  }
+
+  .empty_copy,
+  .empty_inline {
+    color: #6d7a77;
+    font-size: 14px;
+    line-height: 20px;
+  }
+
+  .empty_inline {
+    padding: 16px;
+    border: 1px dashed rgba(188, 201, 198, 0.4);
+    border-radius: 12px;
+    background-color: #f8fbfa;
+    text-align: center;
   }
 
   .mobile_fab {
@@ -2482,6 +2529,32 @@ export const TripItineraryWrapper = styled(Box)`
     }
   }
 
+  .itinerary_modal_body {
+    .form_field_header {
+      margin-bottom: 8px;
+    }
+
+    .form_field_label,
+    .form_label {
+      color: #6d7a77;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      line-height: 16px;
+      text-transform: uppercase;
+    }
+  }
+
+  .itinerary_time_grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+
+    @media (max-width: 560px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
   .document_file_dropzone {
     display: grid;
     min-height: 150px;
@@ -2775,7 +2848,11 @@ export const TripItineraryWrapper = styled(Box)`
     gap: 4px;
     border: 1px solid #bcc9c6;
     border-radius: 12px;
+    cursor: pointer;
     padding: 14px;
+    transition:
+      background-color 160ms ease,
+      border-color 160ms ease;
 
     &.active {
       border-color: ${({ theme }) => theme.palette.primary.main};
@@ -2885,6 +2962,23 @@ export const TripItineraryWrapper = styled(Box)`
       background-color: rgba(0, 131, 120, 0.12);
       color: #005049;
     }
+
+    &.collaborator {
+      background-color: rgba(0, 131, 120, 0.12);
+      color: #005049;
+    }
+
+    &.viewer {
+      background-color: #dae2fd;
+      color: #3a456d;
+    }
+  }
+
+  .empty_member {
+    justify-content: center;
+    border: 1px dashed rgba(188, 201, 198, 0.5);
+    color: #6d7a77;
+    text-align: center;
   }
 
   .invite_footer {

@@ -40,6 +40,9 @@ export type IFormSelectProps<T extends FieldValues> = BaseFormFieldProps<T> & {
   iconButton?: ReactNode;
   startAdornment?: ReactNode;
   fullWidth?: boolean;
+  labelClassName?: string;
+  showStaticLabel?: boolean;
+  wrapperClassName?: string;
 };
 
 export type IFormCheckboxProps<T extends FieldValues> = BaseFormFieldProps<T> & {

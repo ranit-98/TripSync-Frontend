@@ -1,4 +1,4 @@
-import { TextField, Typography } from '@mui/material';
+import { Box, TextField, Typography } from '@mui/material';
 import { Control, Controller, FieldErrors, FieldPath, FieldValues } from 'react-hook-form';
 
 interface IFormTextAreaProps<T extends FieldValues> {
@@ -9,6 +9,7 @@ interface IFormTextAreaProps<T extends FieldValues> {
   errors?: FieldErrors<T>;
   required?: boolean;
   rows?: number;
+  className?: string;
 }
 
 const FormTextArea = <T extends FieldValues>({
@@ -19,11 +20,12 @@ const FormTextArea = <T extends FieldValues>({
   errors,
   required = false,
   rows = 4,
+  className,
 }: IFormTextAreaProps<T>) => {
   const error = errors?.[name];
   const errorMessage = error?.message as string;
   return (
-    <>
+    <Box className={className}>
       <Typography variant='body2' sx={{ mb: 1 }}>
         {labelName} {required && <span style={{ color: 'red' }}>*</span>}
       </Typography>
@@ -47,7 +49,7 @@ const FormTextArea = <T extends FieldValues>({
           {errorMessage}
         </Typography>
       )}
-    </>
+    </Box>
   );
 };
 

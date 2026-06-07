@@ -13,7 +13,7 @@ import {
 import type { IMutationHookOptions } from "@/api/hooks/types";
 import { isSuccessResponse } from "@/api/hooks/types";
 import { listOfQueryKeys } from "@/lib/functions/listOfQueryKeys";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export const useItinerary = (tripId?: string) => {
   return useQuery({
@@ -24,11 +24,14 @@ export const useItinerary = (tripId?: string) => {
 };
 
 export const useItineraryCreateDay = ({ optionalCallback }: IMutationHookOptions) => {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationKey: [listOfQueryKeys.itinerary.days, "create"],
     mutationFn: itineraryCreateDayFn,
-    onSuccess: (res) => {
+    onSuccess: (res, variables) => {
       if (isSuccessResponse(res?.data.statusCode)) {
+        queryClient.invalidateQueries({ queryKey: [listOfQueryKeys.itinerary.details, variables.tripId] });
         optionalCallback();
       }
     },
@@ -60,11 +63,14 @@ export const useItineraryDeleteDay = ({ optionalCallback }: IMutationHookOptions
 };
 
 export const useItineraryCreateActivity = ({ optionalCallback }: IMutationHookOptions) => {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationKey: [listOfQueryKeys.itinerary.activities, "create"],
     mutationFn: itineraryCreateActivityFn,
-    onSuccess: (res) => {
+    onSuccess: (res, variables) => {
       if (isSuccessResponse(res?.data.statusCode)) {
+        queryClient.invalidateQueries({ queryKey: [listOfQueryKeys.itinerary.details, variables.tripId] });
         optionalCallback();
       }
     },

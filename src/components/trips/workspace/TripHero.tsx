@@ -1,4 +1,5 @@
 import { tripItineraryAssets } from '@/json/assets';
+import type { ITrip, ITripMember } from '@/typescript/interface/api';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import NotificationsIcon from '@mui/icons-material/Notifications';
@@ -12,10 +13,77 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import Link from 'next/link';
 
-export default function TripHero({ onCollapse, onInvite }: { onCollapse: () => void; onInvite: () => void }) {
+const formatHeroDateRange = (startDate?: string, endDate?: string) => {
+  if (!startDate || !endDate) {
+    return 'Dates not set';
+  }
+
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+    return 'Dates not set';
+  }
+
+  const monthFormatter = new Intl.DateTimeFormat('en', { month: 'short' });
+  const startMonth = monthFormatter.format(start);
+  const endMonth = monthFormatter.format(end);
+  const startDay = start.getDate();
+  const endDay = end.getDate();
+  const endYear = end.getFullYear();
+
+  return startMonth === endMonth
+    ? `${startMonth} ${startDay} - ${endDay}, ${endYear}`
+    : `${startMonth} ${startDay} - ${endMonth} ${endDay}, ${endYear}`;
+};
+
+const getHeroStatus = (trip?: ITrip | null) => {
+  if (!trip) {
+    return 'Loading';
+  }
+
+  const now = Date.now();
+  const start = new Date(trip.startDate).getTime();
+  const end = new Date(trip.endDate).getTime();
+
+  if (Number.isNaN(start) || Number.isNaN(end)) {
+    return 'Planning';
+  }
+
+  if (now < start) {
+    return 'Upcoming';
+  }
+
+  if (now <= end) {
+    return 'Active';
+  }
+
+  return 'Completed';
+};
+
+type TripHeroProps = {
+  isLoading?: boolean;
+  members: ITripMember[];
+  onCollapse: () => void;
+  onInvite: () => void;
+  trip?: ITrip | null;
+};
+
+export default function TripHero({ isLoading = false, members, onCollapse, onInvite, trip }: TripHeroProps) {
+  const memberAvatars = members
+    .map((member) => member.user?.avatarUrl)
+    .filter((avatar): avatar is string => Boolean(avatar));
+  const visibleAvatars = memberAvatars.slice(0, 3);
+  const extraMembers = Math.max(members.length - visibleAvatars.length, 0);
+
   return (
     <Box className="hero" component="header">
-      <Box alt="Paris Skyline" className="hero_img" component="img" src={tripItineraryAssets.hero} />
+      <Box
+        alt={trip?.title || 'Trip cover'}
+        className="hero_img"
+        component="img"
+        src={trip?.coverUrl || tripItineraryAssets.hero}
+      />
       <Box className="hero_overlay" />
 
       <Box className="hero_topbar">
@@ -36,18 +104,18 @@ export default function TripHero({ onCollapse, onInvite }: { onCollapse: () => v
       <Box className="hero_content">
         <Stack className="hero_copy">
           <Stack className="hero_meta" direction="row">
-            <span className="status_pill">Planning</span>
-            <span className="hero_date">Oct 12 - Oct 20, 2024</span>
+            <span className="status_pill">{getHeroStatus(trip)}</span>
+            <span className="hero_date">{formatHeroDateRange(trip?.startDate, trip?.endDate)}</span>
           </Stack>
           <Typography className="hero_title" component="h1">
-            Autumn in Paris & Loire
+            {isLoading ? 'Loading trip...' : trip?.title || 'Untitled trip'}
           </Typography>
           <Stack className="member_actions" direction="row">
             <Stack className="member_stack">
-              {tripItineraryAssets.members.map((member) => (
+              {(visibleAvatars.length ? visibleAvatars : tripItineraryAssets.members.slice(0, 1)).map((member) => (
                 <Box alt="Trip member" className="member_avatar" component="img" key={member} src={member} />
               ))}
-              <span className="member_more">+2</span>
+              {extraMembers > 0 && <span className="member_more">+{extraMembers}</span>}
             </Stack>
             <Button className="invite_btn" onClick={onInvite} startIcon={<PersonAddIcon />}>
               Invite

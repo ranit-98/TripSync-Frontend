@@ -39,14 +39,16 @@ export const iconMap = {
 export type IconName = keyof typeof iconMap;
 export type TripWorkspaceTab = (typeof tripTabs)[number]['label'];
 
-export const tabHrefMap: Record<TripWorkspaceTab, string> = {
-  Chat: '/trips/paris-loire/chat',
-  Expenses: '/trips/paris-loire/expenses',
-  Files: '/trips/paris-loire/files',
-  Gallery: '/trips/paris-loire/gallery',
-  Itinerary: '/trips/paris-loire/itinerary',
-  Map: '/trips/paris-loire/map',
+export const tripTabSlugs: Record<TripWorkspaceTab, string> = {
+  Chat: 'chat',
+  Expenses: 'expenses',
+  Files: 'files',
+  Gallery: 'gallery',
+  Itinerary: 'itinerary',
+  Map: 'map',
 };
+
+export const getTripTabHref = (tripId: string, tab: TripWorkspaceTab) => `/trips/${tripId}/${tripTabSlugs[tab]}`;
 
 export const expenseRows = [
   {

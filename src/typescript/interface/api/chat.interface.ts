@@ -18,7 +18,9 @@ export interface IMessage {
   body: string;
   attachments?: IAttachment[];
   createdAt?: string;
-  user?: IUser;
+  sender?: IUser | null;
+  senderId: ApiId;
+  user?: IUser | null;
 }
 
 export interface IAttachment extends ICreateAttachmentPayload {

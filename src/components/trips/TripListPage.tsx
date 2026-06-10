@@ -1,13 +1,20 @@
 'use client';
 
-import { useTripsList } from '@/api/hooks/trips/useTrips.hooks';
+import { useNotificationsList } from '@/api/hooks/notifications/useNotifications.hooks';
+import {
+  useTripsAcceptInvite,
+  useTripsDeclineInvite,
+  useTripsList,
+  useTripsPendingInvites,
+} from '@/api/hooks/trips/useTrips.hooks';
 import AppSidebar from '@/components/layout/AppSidebar';
 import { dashboardAssets } from '@/json/assets';
 import { TripListPageWrapper } from '@/styles/trips/tripList.styles';
-import type { ITrip } from '@/typescript/interface/api';
+import type { ApiId, INotification, ITrip, ITripInvite } from '@/typescript/interface/api';
 import AddIcon from '@mui/icons-material/Add';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
+import GroupAddIcon from '@mui/icons-material/GroupAdd';
 import PaymentsIcon from '@mui/icons-material/Payments';
 import SearchIcon from '@mui/icons-material/Search';
 import StyleIcon from '@mui/icons-material/Style';
@@ -59,10 +66,130 @@ const getTripStatus = (trip: ITrip) => {
   return { label: 'Completed', tone: 'neutral' };
 };
 
+type PendingInvite = {
+  id: ApiId;
+  inviteId: ApiId;
+  message: string;
+  tripName: string;
+};
+
+const getRecordValue = (record: Record<string, unknown> | undefined, key: string) => {
+  const value = record?.[key];
+
+  return typeof value === 'string' && value.trim() ? value.trim() : undefined;
+};
+
+const toArray = <T,>(value: unknown): T[] => {
+  if (Array.isArray(value)) return value as T[];
+
+  if (value && typeof value === 'object') {
+    const record = value as Record<string, unknown>;
+    const candidates = [record.notifications, record.invites, record.items, record.data];
+    const arrayValue = candidates.find(Array.isArray);
+
+    if (arrayValue) return arrayValue as T[];
+  }
+
+  return [];
+};
+
+const getPendingInviteFromTripInvite = (invite: ITripInvite): PendingInvite | null => {
+  if (!invite.id || invite.status !== 'pending') {
+    return null;
+  }
+
+  return {
+    id: invite.id,
+    inviteId: invite.id,
+    message: invite.notes || `You have been invited as a ${invite.role}.`,
+    tripName: invite.trip?.title || 'Shared trip',
+  };
+};
+
+const getInviteIdFromUrl = (url?: string) => {
+  const match = url?.match(/\/invites\/([^/?#]+)/);
+
+  return match?.[1];
+};
+
+const getPendingInvite = (notification: INotification): PendingInvite | null => {
+  const resourceType = notification.resourceType || notification.resource_type || '';
+  const text = `${notification.type ?? ''} ${resourceType} ${notification.title ?? ''} ${notification.message ?? ''} ${notification.body ?? ''}`.toLowerCase();
+  const inviteId =
+    notification.inviteId ||
+    notification.resourceId ||
+    notification.resource_id ||
+    getRecordValue(notification.metadata, 'inviteId') ||
+    getRecordValue(notification.metadata, 'invite_id') ||
+    getRecordValue(notification.metadata, 'resourceId') ||
+    getRecordValue(notification.metadata, 'resource_id') ||
+    getRecordValue(notification.data, 'inviteId') ||
+    getRecordValue(notification.data, 'invite_id') ||
+    getRecordValue(notification.data, 'resourceId') ||
+    getRecordValue(notification.data, 'resource_id') ||
+    getInviteIdFromUrl(notification.actionUrl || notification.action_url);
+  const status =
+    getRecordValue(notification.metadata, 'status') ||
+    getRecordValue(notification.data, 'status') ||
+    '';
+  const isInvite =
+    text.includes('invite') ||
+    text.includes('invitation') ||
+    resourceType === 'trip_invite' ||
+    resourceType === 'invite';
+  const isClosedInvite = ['accepted', 'declined', 'expired'].includes(status.toLowerCase());
+
+  if (!inviteId || !isInvite || isClosedInvite) {
+    return null;
+  }
+
+  return {
+    id: notification.id,
+    inviteId,
+    message: notification.message || notification.body || 'You have been invited to join a trip.',
+    tripName:
+      getRecordValue(notification.metadata, 'tripTitle') ||
+      getRecordValue(notification.metadata, 'trip_title') ||
+      getRecordValue(notification.metadata, 'tripName') ||
+      getRecordValue(notification.metadata, 'trip_name') ||
+      getRecordValue(notification.data, 'tripTitle') ||
+      getRecordValue(notification.data, 'trip_title') ||
+      getRecordValue(notification.data, 'tripName') ||
+      getRecordValue(notification.data, 'trip_name') ||
+      notification.title ||
+      'Shared trip',
+  };
+};
+
 export default function TripListPage() {
   const [searchTerm, setSearchTerm] = useState('');
+  const [dismissedInviteIds, setDismissedInviteIds] = useState<string[]>([]);
   const { data: tripsResponse, isLoading } = useTripsList();
+  const { data: notificationsResponse } = useNotificationsList();
+  const { data: pendingInvitesResponse } = useTripsPendingInvites();
+  const acceptInvite = useTripsAcceptInvite({ optionalCallback: () => undefined });
+  const declineInvite = useTripsDeclineInvite({ optionalCallback: () => undefined });
   const trips = useMemo(() => tripsResponse?.data.data ?? [], [tripsResponse?.data.data]);
+  const pendingInvites = useMemo(
+    () => {
+      const invitesFromApi = toArray<ITripInvite>(pendingInvitesResponse?.data.data)
+        .map(getPendingInviteFromTripInvite)
+        .filter((invite): invite is PendingInvite => Boolean(invite));
+      const invitesFromNotifications = toArray<INotification>(notificationsResponse?.data.data)
+        .map(getPendingInvite)
+        .filter((invite): invite is PendingInvite => Boolean(invite));
+      const invitesById = new Map<string, PendingInvite>();
+
+      [...invitesFromApi, ...invitesFromNotifications].forEach((invite) => {
+        if (!dismissedInviteIds.includes(invite.inviteId)) {
+          invitesById.set(invite.inviteId, invite);
+        }
+      });
+
+      return Array.from(invitesById.values());
+    },
+    [dismissedInviteIds, notificationsResponse?.data.data, pendingInvitesResponse?.data.data]
+  );
   const filteredTrips = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase();
 
@@ -104,6 +231,69 @@ export default function TripListPage() {
         </Box>
 
         <Box className="trips_content">
+          {pendingInvites.length > 0 && (
+            <Box className="invites_panel" component="section">
+              <Box className="section_row compact">
+                <Box>
+                  <Typography className="section_title" component="h2">
+                    Pending invites
+                  </Typography>
+                  <Typography className="page_subtitle">Join trips that have been shared with you.</Typography>
+                </Box>
+              </Box>
+
+              <Box className="invite_list">
+                {pendingInvites.map((invite) => {
+                  const isAccepting = acceptInvite.isPending && acceptInvite.variables?.inviteId === invite.inviteId;
+                  const isDeclining = declineInvite.isPending && declineInvite.variables?.inviteId === invite.inviteId;
+                  const isPendingAction = isAccepting || isDeclining;
+
+                  return (
+                    <Box className="invite_card" key={invite.id}>
+                      <Box className="invite_icon">
+                        <GroupAddIcon />
+                      </Box>
+                      <Box className="invite_copy">
+                        <Typography className="invite_title" component="h3">
+                          {invite.tripName}
+                        </Typography>
+                        <Typography className="invite_message">{invite.message}</Typography>
+                      </Box>
+                      <Box className="invite_actions">
+                        <Button
+                          disabled={isPendingAction}
+                          onClick={() =>
+                            acceptInvite.mutate(
+                              { inviteId: invite.inviteId },
+                              { onSuccess: () => setDismissedInviteIds((current) => [...current, invite.inviteId]) }
+                            )
+                          }
+                          size="small"
+                          variant="contained"
+                        >
+                          {isAccepting ? 'Joining...' : 'Join'}
+                        </Button>
+                        <Button
+                          disabled={isPendingAction}
+                          onClick={() =>
+                            declineInvite.mutate(
+                              { inviteId: invite.inviteId },
+                              { onSuccess: () => setDismissedInviteIds((current) => [...current, invite.inviteId]) }
+                            )
+                          }
+                          size="small"
+                          variant="outlined"
+                        >
+                          {isDeclining ? 'Declining...' : 'Decline'}
+                        </Button>
+                      </Box>
+                    </Box>
+                  );
+                })}
+              </Box>
+            </Box>
+          )}
+
           {featuredTrip && (
             <Box className="hero_panel" component="section">
               <Box component="img" src={featuredTrip.coverUrl || dashboardAssets.paris} alt={featuredTrip.title} />

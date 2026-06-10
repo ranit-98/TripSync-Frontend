@@ -9,6 +9,7 @@ import {
   tripsInviteFn,
   tripsListFn,
   tripsMembersFn,
+  tripsPendingInvitesFn,
   tripsRemoveMemberFn,
   tripsUpdateFn,
   tripsUpdateMemberFn,
@@ -39,6 +40,13 @@ export const useTripMembers = (tripId?: string) => {
     queryKey: [listOfQueryKeys.trips.members, tripId],
     queryFn: () => tripsMembersFn({ tripId: tripId ?? "" }),
     enabled: Boolean(tripId),
+  });
+};
+
+export const useTripsPendingInvites = () => {
+  return useQuery({
+    queryKey: [listOfQueryKeys.trips.pendingInvites],
+    queryFn: tripsPendingInvitesFn,
   });
 };
 
@@ -141,11 +149,16 @@ export const useTripsRemoveMember = ({ optionalCallback }: IMutationHookOptions)
 };
 
 export const useTripsAcceptInvite = ({ optionalCallback }: IMutationHookOptions) => {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationKey: [listOfQueryKeys.trips.invites, "accept"],
     mutationFn: tripsAcceptInviteFn,
     onSuccess: (res) => {
       if (isSuccessResponse(res?.data.statusCode)) {
+        queryClient.invalidateQueries({ queryKey: [listOfQueryKeys.trips.list] });
+        queryClient.invalidateQueries({ queryKey: [listOfQueryKeys.trips.pendingInvites] });
+        queryClient.invalidateQueries({ queryKey: [listOfQueryKeys.notifications.list] });
         optionalCallback();
       }
     },
@@ -153,11 +166,15 @@ export const useTripsAcceptInvite = ({ optionalCallback }: IMutationHookOptions)
 };
 
 export const useTripsDeclineInvite = ({ optionalCallback }: IMutationHookOptions) => {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationKey: [listOfQueryKeys.trips.invites, "decline"],
     mutationFn: tripsDeclineInviteFn,
     onSuccess: (res) => {
       if (isSuccessResponse(res?.data.statusCode)) {
+        queryClient.invalidateQueries({ queryKey: [listOfQueryKeys.notifications.list] });
+        queryClient.invalidateQueries({ queryKey: [listOfQueryKeys.trips.pendingInvites] });
         optionalCallback();
       }
     },

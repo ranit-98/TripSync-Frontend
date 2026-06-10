@@ -1,15 +1,27 @@
-import { BaseApiResponse } from "@/typescript/interface/api";
+import { BaseApiResponse, IAuthData } from "@/typescript/interface/api";
 import {
   globalCatchError,
   globalCatchSuccess,
   globalCatchWarning
 } from "@/lib/functions/_helpers.lib";
+import { useAuthStore } from "@/store";
 import axios, { AxiosError, AxiosResponse, InternalAxiosRequestConfig } from "axios";
-import { baseUrlApi, successNotificationEndPoints } from "../endpoints";
+import { baseUrlApi, endpoints, successNotificationEndPoints } from "../endpoints";
 
 let abortController = new AbortController();
 let isHandlingServerError = false;
+let refreshPromise: Promise<AxiosResponse<BaseApiResponse<IAuthData>>> | null = null;
 const successNotificationEndPointSet = new Set(successNotificationEndPoints);
+const authEndpointSet = new Set([
+  endpoints.auth.login("v1"),
+  endpoints.auth.logout("v1"),
+  endpoints.auth.refresh("v1"),
+  endpoints.auth.register("v1"),
+]);
+
+type AuthRetryConfig = InternalAxiosRequestConfig & {
+  _retry?: boolean;
+};
 
 const axiosInstance = axios.create({
   baseURL: baseUrlApi,
@@ -22,6 +34,10 @@ const axiosInstance = axios.create({
 
 axiosInstance.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   config.signal = abortController.signal;
+
+  if (typeof FormData !== "undefined" && config.data instanceof FormData) {
+    delete config.headers["Content-Type"];
+  }
 
   return config;
 });
@@ -56,6 +72,47 @@ axiosInstance.interceptors.response.use(
   async (error: AxiosError<BaseApiResponse>) => {
     if (axios.isCancel(error) || error.code === "ERR_CANCELED") {
       return Promise.reject(error);
+    }
+
+    const originalConfig = error.config as AuthRetryConfig | undefined;
+    const requestUrl = originalConfig?.url ?? "";
+    const shouldAttemptRefresh =
+      error.response?.status === 401 &&
+      !!originalConfig &&
+      !originalConfig._retry &&
+      !authEndpointSet.has(requestUrl);
+
+    if (shouldAttemptRefresh) {
+      originalConfig._retry = true;
+
+      try {
+        refreshPromise ??= axios.post<BaseApiResponse<IAuthData>>(
+          endpoints.auth.refresh("v1"),
+          {},
+          {
+            baseURL: baseUrlApi,
+            headers: {
+              "Content-Type": "application/json"
+            },
+            timeout: 30000,
+            withCredentials: true
+          }
+        );
+
+        const refreshResponse = await refreshPromise;
+
+        if (refreshResponse.data?.data) {
+          useAuthStore.getState().setAuthUser(refreshResponse.data.data);
+        }
+
+        return axiosInstance(originalConfig);
+      } catch (refreshError) {
+        useAuthStore.getState().clearAuth();
+
+        return Promise.reject(refreshError);
+      } finally {
+        refreshPromise = null;
+      }
     }
 
     if (isHandlingServerError) {

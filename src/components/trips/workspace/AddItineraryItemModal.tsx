@@ -3,10 +3,12 @@
 import {
   useItineraryCreateActivity,
   useItineraryCreateDay,
+  useItineraryUpdateActivity,
 } from '@/api/hooks/itinerary/useItinerary.hooks';
 import FormDatePicker from '@/components/Forms/FormDatePicker';
 import FormTextArea from '@/components/Forms/FormTextArea';
 import FormTextField from '@/components/Forms/FormTextField';
+import type { IActivity } from '@/typescript/interface/api';
 import CloseIcon from '@mui/icons-material/Close';
 import EventIcon from '@mui/icons-material/Event';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
@@ -24,6 +26,7 @@ type AddItineraryMode = 'activity' | 'day';
 
 type AddItineraryItemModalProps = {
   dayId?: string;
+  initialActivity?: IActivity;
   mode: AddItineraryMode;
   onClose: () => void;
   tripId: string;
@@ -69,15 +72,20 @@ export type { AddItineraryMode };
 
 export default function AddItineraryItemModal({
   dayId,
+  initialActivity,
   mode,
   onClose,
   tripId,
 }: AddItineraryItemModalProps) {
   const isDayMode = mode === 'day';
+  const isEditingActivity = Boolean(initialActivity?.id);
   const { mutate: createDay, isPending: isCreatingDay } = useItineraryCreateDay({
     optionalCallback: onClose,
   });
   const { mutate: createActivity, isPending: isCreatingActivity } = useItineraryCreateActivity({
+    optionalCallback: onClose,
+  });
+  const { mutate: updateActivity, isPending: isUpdatingActivity } = useItineraryUpdateActivity({
     optionalCallback: onClose,
   });
   const {
@@ -85,11 +93,20 @@ export default function AddItineraryItemModal({
     formState: { errors },
     handleSubmit,
   } = useForm<AddItineraryFormValues>({
-    defaultValues,
+    defaultValues: initialActivity
+      ? {
+          date: '',
+          description: initialActivity.description ?? '',
+          endTime: initialActivity.endTime ?? '',
+          location: initialActivity.location ?? '',
+          startTime: initialActivity.startTime ?? '',
+          title: initialActivity.title ?? '',
+        }
+      : defaultValues,
     mode: 'onBlur',
     resolver: yupResolver(isDayMode ? daySchema : activitySchema),
   });
-  const isSubmitting = isCreatingDay || isCreatingActivity;
+  const isSubmitting = isCreatingDay || isCreatingActivity || isUpdatingActivity;
 
   const onSubmit: SubmitHandler<AddItineraryFormValues> = (values) => {
     if (isDayMode) {
@@ -103,16 +120,27 @@ export default function AddItineraryItemModal({
       return;
     }
 
+    const body = {
+      dayId: dayId ?? initialActivity?.dayId,
+      description: values.description.trim() || undefined,
+      endTime: values.endTime || undefined,
+      location: values.location.trim() || undefined,
+      startTime: values.startTime || undefined,
+      title: values.title.trim(),
+    };
+
+    if (initialActivity?.id) {
+      updateActivity({
+        activityId: initialActivity.id,
+        tripId,
+        body,
+      });
+      return;
+    }
+
     createActivity({
       tripId,
-      body: {
-        dayId,
-        description: values.description.trim() || undefined,
-        endTime: values.endTime || undefined,
-        location: values.location.trim() || undefined,
-        startTime: values.startTime || undefined,
-        title: values.title.trim(),
-      },
+      body,
     });
   };
 
@@ -121,7 +149,9 @@ export default function AddItineraryItemModal({
       <Box className="document_modal" component="form" noValidate onSubmit={handleSubmit(onSubmit)}>
         <Box className="document_modal_header">
           <Box>
-            <Typography component="h3">{isDayMode ? 'Add itinerary day' : 'Add activity'}</Typography>
+            <Typography component="h3">
+              {isDayMode ? 'Add itinerary day' : isEditingActivity ? 'Edit activity' : 'Add activity'}
+            </Typography>
             <Typography>
               {isDayMode
                 ? 'Create a day before adding activities.'
@@ -213,7 +243,7 @@ export default function AddItineraryItemModal({
             Cancel
           </Button>
           <Button disabled={isSubmitting} type="submit" variant="contained">
-            {isSubmitting ? 'Saving...' : isDayMode ? 'Add Day' : 'Add Activity'}
+            {isSubmitting ? 'Saving...' : isDayMode ? 'Add Day' : isEditingActivity ? 'Save Activity' : 'Add Activity'}
           </Button>
         </Box>
       </Box>

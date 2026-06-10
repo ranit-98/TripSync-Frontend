@@ -15,6 +15,19 @@ export interface ITrip {
   updatedAt?: string;
 }
 
+export interface ITripInvite {
+  id: ApiId;
+  tripId: ApiId;
+  email: string;
+  role: TripRole;
+  status: "pending" | "accepted" | "declined" | "expired";
+  invitedBy?: ApiId;
+  notes?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+  trip?: ITrip;
+}
+
 export interface ICreateTripPayload {
   title: string;
   destination: string;

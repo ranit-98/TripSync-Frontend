@@ -25,6 +25,7 @@ export const listOfQueryKeys = {
     members: "trips-members",
     invite: "trips-invite",
     invites: "trips-invites",
+    pendingInvites: "trips-pending-invites",
   },
   itinerary: {
     details: "itinerary-details",

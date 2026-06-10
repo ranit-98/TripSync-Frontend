@@ -39,11 +39,14 @@ export const useItineraryCreateDay = ({ optionalCallback }: IMutationHookOptions
 };
 
 export const useItineraryUpdateDay = ({ optionalCallback }: IMutationHookOptions) => {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationKey: [listOfQueryKeys.itinerary.days, "update"],
     mutationFn: itineraryUpdateDayFn,
-    onSuccess: (res) => {
+    onSuccess: (res, variables) => {
       if (isSuccessResponse(res?.data.statusCode)) {
+        queryClient.invalidateQueries({ queryKey: [listOfQueryKeys.itinerary.details, variables.tripId] });
         optionalCallback();
       }
     },
@@ -51,11 +54,14 @@ export const useItineraryUpdateDay = ({ optionalCallback }: IMutationHookOptions
 };
 
 export const useItineraryDeleteDay = ({ optionalCallback }: IMutationHookOptions) => {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationKey: [listOfQueryKeys.itinerary.days, "delete"],
     mutationFn: itineraryDeleteDayFn,
-    onSuccess: (res) => {
+    onSuccess: (res, variables) => {
       if (isSuccessResponse(res?.data.statusCode)) {
+        queryClient.invalidateQueries({ queryKey: [listOfQueryKeys.itinerary.details, variables.tripId] });
         optionalCallback();
       }
     },
@@ -90,11 +96,14 @@ export const useItineraryReorderActivities = ({ optionalCallback }: IMutationHoo
 };
 
 export const useItineraryUpdateActivity = ({ optionalCallback }: IMutationHookOptions) => {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationKey: [listOfQueryKeys.itinerary.activities, "update"],
     mutationFn: itineraryUpdateActivityFn,
-    onSuccess: (res) => {
+    onSuccess: (res, variables) => {
       if (isSuccessResponse(res?.data.statusCode)) {
+        queryClient.invalidateQueries({ queryKey: [listOfQueryKeys.itinerary.details, variables.tripId] });
         optionalCallback();
       }
     },
@@ -102,11 +111,14 @@ export const useItineraryUpdateActivity = ({ optionalCallback }: IMutationHookOp
 };
 
 export const useItineraryDeleteActivity = ({ optionalCallback }: IMutationHookOptions) => {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationKey: [listOfQueryKeys.itinerary.activities, "delete"],
     mutationFn: itineraryDeleteActivityFn,
-    onSuccess: (res) => {
+    onSuccess: (res, variables) => {
       if (isSuccessResponse(res?.data.statusCode)) {
+        queryClient.invalidateQueries({ queryKey: [listOfQueryKeys.itinerary.details, variables.tripId] });
         optionalCallback();
       }
     },

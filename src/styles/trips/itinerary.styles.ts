@@ -482,7 +482,7 @@ export const TripItineraryWrapper = styled(Box)`
     position: relative;
     display: flex;
     align-items: center;
-    gap: 24px;
+    gap: 16px;
     padding: 16px;
     overflow: hidden;
     border: 1px solid rgba(188, 201, 198, 0.2);
@@ -604,6 +604,24 @@ export const TripItineraryWrapper = styled(Box)`
     height: 32px;
     border: 2px solid #ffffff;
     box-shadow: 0 4px 10px rgba(23, 29, 28, 0.14);
+  }
+
+  .activity_actions,
+  .row_actions {
+    align-items: center;
+    justify-content: flex-end;
+    gap: 2px;
+
+    .MuiIconButton-root {
+      width: 34px;
+      height: 34px;
+      color: #6d7a77;
+
+      &:hover {
+        background-color: rgba(0, 131, 120, 0.1);
+        color: ${({ theme }) => theme.palette.primary.main};
+      }
+    }
   }
 
   .add_activity_btn {
@@ -976,9 +994,9 @@ export const TripItineraryWrapper = styled(Box)`
 
   .expense_row {
     display: grid;
-    grid-template-columns: minmax(250px, 1.4fr) minmax(110px, 0.55fr) minmax(90px, 0.45fr) minmax(130px, 0.65fr) minmax(130px, 0.7fr);
+    grid-template-columns: minmax(250px, 1.4fr) minmax(120px, 0.55fr) minmax(150px, 0.7fr) minmax(130px, 0.65fr) minmax(130px, 0.7fr) minmax(116px, 0.5fr);
     align-items: center;
-    min-width: 820px;
+    min-width: 960px;
     min-height: 86px;
     border-bottom: 1px solid rgba(188, 201, 198, 0.24);
 
@@ -1051,6 +1069,22 @@ export const TripItineraryWrapper = styled(Box)`
     width: 34px;
     height: 34px;
     object-fit: cover;
+  }
+
+  .paid_by_cell {
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+
+    span {
+      min-width: 0;
+      overflow: hidden;
+      color: ${({ theme }) => theme.palette.text.primary};
+      font-size: 13px;
+      font-weight: 800;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
   }
 
   .mini_stack {
@@ -1417,6 +1451,62 @@ export const TripItineraryWrapper = styled(Box)`
       min-width: 120px;
       border-radius: 8px;
       font-weight: 800;
+    }
+  }
+
+  .details_modal {
+    width: min(100%, 560px);
+  }
+
+  .confirm_modal {
+    width: min(100%, 460px);
+  }
+
+  .confirm_body {
+    padding: 24px;
+
+    p {
+      margin: 0;
+      color: #3d4947;
+      font-size: 15px;
+      line-height: 22px;
+    }
+  }
+
+  .detail_body {
+    display: grid;
+    gap: 12px;
+    overflow-y: auto;
+    padding: 24px;
+  }
+
+  .detail_row {
+    display: grid;
+    grid-template-columns: 128px minmax(0, 1fr);
+    gap: 16px;
+    align-items: start;
+    padding: 14px 0;
+    border-bottom: 1px solid rgba(188, 201, 198, 0.24);
+
+    &:last-child {
+      border-bottom: 0;
+    }
+
+    span {
+      color: #6d7a77;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      line-height: 16px;
+      text-transform: uppercase;
+    }
+
+    strong {
+      min-width: 0;
+      color: ${({ theme }) => theme.palette.text.primary};
+      font-size: 14px;
+      line-height: 20px;
+      overflow-wrap: anywhere;
     }
   }
 
@@ -1819,7 +1909,14 @@ export const TripItineraryWrapper = styled(Box)`
     font-weight: 700;
   }
 
+  .message_group {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+
   .message {
+    position: relative;
     display: flex;
     max-width: min(78%, 760px);
     gap: 12px;
@@ -1860,10 +1957,47 @@ export const TripItineraryWrapper = styled(Box)`
     }
   }
 
+  .message_bubble_wrap {
+    min-width: 0;
+  }
+
+  .message_delete_btn {
+    align-self: center;
+    color: #6d7a77;
+
+    &:hover {
+      background-color: rgba(146, 70, 40, 0.1);
+      color: #924628;
+    }
+  }
+
   .message_avatar {
     width: 32px;
     height: 32px;
     align-self: flex-end;
+  }
+
+  .message_attachment {
+    display: block;
+    width: min(360px, 100%);
+    margin-top: 8px;
+    border: 1px solid rgba(188, 201, 198, 0.24);
+    border-radius: 12px;
+    background-color: #ffffff;
+    color: ${({ theme }) => theme.palette.primary.main};
+    font-size: 13px;
+    font-weight: 800;
+    overflow: hidden;
+    padding: 10px;
+    text-decoration: none;
+
+    img {
+      display: block;
+      width: 100%;
+      max-height: 220px;
+      border-radius: 8px;
+      object-fit: cover;
+    }
   }
 
   .media_message {

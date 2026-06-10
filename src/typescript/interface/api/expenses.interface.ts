@@ -1,8 +1,10 @@
 import type { ApiId } from "./common.interface";
+import type { IUser } from "./users.interface";
 
 export interface IExpenseSplitPayload {
   userId: ApiId;
   amount: number;
+  user?: IUser | null;
 }
 
 export interface ICreateExpensePayload {
@@ -28,6 +30,7 @@ export interface IExpense {
   expenseDate: string;
   notes?: string;
   splits?: IExpenseSplitPayload[];
+  paidBy?: IUser | null;
 }
 
 export interface ISettlement {
@@ -37,4 +40,5 @@ export interface ISettlement {
   amount?: number;
   currency?: string;
   isPaid?: boolean;
+  status?: "pending" | "paid";
 }

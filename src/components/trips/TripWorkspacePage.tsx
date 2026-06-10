@@ -2,6 +2,7 @@
 
 import { useTripDetails, useTripMembers } from '@/api/hooks/trips/useTrips.hooks';
 import AppSidebar from '@/components/layout/AppSidebar';
+import { useTripWorkspaceUiStore } from '@/store';
 import { TripItineraryWrapper } from '@/styles/trips/itinerary.styles';
 import AddIcon from '@mui/icons-material/Add';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
@@ -18,7 +19,8 @@ import type { TripWorkspaceTab } from './workspace/shared';
 export default function TripWorkspacePage({ activeTab }: { activeTab: TripWorkspaceTab }) {
   const params = useParams<{ tripId?: string }>();
   const tripId = params.tripId ?? '';
-  const [showHero, setShowHero] = useState(true);
+  const showHero = useTripWorkspaceUiStore((state) => state.isTripHeroExpanded(tripId));
+  const setTripHeroExpanded = useTripWorkspaceUiStore((state) => state.setTripHeroExpanded);
   const [showInviteModal, setShowInviteModal] = useState(false);
   const { data: tripResponse, isLoading: isTripLoading } = useTripDetails(tripId);
   const { data: membersResponse } = useTripMembers(tripId);
@@ -34,7 +36,7 @@ export default function TripWorkspacePage({ activeTab }: { activeTab: TripWorksp
           <TripHero
             isLoading={isTripLoading}
             members={members}
-            onCollapse={() => setShowHero(false)}
+            onCollapse={() => setTripHeroExpanded(tripId, false)}
             onInvite={() => setShowInviteModal(true)}
             trip={trip}
           />
@@ -42,13 +44,13 @@ export default function TripWorkspacePage({ activeTab }: { activeTab: TripWorksp
           <Button
             className="hero_restore"
             startIcon={<KeyboardArrowDownIcon />}
-            onClick={() => setShowHero(true)}
+            onClick={() => setTripHeroExpanded(tripId, true)}
           >
             Show Trip Banner
           </Button>
         )}
         <TripTabBar activeTab={activeTab} tripId={tripId} />
-        <ActiveTab activeTab={activeTab} tripId={tripId} />
+        <ActiveTab activeTab={activeTab} onInvite={() => setShowInviteModal(true)} tripId={tripId} />
       </Box>
 
       {activeTab === 'Itinerary' && (

@@ -1,97 +1,133 @@
+'use client';
+
+import { useChatDelete, useChatHistory, useChatSend } from '@/api/hooks/chat/useChat.hooks';
+import { useChatRealtime } from '@/api/hooks/chat/useChatRealtime';
+import { useTripMembers } from '@/api/hooks/trips/useTrips.hooks';
+import ReusableChat, {
+  type ReusableChatMessage,
+  type ReusableChatUser,
+} from '@/components/chat/ReusableChat';
 import { tripItineraryAssets } from '@/json/assets';
-import AttachFileIcon from '@mui/icons-material/AttachFile';
-import ImageIcon from '@mui/icons-material/Image';
-import MicIcon from '@mui/icons-material/Mic';
-import PersonAddIcon from '@mui/icons-material/PersonAdd';
-import SendIcon from '@mui/icons-material/Send';
-import SentimentSatisfiedAltIcon from '@mui/icons-material/SentimentSatisfiedAlt';
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import IconButton from '@mui/material/IconButton';
-import Stack from '@mui/material/Stack';
-import Typography from '@mui/material/Typography';
-import { chatMembers } from '../shared';
+import { useAuthStore } from '@/store/auth/auth.store';
+import type { IMessage, ITripMember } from '@/typescript/interface/api';
+import { useMemo } from 'react';
 
-export default function ChatTab() {
+const toArray = <T,>(value: unknown): T[] => {
+  if (Array.isArray(value)) return value as T[];
+
+  if (value && typeof value === 'object') {
+    const record = value as Record<string, unknown>;
+    const candidates = [record.messages, record.members, record.items, record.data];
+    const arrayValue = candidates.find(Array.isArray);
+
+    if (arrayValue) return arrayValue as T[];
+  }
+
+  return [];
+};
+
+const getUserName = (name?: string, email?: string) => name || email || 'Trip member';
+
+export default function ChatTab({
+  onInvite,
+  tripId,
+}: {
+  onInvite?: () => void;
+  tripId: string;
+}) {
+  const currentUser = useAuthStore((state) => state.user);
+  const { data: membersResponse } = useTripMembers(tripId);
+  const { data: messagesResponse, isLoading } = useChatHistory(tripId);
+  const sendMessage = useChatSend({ optionalCallback: () => undefined });
+  const deleteMessage = useChatDelete({ optionalCallback: () => undefined });
+  const apiMessages = useMemo(
+    () => toArray<IMessage>(messagesResponse?.data.data),
+    [messagesResponse?.data.data]
+  );
+  const members = useMemo<ReusableChatUser[]>(
+    () =>
+      toArray<ITripMember>(membersResponse?.data.data)
+        .map((member) => member.user)
+        .filter((user): user is NonNullable<typeof user> => Boolean(user?.id))
+        .map((user) => ({
+          avatarUrl: user.avatarUrl,
+          id: user.id,
+          name: getUserName(user.name, user.email),
+          status: user.id === currentUser?.id ? 'Active now' : 'Trip member',
+        })),
+    [currentUser?.id, membersResponse?.data.data]
+  );
+  const messages = useMemo<ReusableChatMessage[]>(
+    () =>
+      apiMessages.map((message) => ({
+        attachments: message.attachments?.map((attachment) => ({
+          id: attachment.id,
+          mimeType: attachment.mimeType,
+          name: attachment.originalFileName,
+          url: attachment.url,
+        })),
+        body: message.body,
+        createdAt: message.createdAt,
+        id: message.id,
+        sender: message.sender
+          ? {
+              avatarUrl: message.sender.avatarUrl,
+              id: message.sender.id,
+              name: getUserName(message.sender.name, message.sender.email),
+            }
+          : null,
+        senderId: message.senderId,
+      })),
+    [apiMessages]
+  );
+  const realtime = useChatRealtime({
+    currentUser,
+    initialMessages: apiMessages,
+    tripId,
+  });
+  const realtimeMessages = useMemo<ReusableChatMessage[]>(
+    () =>
+      realtime.messages.map((message) => ({
+        attachments: message.attachments?.map((attachment) => ({
+          id: attachment.id,
+          mimeType: attachment.mimeType,
+          name: attachment.originalFileName,
+          url: attachment.url,
+        })),
+        body: message.body,
+        createdAt: message.createdAt,
+        id: message.id,
+        sender: message.sender
+          ? {
+              avatarUrl: message.sender.avatarUrl,
+              id: message.sender.id,
+              name: getUserName(message.sender.name, message.sender.email),
+            }
+          : null,
+        senderId: message.senderId,
+      })),
+    [realtime.messages]
+  );
+
   return (
-    <Box className="chat_shell">
-      <Box className="chat_members">
-        <Typography className="eyebrow">Trip Members</Typography>
-        <Stack className="member_list">
-          {chatMembers.map((member) => (
-            <Stack className={`chat_member${member.active ? ' active' : ''}`} direction="row" key={member.name}>
-              <Box className="chat_avatar_wrap">
-                <Box alt="" className={`chat_avatar${member.online ? '' : ' away'}`} component="img" src={member.avatar} />
-                <span className={member.online ? 'online' : 'away'} />
-              </Box>
-              <Box>
-                <strong>{member.name}</strong>
-                <small>{member.status}</small>
-              </Box>
-            </Stack>
-          ))}
-        </Stack>
-        <Button className="invite_member_btn" startIcon={<PersonAddIcon />}>
-          Invite Member
-        </Button>
-      </Box>
-
-      <Box className="chat_window">
-        <Box className="messages">
-          <span className="date_chip">August 14th, 2023</span>
-          <Box className="message incoming">
-            <Box alt="" className="message_avatar" component="img" src={tripItineraryAssets.members[1]} />
-            <Box>
-              <small>Marcus Chen - 10:24 AM</small>
-              <p>Hey guys! I just saw this amazing villa in Positano. Should we book it before someone else does?</p>
-            </Box>
-          </Box>
-          <Box className="media_message">
-            <Box alt="Villa in Positano" component="img" src={tripItineraryAssets.hero} />
-            <Stack direction="row">
-              <strong>Villa Fiorella - Positano</strong>
-              <span>$450/night</span>
-            </Stack>
-          </Box>
-          <Box className="message outgoing">
-            <small>You - 10:28 AM</small>
-            <p>Wow, that looks incredible! I am definitely in. Let&apos;s check with Priya and Alex.</p>
-          </Box>
-          <Box className="message incoming">
-            <Box alt="" className="message_avatar" component="img" src={tripItineraryAssets.members[0]} />
-            <Box>
-              <small>Priya Sharma - 10:30 AM</small>
-              <p>Agreed! Checking the dates now. Looks like it is available for our full stay.</p>
-            </Box>
-          </Box>
-          <Box className="typing_row">
-            <Box alt="" className="typing_avatar" component="img" src={tripItineraryAssets.members[0]} />
-            <span>Priya is typing</span>
-          </Box>
-        </Box>
-        <Box className="message_input">
-          <textarea placeholder="Type a message to the group..." rows={1} />
-          <Box className="input_actions">
-            <Stack direction="row">
-              <IconButton>
-                <SentimentSatisfiedAltIcon />
-              </IconButton>
-              <IconButton>
-                <AttachFileIcon />
-              </IconButton>
-              <IconButton>
-                <ImageIcon />
-              </IconButton>
-              <IconButton>
-                <MicIcon />
-              </IconButton>
-            </Stack>
-            <Button className="send_btn" endIcon={<SendIcon />}>
-              Send
-            </Button>
-          </Box>
-        </Box>
-      </Box>
-    </Box>
+    <ReusableChat
+      currentUserId={currentUser?.id}
+      emptyText="No trip messages yet."
+      fallbackAvatar={tripItineraryAssets.profile}
+      isLoading={isLoading}
+      isSending={sendMessage.isPending}
+      members={members}
+      messages={realtimeMessages.length ? realtimeMessages : messages}
+      onDeleteMessage={(message) => deleteMessage.mutate({ messageId: message.id, tripId })}
+      onInviteMember={onInvite}
+      onSendMessage={(body) => {
+        realtime.stopTyping();
+        sendMessage.mutate({ body: { body }, tripId });
+      }}
+      onTyping={realtime.notifyTyping}
+      placeholder="Type a message to the group..."
+      title="Trip Members"
+      typingUsers={realtime.typingUsers}
+    />
   );
 }

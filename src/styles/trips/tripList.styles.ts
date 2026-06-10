@@ -163,11 +163,74 @@ export const TripListPageWrapper = styled(Box)`
     margin-bottom: 18px;
   }
 
+  .section_row.compact {
+    margin-top: 0;
+    margin-bottom: 16px;
+  }
+
   .section_title {
     color: #172124;
     font-size: 24px;
     font-weight: 800;
     line-height: 32px;
+  }
+
+  .invites_panel {
+    margin-bottom: 24px;
+    padding: 20px;
+    border: 1px solid rgba(0, 104, 95, 0.18);
+    border-radius: 12px;
+    background-color: #ffffff;
+    box-shadow: 0 8px 24px rgba(23, 29, 28, 0.06);
+  }
+
+  .invite_list {
+    display: grid;
+    gap: 12px;
+  }
+
+  .invite_card {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 14px;
+    padding: 14px;
+    border: 1px solid rgba(188, 201, 198, 0.38);
+    border-radius: 10px;
+    background-color: #f7fbfa;
+  }
+
+  .invite_icon {
+    display: grid;
+    width: 44px;
+    height: 44px;
+    place-items: center;
+    border-radius: 10px;
+    background-color: #d8efea;
+    color: #00685f;
+  }
+
+  .invite_copy {
+    min-width: 0;
+  }
+
+  .invite_title {
+    color: #172124;
+    font-size: 17px;
+    font-weight: 800;
+    line-height: 24px;
+  }
+
+  .invite_message {
+    color: #5f6f74;
+    font-size: 14px;
+    line-height: 20px;
+  }
+
+  .invite_actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
   }
 
   .trip_grid {
@@ -370,6 +433,16 @@ export const TripListPageWrapper = styled(Box)`
 
     .trip_grid {
       grid-template-columns: 1fr;
+    }
+
+    .invite_card {
+      grid-template-columns: auto minmax(0, 1fr);
+    }
+
+    .invite_actions {
+      grid-column: 1 / -1;
+      justify-content: flex-start;
+      padding-left: 58px;
     }
 
     .hero_content {

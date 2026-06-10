@@ -83,6 +83,9 @@ export const endpoints = {
     invite: (version: TAPIVersions, tripId: string) => {
       return `${version}/trips/${tripId}/invites`;
     },
+    pendingInvites: (version: TAPIVersions) => {
+      return `${version}/invites`;
+    },
     updateMember: (version: TAPIVersions, tripId: string, memberId: string) => {
       return `${version}/trips/${tripId}/members/${memberId}`;
     },

@@ -10,6 +10,7 @@ import type {
   ICreateTripPayload,
   IInviteMemberPayload,
   ITrip,
+  ITripInvite,
   ITripMember,
   IUpdateMemberPayload,
   IUpdateTripPayload,
@@ -104,6 +105,12 @@ export const tripsInviteFn = async ({
   tripId,
 }: IBodyPayload<IInviteMemberPayload> & IWithTripId): ApiMutationResponse => {
   const res = await axiosInstance.post(endpoints.trips.invite("v1", tripId), body);
+
+  return res;
+};
+
+export const tripsPendingInvitesFn = async (): ApiMutationResponse<ITripInvite[]> => {
+  const res = await axiosInstance.get(endpoints.trips.pendingInvites("v1"));
 
   return res;
 };

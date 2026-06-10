@@ -4,7 +4,7 @@ import { chatAttachFn, chatDeleteFn, chatHistoryFn, chatSendFn } from "@/api/fun
 import type { IMutationHookOptions } from "@/api/hooks/types";
 import { isSuccessResponse } from "@/api/hooks/types";
 import { listOfQueryKeys } from "@/lib/functions/listOfQueryKeys";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export const useChatHistory = (tripId?: string) => {
   return useQuery({
@@ -15,11 +15,14 @@ export const useChatHistory = (tripId?: string) => {
 };
 
 export const useChatSend = ({ optionalCallback }: IMutationHookOptions) => {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationKey: [listOfQueryKeys.chat.messages, "send"],
     mutationFn: chatSendFn,
-    onSuccess: (res) => {
+    onSuccess: (res, variables) => {
       if (isSuccessResponse(res?.data.statusCode)) {
+        queryClient.invalidateQueries({ queryKey: [listOfQueryKeys.chat.messages, variables.tripId] });
         optionalCallback();
       }
     },
@@ -27,11 +30,14 @@ export const useChatSend = ({ optionalCallback }: IMutationHookOptions) => {
 };
 
 export const useChatAttach = ({ optionalCallback }: IMutationHookOptions) => {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationKey: [listOfQueryKeys.chat.attachments],
     mutationFn: chatAttachFn,
-    onSuccess: (res) => {
+    onSuccess: (res, variables) => {
       if (isSuccessResponse(res?.data.statusCode)) {
+        queryClient.invalidateQueries({ queryKey: [listOfQueryKeys.chat.messages, variables.tripId] });
         optionalCallback();
       }
     },
@@ -39,11 +45,14 @@ export const useChatAttach = ({ optionalCallback }: IMutationHookOptions) => {
 };
 
 export const useChatDelete = ({ optionalCallback }: IMutationHookOptions) => {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationKey: [listOfQueryKeys.chat.messages, "delete"],
     mutationFn: chatDeleteFn,
-    onSuccess: (res) => {
+    onSuccess: (res, variables) => {
       if (isSuccessResponse(res?.data.statusCode)) {
+        queryClient.invalidateQueries({ queryKey: [listOfQueryKeys.chat.messages, variables.tripId] });
         optionalCallback();
       }
     },

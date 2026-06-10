@@ -1,14 +1,22 @@
 'use client';
 
-import { useItinerary } from '@/api/hooks/itinerary/useItinerary.hooks';
+import {
+  useItinerary,
+  useItineraryDeleteActivity,
+} from '@/api/hooks/itinerary/useItinerary.hooks';
 import { tripItineraryAssets } from '@/json/assets';
 import type { IActivity, IItineraryDay } from '@/typescript/interface/api';
 import AddCircleIcon from '@mui/icons-material/AddCircle';
+import CloseIcon from '@mui/icons-material/Close';
+import DeleteIcon from '@mui/icons-material/Delete';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
+import EditIcon from '@mui/icons-material/Edit';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
+import VisibilityIcon from '@mui/icons-material/Visibility';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
+import IconButton from '@mui/material/IconButton';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { useState } from 'react';
@@ -118,8 +126,22 @@ const getDayDescription = (day: IItineraryDay) => {
 
 export default function ItineraryTab({ tripId }: { tripId: string }) {
   const [addModal, setAddModal] = useState<{ dayId?: string; mode: AddItineraryMode } | null>(null);
+  const [selectedActivity, setSelectedActivity] = useState<IActivity | null>(null);
+  const [editingActivity, setEditingActivity] = useState<IActivity | null>(null);
+  const [deleteActivityCandidate, setDeleteActivityCandidate] = useState<IActivity | null>(null);
   const { data: itineraryResponse, isLoading } = useItinerary(tripId);
+  const deleteActivity = useItineraryDeleteActivity({
+    optionalCallback: () => {
+      setSelectedActivity(null);
+      setDeleteActivityCandidate(null);
+    },
+  });
   const days = normalizeItineraryDays(itineraryResponse?.data.data);
+  const handleConfirmDeleteActivity = () => {
+    if (!deleteActivityCandidate?.id) return;
+
+    deleteActivity.mutate({ activityId: deleteActivityCandidate.id, tripId });
+  };
 
   return (
     <>
@@ -175,6 +197,21 @@ export default function ItineraryTab({ tripId }: { tripId: string }) {
                             </Typography>
                           </Box>
                           <Box alt="Assignee" className="assignee_avatar" component="img" src={tripItineraryAssets.profile} />
+                          <Stack className="activity_actions" direction="row">
+                            <IconButton aria-label="View activity" onClick={() => setSelectedActivity(activity)}>
+                              <VisibilityIcon fontSize="small" />
+                            </IconButton>
+                            <IconButton aria-label="Edit activity" onClick={() => setEditingActivity(activity)}>
+                              <EditIcon fontSize="small" />
+                            </IconButton>
+                            <IconButton
+                              aria-label="Delete activity"
+                              disabled={deleteActivity.isPending}
+                              onClick={() => setDeleteActivityCandidate(activity)}
+                            >
+                              <DeleteIcon fontSize="small" />
+                            </IconButton>
+                          </Stack>
                         </Box>
                       );
                     })
@@ -251,6 +288,98 @@ export default function ItineraryTab({ tripId }: { tripId: string }) {
           onClose={() => setAddModal(null)}
           tripId={tripId}
         />
+      )}
+      {editingActivity && (
+        <AddItineraryItemModal
+          dayId={editingActivity.dayId}
+          initialActivity={editingActivity}
+          mode="activity"
+          onClose={() => setEditingActivity(null)}
+          tripId={tripId}
+        />
+      )}
+      {selectedActivity && (
+        <Box className="expense_modal_overlay">
+          <Box className="expense_modal details_modal">
+            <Box className="expense_modal_header">
+              <Box>
+                <Typography component="h3">{selectedActivity.title}</Typography>
+                <Typography>{formatActivityTime(selectedActivity)}</Typography>
+              </Box>
+              <IconButton aria-label="Close activity details" onClick={() => setSelectedActivity(null)}>
+                <CloseIcon />
+              </IconButton>
+            </Box>
+            <Box className="detail_body">
+              <Box className="detail_row">
+                <span>Location</span>
+                <strong>{selectedActivity.location || 'Location not set'}</strong>
+              </Box>
+              <Box className="detail_row">
+                <span>Description</span>
+                <strong>{selectedActivity.description || 'No notes added'}</strong>
+              </Box>
+            </Box>
+            <Box className="expense_modal_footer">
+              <Button
+                onClick={() => {
+                  setEditingActivity(selectedActivity);
+                  setSelectedActivity(null);
+                }}
+                startIcon={<EditIcon />}
+              >
+                Edit
+              </Button>
+              <Button
+                color="error"
+                disabled={deleteActivity.isPending}
+                onClick={() => {
+                  setDeleteActivityCandidate(selectedActivity);
+                  setSelectedActivity(null);
+                }}
+                startIcon={<DeleteIcon />}
+              >
+                Delete
+              </Button>
+            </Box>
+          </Box>
+        </Box>
+      )}
+      {deleteActivityCandidate && (
+        <Box className="expense_modal_overlay">
+          <Box className="expense_modal confirm_modal">
+            <Box className="expense_modal_header">
+              <Box>
+                <Typography component="h3">Delete activity?</Typography>
+                <Typography>{deleteActivityCandidate.title}</Typography>
+              </Box>
+              <IconButton
+                aria-label="Close delete confirmation"
+                disabled={deleteActivity.isPending}
+                onClick={() => setDeleteActivityCandidate(null)}
+              >
+                <CloseIcon />
+              </IconButton>
+            </Box>
+            <Box className="confirm_body">
+              <Typography>This activity will be removed from the itinerary.</Typography>
+            </Box>
+            <Box className="expense_modal_footer">
+              <Button disabled={deleteActivity.isPending} onClick={() => setDeleteActivityCandidate(null)}>
+                Cancel
+              </Button>
+              <Button
+                color="error"
+                disabled={deleteActivity.isPending}
+                onClick={handleConfirmDeleteActivity}
+                startIcon={<DeleteIcon />}
+                variant="contained"
+              >
+                {deleteActivity.isPending ? 'Deleting...' : 'Delete'}
+              </Button>
+            </Box>
+          </Box>
+        </Box>
       )}
     </>
   );

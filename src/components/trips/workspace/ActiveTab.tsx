@@ -1,11 +1,13 @@
 import type { TripWorkspaceTab } from './shared';
-import ChatTab from './tabs/ChatTab';
-import ExpensesTab from './tabs/ExpensesTab';
-import FilesTab from './tabs/FilesTab';
-import GalleryTab from './tabs/GalleryTab';
-import ItineraryTab from './tabs/ItineraryTab';
-import MapTab from './tabs/MapTab';
-import PlaceholderTab from './tabs/PlaceholderTab';
+import { lazy } from 'react';
+
+const ChatTab = lazy(() => import('./tabs/ChatTab'));
+const ExpensesTab = lazy(() => import('./tabs/ExpensesTab'));
+const FilesTab = lazy(() => import('./tabs/FilesTab'));
+const GalleryTab = lazy(() => import('./tabs/GalleryTab'));
+const ItineraryTab = lazy(() => import('./tabs/ItineraryTab'));
+const MapTab = lazy(() => import('./tabs/MapTab'));
+const PlaceholderTab = lazy(() => import('./tabs/PlaceholderTab'));
 
 export default function ActiveTab({
   activeTab,

@@ -10,3 +10,16 @@ body {
   min-height: 100%;
   margin: 0;
 }
+
+.mobile_menu_trigger { display: none; }
+.mobile_navigation_drawer { width: min(82vw, 320px); background: #f5faf8; }
+.mobile_navigation_content { display: flex; min-height: 100%; flex-direction: column; gap: 8px; padding: 24px; }
+.mobile_navigation_content .brand_row { display: flex; align-items: center; gap: 14px; padding: 10px 0 28px; }
+.mobile_navigation_content .brand_icon { display: grid; width: 40px; height: 40px; place-items: center; border-radius: 10px; background: #00685f; color: #fff; }
+.mobile_navigation_content .brand_name { color: #00685f; font-size: 19px; font-weight: 800; }
+.mobile_navigation_content .brand_caption { color: #3d4947; font-size: 12px; }
+.mobile_navigation_content .sidebar_nav { display: flex; flex: 1; flex-direction: column; gap: 8px; }
+.mobile_navigation_content .nav_link { display: flex; align-items: center; gap: 14px; min-height: 42px; padding: 10px 14px; border-radius: 8px; color: #3d4947; font-size: 14px; font-weight: 600; text-decoration: none; }
+.mobile_navigation_content .nav_link.active { background: rgba(0, 131, 120, .11); color: #00685f; }
+.mobile_navigation_content .new_trip_btn { min-height: 52px; border-radius: 8px; background: #00685f; color: #fff; font-weight: 800; text-transform: none; }
+@media (max-width: 899px) { .mobile_menu_trigger { position: fixed; top: 12px; right: 12px; z-index: 1201; display: inline-flex; background: #fff; color: #00685f; box-shadow: 0 4px 14px rgba(23,29,28,.14); } }

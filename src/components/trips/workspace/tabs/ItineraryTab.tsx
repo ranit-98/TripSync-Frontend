@@ -4,6 +4,8 @@ import {
   useItinerary,
   useItineraryDeleteActivity,
 } from '@/api/hooks/itinerary/useItinerary.hooks';
+import { ItinerarySkeleton } from '@/components/skeleton';
+import ImageComp from '@/components/image/ImageComp';
 import { tripItineraryAssets } from '@/json/assets';
 import type { IActivity, IItineraryDay } from '@/typescript/interface/api';
 import AddCircleIcon from '@mui/icons-material/AddCircle';
@@ -118,6 +120,32 @@ const getActivityIcon = (activity: IActivity) => {
   return 'hotel';
 };
 
+const getActivityCreator = (activity: IActivity) => {
+  const record = activity as IActivity & Record<string, unknown>;
+  const candidate = record.createdBy ?? record.addedBy ?? record.creator ?? record.user;
+
+  if (candidate && typeof candidate === 'object') {
+    const creator = candidate as { avatarUrl?: string | null; name?: string };
+
+    return {
+      avatar: creator.avatarUrl || tripItineraryAssets.profile,
+      name: creator.name || 'You',
+    };
+  }
+
+  if (typeof candidate === 'string' && candidate.trim()) {
+    return {
+      avatar: tripItineraryAssets.profile,
+      name: candidate,
+    };
+  }
+
+  return {
+    avatar: tripItineraryAssets.profile,
+    name: 'You',
+  };
+};
+
 const getDayDescription = (day: IItineraryDay) => {
   const activityCount = getDayActivities(day).length;
 
@@ -149,9 +177,7 @@ export default function ItineraryTab({ tripId }: { tripId: string }) {
       <Box className="content_grid">
         <Box className="itinerary_col">
           {isLoading ? (
-            <Box className="empty_panel">
-              <Typography className="empty_title">Loading itinerary...</Typography>
-            </Box>
+            <ItinerarySkeleton />
           ) : days.length ? (
             <>
               {days.map((day, index) => {
@@ -179,6 +205,7 @@ export default function ItineraryTab({ tripId }: { tripId: string }) {
                   {getDayActivities(day).length ? (
                     getDayActivities(day).map((activity) => {
                       const activityType = getActivityType(activity);
+                      const creator = getActivityCreator(activity);
 
                       return (
                         <Box className={`activity_card ${activityType}`} key={activity.id}>
@@ -195,8 +222,12 @@ export default function ItineraryTab({ tripId }: { tripId: string }) {
                               <LocationOnIcon fontSize="inherit" />
                               {activity.location || activity.description || 'Location not set'}
                             </Typography>
+                            <Box className="activity_added_by">
+                              <ImageComp alt="" className="activity_added_avatar" isAvatar src={creator.avatar} />
+                              <span>Added by {creator.name}</span>
+                            </Box>
                           </Box>
-                          <Box alt="Assignee" className="assignee_avatar" component="img" src={tripItineraryAssets.profile} />
+                          <ImageComp alt={creator.name} className="assignee_avatar" isAvatar src={creator.avatar} />
                           <Stack className="activity_actions" direction="row">
                             <IconButton aria-label="View activity" onClick={() => setSelectedActivity(activity)}>
                               <VisibilityIcon fontSize="small" />
@@ -263,7 +294,7 @@ export default function ItineraryTab({ tripId }: { tripId: string }) {
               {days.slice(0, 4).map((day, index) => (
                 <Box className="feed_item" key={day.id}>
                   <Box className="feed_avatar_wrap">
-                    <Box alt="" className="feed_avatar" component="img" src={tripItineraryAssets.profile} />
+                    <ImageComp alt="" className="feed_avatar" isAvatar src={tripItineraryAssets.profile} />
                   </Box>
                   <Box>
                     <Typography className="feed_text">

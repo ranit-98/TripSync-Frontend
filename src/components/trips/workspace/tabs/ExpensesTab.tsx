@@ -10,6 +10,8 @@ import {
   useExpensesUpdate,
 } from '@/api/hooks/expenses/useExpenses.hooks';
 import { useTripDetails, useTripMembers } from '@/api/hooks/trips/useTrips.hooks';
+import { ExpensesSkeleton } from '@/components/skeleton';
+import ImageComp from '@/components/image/ImageComp';
 import { tripItineraryAssets } from '@/json/assets';
 import { useAuthStore } from '@/store/auth/auth.store';
 import type {
@@ -405,7 +407,7 @@ function AddExpenseModal({
                             field.onChange(nextValue);
                           }}
                         />
-                        <Box alt="" className="split_avatar" component="img" src={member.avatar} />
+                        <ImageComp alt="" className="split_avatar" isAvatar src={member.avatar} />
                         <span>{member.label}</span>
                       </Box>
                     );
@@ -525,6 +527,10 @@ export default function ExpensesTab({ tripId }: { tripId: string }) {
 
     return Object.entries(totals).sort((a, b) => b[1] - a[1])[0]?.[0];
   }, [expenses]);
+
+  if (isExpensesLoading && isSettlementsLoading) {
+    return <ExpensesSkeleton />;
+  }
 
   const getExpensePayload = (values: AddExpenseFormValues): ICreateExpensePayload => {
     const splitAmount = Number((values.amount / values.splitWith.length).toFixed(2));
@@ -679,18 +685,13 @@ export default function ExpensesTab({ tripId }: { tripId: string }) {
                     </Stack>
                     <strong>{formatMoney(expense.amount, expense.currency || currency)}</strong>
                     <Stack className="paid_by_cell" direction="row">
-                      <Box
-                        alt={paidBy.label}
-                        className="paid_avatar"
-                        component="img"
-                        src={paidBy.avatar}
-                      />
+                      <ImageComp alt={paidBy.label} className="paid_avatar" isAvatar src={paidBy.avatar} />
                       <span>{paidBy.label}</span>
                     </Stack>
                     <span className="muted_text">{formatExpenseDate(expense.expenseDate)}</span>
                     <Stack className="mini_stack" direction="row">
                       {splits.slice(0, 3).map((member) => (
-                        <Box alt={member.label} className="mini_avatar" component="img" key={member.userId} src={member.avatar} />
+                        <ImageComp alt={member.label} className="mini_avatar" isAvatar key={member.userId} src={member.avatar} />
                       ))}
                       {splits.length > 3 && <span className="mini_more">+{splits.length - 3}</span>}
                     </Stack>
@@ -734,7 +735,7 @@ export default function ExpensesTab({ tripId }: { tripId: string }) {
 
                 return (
                   <Box className={`balance_item ${positive ? 'positive' : 'warning'}`} key={settlement.id}>
-                    <Box alt="" className="person_avatar" component="img" src={settlementText.avatar} />
+                    <ImageComp alt="" className="person_avatar" isAvatar src={settlementText.avatar} />
                     <Box className="balance_copy">
                       <strong>{settlementText.title}</strong>
                       <span>{isSettlementPaid(settlement) ? 'Settled' : 'Pending settlement'}</span>

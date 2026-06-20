@@ -2,6 +2,8 @@
 
 import { useUsersMe, useUsersUploadAvatar } from "@/api/hooks/users/useUsers.hooks";
 import AppSidebar from "@/components/layout/AppSidebar";
+import ImageComp from "@/components/image/ImageComp";
+import { ProfileSettingsSkeleton } from "@/components/skeleton";
 import ChangePasswordCard from "@/components/settings/profile/ChangePasswordCard";
 import DeleteAccountCard from "@/components/settings/profile/DeleteAccountCard";
 import PersonalInfoForm from "@/components/settings/profile/PersonalInfoForm";
@@ -19,6 +21,7 @@ import Box from "@mui/material/Box";
 import IconButton from "@mui/material/IconButton";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
+import Link from "next/link";
 import { useCallback, useMemo, useState } from "react";
 
 // ─── Component ───────────────────────────────────────────────────────────────
@@ -78,12 +81,12 @@ export default function ProfileSettings() {
             <IconButton aria-label="Open notifications">
               <NotificationsIcon />
             </IconButton>
-            <Box alt="User profile avatar" className="topbar_avatar" component="img" src={avatarSrc} />
+            <ImageComp alt="User profile avatar" className="topbar_avatar" isAvatar src={avatarSrc} />
           </Stack>
         </Box>
 
         <Box className="content_area">
-          <Box className="settings_grid">
+          {isLoading ? <ProfileSettingsSkeleton /> : <Box className="settings_grid">
             <Stack className="identity_col">
               <ProfileImageCard
                 avatarPreviewUrl={avatarSrc}
@@ -109,12 +112,12 @@ export default function ProfileSettings() {
               <ChangePasswordCard />
               <DeleteAccountCard />
             </Stack>
-          </Box>
+          </Box>}
         </Box>
       </Box>
 
       <Box className="mobile_nav" component="nav">
-        <Box className="mobile_nav_link" component="a" href="/dashboard">
+        <Box className="mobile_nav_link" component={Link} href="/dashboard">
           <DashboardIcon />
           <span>Home</span>
         </Box>
@@ -122,7 +125,7 @@ export default function ProfileSettings() {
           <ExploreIcon />
           <span>Explore</span>
         </Box>
-        <Box className="mobile_nav_link active" component="a" href="/settings">
+        <Box className="mobile_nav_link active" component={Link} href="/settings">
           <SettingsIcon />
           <span>Profile</span>
         </Box>

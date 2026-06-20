@@ -1,4 +1,5 @@
 import { dashboardAssets } from "@/json/assets";
+import ImageComp from "@/components/image/ImageComp";
 import { AcceptedTypes, ErrorImageMessage, SIZE } from "@/json/messages/validationText";
 import type { IUser } from "@/typescript/interface/api";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
@@ -92,7 +93,7 @@ function ProfileImageCard({
   return (
     <Box className="profile_card">
       <Box className="profile_photo_wrap">
-        <Box alt={displayName} className="profile_photo" component="img" src={displayAvatar} />
+        <ImageComp alt={displayName} className="profile_photo" isAvatar src={displayAvatar} />
         <IconButton
           aria-label="Choose profile image"
           className={`camera_badge ${isEditing ? "active" : ""}`}

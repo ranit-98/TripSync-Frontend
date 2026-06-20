@@ -8,6 +8,8 @@ import {
   useTripsPendingInvites,
 } from '@/api/hooks/trips/useTrips.hooks';
 import AppSidebar from '@/components/layout/AppSidebar';
+import ImageComp from '@/components/image/ImageComp';
+import { TripListSkeleton } from '@/components/skeleton';
 import { dashboardAssets } from '@/json/assets';
 import { TripListPageWrapper } from '@/styles/trips/tripList.styles';
 import type { ApiId, INotification, ITrip, ITripInvite } from '@/typescript/interface/api';
@@ -296,7 +298,7 @@ export default function TripListPage() {
 
           {featuredTrip && (
             <Box className="hero_panel" component="section">
-              <Box component="img" src={featuredTrip.coverUrl || dashboardAssets.paris} alt={featuredTrip.title} />
+              <ImageComp alt={featuredTrip.title} src={featuredTrip.coverUrl || dashboardAssets.paris} style={{ borderRadius: 0 }} />
               <Box className="hero_overlay" />
               <Box className="hero_content">
                 <span className="hero_tag">Continue planning</span>
@@ -331,9 +333,7 @@ export default function TripListPage() {
           </Box>
 
           {isLoading ? (
-            <Box className="empty_state">
-              <Typography className="empty_title">Loading trips...</Typography>
-            </Box>
+            <TripListSkeleton />
           ) : filteredTrips.length ? (
             <Box className="trip_grid">
               {filteredTrips.map((trip) => {
@@ -342,7 +342,7 @@ export default function TripListPage() {
                 return (
                   <Box className="trip_card" component={Link} href={`/trips/${trip.id}/itinerary`} key={trip.id}>
                     <Box className="trip_media">
-                      <Box component="img" src={trip.coverUrl || dashboardAssets.bali} alt={trip.title} />
+                      <ImageComp alt={trip.title} src={trip.coverUrl || dashboardAssets.bali} style={{ borderRadius: 0 }} />
                       <span className={`trip_status ${status.tone}`}>{status.label}</span>
                     </Box>
                     <Box className="trip_body">

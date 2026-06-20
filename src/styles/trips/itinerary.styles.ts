@@ -122,6 +122,7 @@ export const TripItineraryWrapper = styled(Box)`
     min-width: 0;
     flex: 1;
     flex-direction: column;
+    overflow-x: hidden;
     overflow-y: auto;
   }
 
@@ -136,12 +137,40 @@ export const TripItineraryWrapper = styled(Box)`
     }
   }
 
+  .hero_transition {
+    height: 400px;
+    flex-shrink: 0;
+    overflow: hidden;
+    transition: height 280ms ease, opacity 220ms ease, transform 280ms ease;
+
+    &.is_collapsing {
+      height: 0;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(-16px);
+    }
+
+    @media (max-width: 599px) {
+      height: 460px;
+    }
+  }
+
+  .hero_skeleton_content {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    padding: 32px;
+  }
+
   .hero_img {
     position: absolute;
     inset: 0;
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    border-radius: 0;
+
+    img { object-fit: cover; }
   }
 
   .hero_overlay {
@@ -218,15 +247,85 @@ export const TripItineraryWrapper = styled(Box)`
     display: flex;
     align-items: center;
     justify-content: center;
-    min-height: 52px;
-    border-top: 1px solid rgba(188, 201, 198, 0.25);
-    border-bottom: 1px solid rgba(188, 201, 198, 0.25);
-    border-radius: 0;
-    background-color: rgba(245, 250, 248, 0.94);
+    min-height: 40px;
+    border: 1px solid rgba(188, 201, 198, 0.35);
+    border-radius: 999px;
+    background-color: #ffffff;
     color: #3d4947;
     font-weight: 800;
+    padding: 6px 14px;
     text-transform: none;
-    backdrop-filter: blur(12px);
+  }
+
+  .collapsed_trip_header {
+    position: sticky;
+    top: 0;
+    z-index: 35;
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 12px;
+    border-bottom: 1px solid rgba(188, 201, 198, 0.3);
+    background-color: rgba(245, 250, 248, 0.94);
+    padding: 10px 24px;
+    backdrop-filter: blur(16px);
+  }
+
+  .collapsed_back_btn {
+    width: 40px;
+    height: 40px;
+    flex: 0 0 40px;
+    background-color: #ffffff;
+    color: ${({ theme }) => theme.palette.primary.main};
+    box-shadow: 0 4px 12px rgba(23, 29, 28, 0.06);
+  }
+
+  .collapsed_trip_copy {
+    min-width: 0;
+    flex: 1;
+
+    h1 {
+      overflow: hidden;
+      color: ${({ theme }) => theme.palette.text.primary};
+      font-size: 18px;
+      font-weight: 900;
+      line-height: 24px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    span {
+      color: #6d7a77;
+      font-size: 12px;
+      font-weight: 700;
+    }
+  }
+
+  @media (max-width: 599px) {
+    .collapsed_trip_header {
+      gap: 8px;
+      padding: 8px 64px 8px 12px;
+    }
+
+    .hero_actions {
+      display: none;
+    }
+
+    .collapsed_trip_copy h1 {
+      font-size: 15px;
+      line-height: 20px;
+    }
+
+    .hero_restore {
+      min-width: 42px;
+      font-size: 0;
+      padding: 6px 10px;
+
+      .MuiButton-startIcon {
+        margin: 0;
+        font-size: 18px;
+      }
+    }
   }
 
   .hero_inner {
@@ -333,9 +432,40 @@ export const TripItineraryWrapper = styled(Box)`
     position: sticky;
     top: 0;
     z-index: 30;
+    min-width: 0;
+    overflow: hidden;
     border-bottom: 1px solid rgba(188, 201, 198, 0.3);
     background-color: rgba(245, 250, 248, 0.84);
     backdrop-filter: blur(20px);
+
+    &::before,
+    &::after {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      z-index: 1;
+      width: 18px;
+      content: '';
+      pointer-events: none;
+    }
+
+    &::before {
+      left: 0;
+      background: linear-gradient(90deg, rgba(245, 250, 248, 0.96), transparent);
+    }
+
+    &::after {
+      right: 0;
+      background: linear-gradient(270deg, rgba(245, 250, 248, 0.96), transparent);
+    }
+  }
+
+  .trip_main.hero_collapsed .tab_bar {
+    top: 61px;
+
+    @media (max-width: 599px) {
+      top: 61px;
+    }
   }
 
   .tab_inner {
@@ -347,10 +477,20 @@ export const TripItineraryWrapper = styled(Box)`
     gap: 32px;
     overflow-x: auto;
     padding: 0 32px;
+    scroll-padding: 24px;
+    scroll-snap-type: x proximity;
     scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
 
     &::-webkit-scrollbar {
       display: none;
+    }
+
+    @media (max-width: 599px) {
+      width: 100%;
+      gap: 4px;
+      padding: 0 6px;
+      scroll-padding: 6px;
     }
   }
 
@@ -359,24 +499,45 @@ export const TripItineraryWrapper = styled(Box)`
     flex-shrink: 0;
     align-items: center;
     gap: 4px;
+    min-width: max-content;
     padding: 16px 0;
     border-bottom: 2px solid transparent;
     color: ${({ theme }) => theme.palette.text.secondary};
     font-weight: 800;
+    scroll-snap-align: center;
     text-transform: none;
 
     &.active {
       border-bottom-color: ${({ theme }) => theme.palette.primary.main};
       color: ${({ theme }) => theme.palette.primary.main};
     }
+
+    @media (max-width: 599px) {
+      min-width: 42px;
+      justify-content: center;
+      gap: 3px;
+      padding: 13px 4px;
+      font-size: 0;
+
+      svg {
+        font-size: 20px;
+      }
+
+      &.active {
+        min-width: 92px;
+        font-size: 13px;
+      }
+    }
   }
 
   .content_area {
     flex: 1;
     padding: 32px;
+    min-width: 0;
+    overflow-x: hidden;
 
     @media (max-width: 599px) {
-      padding: 20px 16px 96px;
+      padding: 14px 16px 96px;
     }
   }
 
@@ -387,6 +548,11 @@ export const TripItineraryWrapper = styled(Box)`
     margin-left: auto;
     grid-template-columns: repeat(12, minmax(0, 1fr));
     gap: 32px;
+    min-width: 0;
+
+    @media (max-width: 599px) {
+      gap: 18px;
+    }
   }
 
   .itinerary_col {
@@ -423,6 +589,10 @@ export const TripItineraryWrapper = styled(Box)`
     justify-content: space-between;
     padding: 24px;
     cursor: pointer;
+
+    @media (max-width: 599px) {
+      padding: 24px;
+    }
   }
 
   .day_header.expanded {
@@ -432,6 +602,7 @@ export const TripItineraryWrapper = styled(Box)`
   .day_title_group {
     align-items: center;
     gap: 16px;
+    min-width: 0;
   }
 
   .date_badge {
@@ -469,6 +640,11 @@ export const TripItineraryWrapper = styled(Box)`
     font-size: 24px;
     font-weight: 800;
     line-height: 32px;
+
+    @media (max-width: 599px) {
+      font-size: 25px;
+      line-height: 31px;
+    }
   }
 
   .activities {
@@ -518,14 +694,22 @@ export const TripItineraryWrapper = styled(Box)`
     }
 
     @media (max-width: 599px) {
+      display: grid;
+      grid-template-columns: 26px 48px minmax(0, 1fr);
       align-items: flex-start;
-      gap: 14px;
+      gap: 10px;
+      padding: 14px;
+      overflow: visible;
     }
   }
 
   .drag_icon {
     color: #bcc9c6;
     cursor: grab;
+
+    @media (max-width: 599px) {
+      align-self: center;
+    }
   }
 
   .activity_icon {
@@ -555,26 +739,40 @@ export const TripItineraryWrapper = styled(Box)`
   .activity_main {
     min-width: 0;
     flex: 1;
+
+    @media (max-width: 599px) {
+      grid-column: 3;
+    }
   }
 
   .activity_top {
     align-items: flex-start;
     justify-content: space-between;
     gap: 16px;
+
+    @media (max-width: 599px) {
+      flex-direction: column;
+      gap: 6px;
+    }
   }
 
   .activity_title {
     color: ${({ theme }) => theme.palette.text.primary};
     font-size: 16px;
     font-weight: 800;
+    overflow-wrap: anywhere;
   }
 
   .time_badge {
     flex-shrink: 0;
+    max-width: 100%;
+    overflow: hidden;
     padding: 4px 8px;
     border-radius: 4px;
     font-size: 12px;
     font-weight: 800;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .time_badge.flight {
@@ -597,6 +795,41 @@ export const TripItineraryWrapper = styled(Box)`
     align-items: center;
     gap: 4px;
     margin-top: 4px;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .activity_added_by {
+    display: none;
+    align-items: center;
+    min-width: 0;
+    gap: 6px;
+    margin-top: 8px;
+    color: #6d7a77;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 16px;
+
+    span {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    @media (max-width: 599px) {
+      display: flex;
+    }
+  }
+
+  .activity_added_avatar {
+    width: 20px;
+    height: 20px;
+    flex: 0 0 20px;
+    border: 2px solid #ffffff;
+    border-radius: 999px;
+    object-fit: cover;
+    box-shadow: 0 3px 8px rgba(23, 29, 28, 0.12);
   }
 
   .assignee_avatar {
@@ -604,6 +837,10 @@ export const TripItineraryWrapper = styled(Box)`
     height: 32px;
     border: 2px solid #ffffff;
     box-shadow: 0 4px 10px rgba(23, 29, 28, 0.14);
+
+    @media (max-width: 599px) {
+      display: none;
+    }
   }
 
   .activity_actions,
@@ -620,6 +857,20 @@ export const TripItineraryWrapper = styled(Box)`
       &:hover {
         background-color: rgba(0, 131, 120, 0.1);
         color: ${({ theme }) => theme.palette.primary.main};
+      }
+    }
+
+    @media (max-width: 599px) {
+      position: static;
+      grid-column: 3;
+      justify-content: flex-start;
+      gap: 0;
+      margin-top: 6px;
+
+      .MuiIconButton-root {
+        width: 28px;
+        height: 28px;
+        padding: 4px;
       }
     }
   }
@@ -1895,8 +2146,38 @@ export const TripItineraryWrapper = styled(Box)`
     flex: 1;
     flex-direction: column;
     gap: 24px;
+    min-width: 0;
+    overflow-x: hidden;
     overflow-y: auto;
     padding: 24px;
+  }
+
+  .older_messages_loader {
+    display: flex;
+    min-height: 34px;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+
+    button {
+      border: 1px solid rgba(188, 201, 198, 0.5);
+      border-radius: 999px;
+      background-color: #ffffff;
+      color: ${({ theme }) => theme.palette.primary.main};
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 800;
+      padding: 7px 14px;
+    }
+
+    span {
+      width: min(180px, 26vw);
+      height: 12px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #e7eeeb 0%, #f6faf8 50%, #e7eeeb 100%);
+      background-size: 200% 100%;
+      animation: chatSkeleton 1100ms ease-in-out infinite;
+    }
   }
 
   .date_chip {
@@ -1919,6 +2200,7 @@ export const TripItineraryWrapper = styled(Box)`
     position: relative;
     display: flex;
     max-width: min(78%, 760px);
+    min-width: 0;
     gap: 12px;
 
     small {
@@ -1928,19 +2210,69 @@ export const TripItineraryWrapper = styled(Box)`
       font-size: 12px;
     }
 
-    p {
-      margin: 0;
+    .message_bubble {
+      display: flex;
+      min-width: 120px;
+      max-width: 100%;
+      flex-direction: column;
+      gap: 8px;
       border-radius: 18px;
       padding: 14px 16px;
-      line-height: 24px;
+
+      p {
+        margin: 0;
+        line-height: 24px;
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
     }
 
-    &.incoming p {
+    .quoted_message {
+      display: flex;
+      max-width: 100%;
+      flex-direction: column;
+      gap: 3px;
+      border-left: 3px solid rgba(0, 104, 95, 0.82);
+      border-radius: 9px;
+      padding: 8px 10px;
+
+      strong,
+      span {
+        display: block;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      strong {
+        font-size: 12px;
+        line-height: 16px;
+      }
+
+      span {
+        font-size: 13px;
+        line-height: 18px;
+      }
+    }
+
+    &.incoming .message_bubble {
       border: 1px solid rgba(188, 201, 198, 0.24);
       border-bottom-left-radius: 4px;
       background-color: #ffffff;
       color: ${({ theme }) => theme.palette.text.primary};
       box-shadow: 0 2px 4px rgba(23, 29, 28, 0.06);
+
+      .quoted_message {
+        background-color: #eef4f2;
+
+        strong {
+          color: ${({ theme }) => theme.palette.primary.main};
+        }
+
+        span {
+          color: #5d6a67;
+        }
+      }
     }
 
     &.outgoing {
@@ -1948,27 +2280,138 @@ export const TripItineraryWrapper = styled(Box)`
       flex-direction: column;
       align-items: flex-end;
 
-      p {
+      .message_bubble {
         border-bottom-right-radius: 4px;
         background-color: ${({ theme }) => theme.palette.primary.main};
         color: #ffffff;
         box-shadow: 0 6px 14px rgba(0, 104, 95, 0.16);
+
+        .quoted_message {
+          border-left-color: rgba(255, 255, 255, 0.86);
+          background-color: rgba(255, 255, 255, 0.16);
+
+          strong {
+            color: #ffffff;
+          }
+
+          span {
+            color: rgba(255, 255, 255, 0.82);
+          }
+        }
       }
     }
   }
 
   .message_bubble_wrap {
+    position: relative;
+    display: flex;
     min-width: 0;
+    flex-direction: column;
+    align-items: flex-start;
+
+    &:hover .message_surface .message_actions,
+    &:focus-within .message_surface .message_actions {
+      opacity: 1;
+      transform: translateY(50%);
+      pointer-events: auto;
+    }
+  }
+
+  .message.outgoing .message_bubble_wrap {
+    align-items: flex-end;
+  }
+
+  .message_surface {
+    position: relative;
+    display: flex;
+    min-width: 0;
+    max-width: 100%;
+    flex-direction: column;
+    align-items: flex-start;
+    margin-bottom: 12px;
+  }
+
+  .message.outgoing .message_surface {
+    align-items: flex-end;
   }
 
   .message_delete_btn {
-    align-self: center;
-    color: #6d7a77;
+    color: #924628;
 
     &:hover {
       background-color: rgba(146, 70, 40, 0.1);
       color: #924628;
     }
+  }
+
+  .message_actions {
+    position: absolute;
+    bottom: -3px;
+    left: 10px;
+    z-index: 4;
+    width: max-content;
+    max-width: 100%;
+    align-items: center;
+    gap: 4px;
+    border: 1px solid rgba(188, 201, 198, 0.4);
+    border-radius: 999px;
+    background-color: rgba(255, 255, 255, 0.92);
+    box-shadow: 0 8px 18px rgba(23, 29, 28, 0.08);
+    opacity: 0;
+    padding: 3px;
+    pointer-events: none;
+    transform: translateY(38%);
+    transition: opacity 160ms ease, transform 160ms ease;
+
+    .MuiIconButton-root {
+      width: 28px;
+      height: 28px;
+      color: #6d7a77;
+    }
+  }
+
+  .message.outgoing .message_actions {
+    right: 10px;
+    left: auto;
+  }
+
+  .reaction_btn {
+    width: 28px;
+    height: 28px;
+    border: 0;
+    border-radius: 50%;
+    background-color: transparent;
+    cursor: pointer;
+    font-size: 15px;
+    line-height: 1;
+
+    &:hover {
+      background-color: #f0f5f2;
+    }
+  }
+
+  .reaction_summary {
+    position: absolute;
+    bottom: 0;
+    z-index: 2;
+    width: max-content;
+    gap: 4px;
+    border: 1px solid rgba(188, 201, 198, 0.4);
+    border-radius: 999px;
+    background-color: #ffffff;
+    padding: 2px 7px;
+    box-shadow: 0 5px 12px rgba(23, 29, 28, 0.1);
+    font-size: 13px;
+    line-height: 18px;
+    transform: translateY(50%);
+  }
+
+  .message.incoming .reaction_summary {
+    left: 14px;
+  }
+
+  .message.outgoing .reaction_summary {
+    right: 14px;
   }
 
   .message_avatar {
@@ -1997,6 +2440,204 @@ export const TripItineraryWrapper = styled(Box)`
       max-height: 220px;
       border-radius: 8px;
       object-fit: cover;
+    }
+  }
+
+  .voice_note_attachment {
+    display: flex;
+    width: clamp(250px, 34vw, 350px);
+    max-width: 100%;
+    min-width: 0;
+    align-items: center;
+    gap: 10px;
+    margin-top: 8px;
+    border: 1px solid rgba(0, 104, 95, 0.14);
+    border-radius: 16px;
+    background: linear-gradient(135deg, #ffffff 0%, #f3faf8 100%);
+    padding: 9px 10px;
+    box-shadow: 0 10px 24px rgba(23, 29, 28, 0.08);
+
+    audio {
+      display: none;
+    }
+
+    @media (max-width: 599px) {
+      width: 100%;
+      min-width: 0;
+    }
+  }
+
+  .voice_note_icon {
+    display: grid;
+    width: 36px;
+    height: 36px;
+    flex: 0 0 36px;
+    place-items: center;
+    border-radius: 50%;
+    background-color: ${({ theme }) => theme.palette.primary.main};
+    color: #ffffff;
+    box-shadow: 0 8px 16px rgba(0, 104, 95, 0.22);
+  }
+
+  .voice_note_body {
+    min-width: 0;
+    flex: 1;
+
+    strong {
+      display: block;
+      overflow: hidden;
+      margin-bottom: 5px;
+      color: #3d4947;
+      font-size: 11px;
+      font-weight: 800;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+
+  .voice_note_controls,
+  .voice_note_volume {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+  }
+
+  .voice_note_controls {
+    gap: 7px;
+
+    button {
+      display: grid;
+      width: 28px;
+      height: 28px;
+      flex: 0 0 28px;
+      place-items: center;
+      border: 0;
+      border-radius: 50%;
+      background-color: rgba(0, 104, 95, 0.1);
+      color: ${({ theme }) => theme.palette.primary.main};
+      cursor: pointer;
+
+      &:hover {
+        background-color: rgba(0, 104, 95, 0.16);
+      }
+    }
+
+    span {
+      flex: 0 0 30px;
+      color: #5d6a67;
+      font-size: 11px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+  }
+
+  .voice_note_volume {
+    position: relative;
+    flex: 0 0 auto;
+    gap: 0;
+    margin-top: 0;
+    color: #6d7a77;
+
+    .MuiIconButton-root {
+      width: 26px;
+      height: 26px;
+      color: #6d7a77;
+    }
+
+    &.open .voice_volume_panel {
+      width: 92px;
+      opacity: 1;
+      pointer-events: auto;
+    }
+  }
+
+  .voice_volume_panel {
+    position: absolute;
+    right: 0;
+    bottom: calc(100% + 8px);
+    display: flex;
+    width: 0;
+    overflow: hidden;
+    border: 1px solid rgba(188, 201, 198, 0.42);
+    border-radius: 999px;
+    background-color: #ffffff;
+    box-shadow: 0 10px 22px rgba(23, 29, 28, 0.12);
+    opacity: 0;
+    padding: 8px;
+    pointer-events: none;
+    transition: width 180ms ease, opacity 160ms ease;
+
+    input {
+      width: 76px;
+      flex: 0 0 76px;
+    }
+  }
+
+  .voice_note_controls input,
+  .voice_note_volume input {
+    height: 6px;
+    min-width: 0;
+    appearance: none;
+    border-radius: 999px;
+    background-color: #dce6e3;
+    cursor: pointer;
+    outline: none;
+
+    &::-webkit-slider-thumb {
+      width: 13px;
+      height: 13px;
+      appearance: none;
+      border-radius: 50%;
+      background-color: ${({ theme }) => theme.palette.primary.main};
+      box-shadow: 0 1px 4px rgba(23, 29, 28, 0.22);
+    }
+
+    &::-moz-range-thumb {
+      width: 13px;
+      height: 13px;
+      border: 0;
+      border-radius: 50%;
+      background-color: ${({ theme }) => theme.palette.primary.main};
+      box-shadow: 0 1px 4px rgba(23, 29, 28, 0.22);
+    }
+  }
+
+  .voice_note_controls input {
+    flex: 1;
+    background-image: linear-gradient(
+      ${({ theme }) => theme.palette.primary.main},
+      ${({ theme }) => theme.palette.primary.main}
+    );
+    background-repeat: no-repeat;
+    background-size: 0% 100%;
+  }
+
+  .voice_volume_panel input {
+    background-image: linear-gradient(#6d7a77, #6d7a77);
+    background-repeat: no-repeat;
+    background-size: 90% 100%;
+  }
+
+  @media (max-width: 599px) {
+    .voice_note_attachment {
+      width: min(292px, 78vw);
+      gap: 8px;
+      padding: 8px;
+    }
+
+    .voice_note_icon {
+      width: 34px;
+      height: 34px;
+      flex-basis: 34px;
+    }
+
+    .voice_note_controls {
+      gap: 6px;
+    }
+
+    .voice_note_controls span {
+      flex-basis: 28px;
+      font-size: 10px;
     }
   }
 
@@ -2070,6 +2711,314 @@ export const TripItineraryWrapper = styled(Box)`
     }
   }
 
+  .reply_preview {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 10px;
+    border-left: 3px solid ${({ theme }) => theme.palette.primary.main};
+    border-radius: 8px;
+    background-color: #f0f5f2;
+    padding: 10px 12px;
+
+    strong,
+    span {
+      display: block;
+    }
+
+    strong {
+      color: ${({ theme }) => theme.palette.primary.main};
+      font-size: 12px;
+    }
+
+    span {
+      color: #6d7a77;
+      font-size: 13px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+
+  .pending_files {
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  .pending_file {
+    display: flex;
+    max-width: 280px;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid rgba(188, 201, 198, 0.5);
+    border-radius: 10px;
+    background-color: #ffffff;
+    padding: 6px 8px;
+
+    > img {
+      width: 34px;
+      height: 34px;
+      border-radius: 7px;
+      object-fit: cover;
+    }
+
+    > svg {
+      width: 24px;
+      height: 24px;
+      color: ${({ theme }) => theme.palette.primary.main};
+    }
+
+    span {
+      min-width: 0;
+      overflow: hidden;
+      color: #3d4947;
+      font-size: 12px;
+      font-weight: 700;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .MuiIconButton-root {
+      width: 24px;
+      height: 24px;
+      margin-left: auto;
+      color: #6d7a77;
+    }
+  }
+
+  .voice_recorder_composer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    margin-bottom: 0;
+    border: 1px solid rgba(0, 104, 95, 0.18);
+    border-radius: 16px;
+    background: linear-gradient(135deg, #eef7f5 0%, #ffffff 100%);
+    padding: 12px;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.62);
+  }
+
+  @media (max-width: 599px) {
+    .message_input {
+      padding: 10px 12px;
+    }
+
+    .voice_recorder_composer {
+      gap: 8px;
+      border-radius: 14px;
+      padding: 8px;
+    }
+
+    .voice_recording_status {
+      gap: 8px;
+
+      strong {
+        font-size: 12px;
+      }
+    }
+
+    .voice_recording_mic {
+      width: 34px;
+      height: 34px;
+      flex-basis: 34px;
+    }
+
+    .voice_waveform {
+      min-width: 0;
+      gap: 2px;
+
+      span {
+        width: 3px;
+        flex-basis: 3px;
+      }
+    }
+
+    .voice_recording_actions {
+      gap: 6px;
+
+      .MuiIconButton-root {
+        width: 34px;
+        height: 34px;
+        flex: 0 0 34px;
+      }
+
+      .voice_recording_send {
+        min-width: 0;
+        min-height: 34px;
+        font-size: 0;
+        padding: 6px 10px;
+
+        .MuiButton-endIcon {
+          margin: 0;
+          font-size: 18px;
+        }
+      }
+    }
+  }
+
+  .voice_recording_status {
+    display: flex;
+    min-width: 0;
+    flex: 1;
+    align-items: center;
+    gap: 12px;
+
+    strong {
+      color: ${({ theme }) => theme.palette.primary.main};
+      font-size: 13px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+  }
+
+  .voice_recording_mic {
+    position: relative;
+    display: grid;
+    width: 34px;
+    height: 34px;
+    flex: 0 0 34px;
+    place-items: center;
+    border-radius: 50%;
+    background-color: ${({ theme }) => theme.palette.primary.main};
+    color: #ffffff;
+
+    &::after {
+      position: absolute;
+      inset: -4px;
+      border: 1px solid rgba(0, 104, 95, 0.28);
+      border-radius: inherit;
+      animation: voicePulse 1200ms ease-out infinite;
+      content: '';
+    }
+  }
+
+  .voice_waveform {
+    display: flex;
+    min-width: 120px;
+    flex: 1;
+    align-items: center;
+    gap: 3px;
+    overflow: hidden;
+
+    span {
+      width: 4px;
+      height: 12px;
+      flex: 0 0 4px;
+      border-radius: 999px;
+      background-color: ${({ theme }) => theme.palette.primary.main};
+      opacity: 0.76;
+      animation: voiceWave 840ms ease-in-out infinite;
+    }
+
+    span:nth-of-type(3n) {
+      height: 22px;
+    }
+
+    span:nth-of-type(4n) {
+      height: 16px;
+      opacity: 0.55;
+    }
+  }
+
+  .voice_recording_actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    .MuiIconButton-root {
+      width: 36px;
+      height: 36px;
+      border: 1px solid rgba(188, 201, 198, 0.5);
+      background-color: #ffffff;
+      color: #6d7a77;
+    }
+
+    .voice_recording_send {
+      min-height: 36px;
+      border-color: transparent;
+      border-radius: 999px;
+      background-color: ${({ theme }) => theme.palette.primary.main};
+      color: #ffffff;
+      font-size: 12px;
+      font-weight: 900;
+      padding: 6px 14px;
+      text-transform: none;
+
+      &:hover {
+        background-color: ${({ theme }) => theme.palette.primary.dark};
+      }
+
+      &.Mui-disabled {
+        background-color: rgba(0, 104, 95, 0.22);
+        color: #ffffff;
+      }
+    }
+  }
+
+  @keyframes voiceWave {
+    0%,
+    100% {
+      transform: scaleY(0.45);
+    }
+
+    50% {
+      transform: scaleY(1);
+    }
+  }
+
+  @keyframes voicePulse {
+    0% {
+      opacity: 0.8;
+      transform: scale(0.9);
+    }
+
+    100% {
+      opacity: 0;
+      transform: scale(1.25);
+    }
+  }
+
+  @keyframes chatSkeleton {
+    0% {
+      background-position: 100% 0;
+    }
+
+    100% {
+      background-position: -100% 0;
+    }
+  }
+
+  @media (max-width: 599px) {
+    .messages {
+      gap: 18px;
+      padding: 16px 12px;
+    }
+
+    .message {
+      max-width: 92%;
+      gap: 8px;
+    }
+
+    .message_bubble {
+      min-width: 0;
+      padding: 12px 14px;
+    }
+
+    .voice_note_attachment {
+      width: min(320px, 82vw);
+      max-width: 100%;
+    }
+
+    .reaction_summary {
+      bottom: 1px;
+      padding: 1px 6px;
+      font-size: 12px;
+    }
+  }
+
   .input_actions {
     display: flex;
     align-items: center;
@@ -2079,6 +3028,87 @@ export const TripItineraryWrapper = styled(Box)`
 
     .MuiIconButton-root {
       color: #6d7a77;
+
+      &.recording {
+        background-color: rgba(146, 70, 40, 0.1);
+        color: #924628;
+      }
+    }
+  }
+
+  .composer_tool {
+    position: relative;
+  }
+
+  .composer_popover,
+  .mention_popover {
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 0;
+    z-index: 8;
+    border: 1px solid rgba(188, 201, 198, 0.45);
+    border-radius: 12px;
+    background-color: #ffffff;
+    box-shadow: 0 14px 34px rgba(23, 29, 28, 0.12);
+    padding: 8px;
+  }
+
+  .composer_popover {
+    gap: 4px;
+
+    button {
+      width: 32px;
+      height: 32px;
+      border: 0;
+      border-radius: 8px;
+      background-color: transparent;
+      cursor: pointer;
+      font-size: 18px;
+
+      &:hover {
+        background-color: #f0f5f2;
+      }
+    }
+  }
+
+  .mention_popover {
+    width: 220px;
+    max-height: 260px;
+    gap: 4px;
+    overflow-y: auto;
+
+    button {
+      display: flex;
+      width: 100%;
+      align-items: center;
+      gap: 8px;
+      border: 0;
+      border-radius: 8px;
+      background-color: transparent;
+      cursor: pointer;
+      padding: 7px;
+      text-align: left;
+
+      &:hover {
+        background-color: #f0f5f2;
+      }
+    }
+
+    img {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+
+    span {
+      min-width: 0;
+      overflow: hidden;
+      color: #3d4947;
+      font-size: 13px;
+      font-weight: 700;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
   }
 

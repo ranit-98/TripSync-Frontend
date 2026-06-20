@@ -208,7 +208,7 @@ export default function DashboardPage() {
             <AddIcon />
           </Button>
         </Box>
-        <Box className="mobile_nav_link" component="a" href="/albums">
+        <Box className="mobile_nav_link" component={Link} href="/albums">
           <CollectionsIcon />
           <span>Album</span>
         </Box>

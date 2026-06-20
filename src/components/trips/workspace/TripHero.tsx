@@ -1,3 +1,5 @@
+import ImageComp from '@/components/image/ImageComp';
+import { TripHeroSkeleton } from '@/components/skeleton';
 import { tripItineraryAssets } from '@/json/assets';
 import type { ITrip, ITripMember } from '@/typescript/interface/api';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
@@ -70,6 +72,10 @@ type TripHeroProps = {
 };
 
 export default function TripHero({ isLoading = false, members, onCollapse, onInvite, trip }: TripHeroProps) {
+  if (isLoading) {
+    return <TripHeroSkeleton />;
+  }
+
   const memberAvatars = members
     .map((member) => member.user?.avatarUrl)
     .filter((avatar): avatar is string => Boolean(avatar));
@@ -78,10 +84,9 @@ export default function TripHero({ isLoading = false, members, onCollapse, onInv
 
   return (
     <Box className="hero" component="header">
-      <Box
+      <ImageComp
         alt={trip?.title || 'Trip cover'}
         className="hero_img"
-        component="img"
         src={trip?.coverUrl || tripItineraryAssets.hero}
       />
       <Box className="hero_overlay" />
@@ -97,7 +102,7 @@ export default function TripHero({ isLoading = false, members, onCollapse, onInv
           <IconButton className="glass_icon_btn" aria-label="Share trip">
             <ShareIcon />
           </IconButton>
-          <Box alt="Avatar" className="profile_avatar" component="img" src={tripItineraryAssets.profile} />
+          <ImageComp alt="Avatar" className="profile_avatar" isAvatar src={tripItineraryAssets.profile} />
         </Stack>
       </Box>
 
@@ -113,7 +118,7 @@ export default function TripHero({ isLoading = false, members, onCollapse, onInv
           <Stack className="member_actions" direction="row">
             <Stack className="member_stack">
               {(visibleAvatars.length ? visibleAvatars : tripItineraryAssets.members.slice(0, 1)).map((member) => (
-                <Box alt="Trip member" className="member_avatar" component="img" key={member} src={member} />
+                <ImageComp alt="Trip member" className="member_avatar" isAvatar key={member} src={member} />
               ))}
               {extraMembers > 0 && <span className="member_more">+{extraMembers}</span>}
             </Stack>

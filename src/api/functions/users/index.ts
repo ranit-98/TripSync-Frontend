@@ -17,6 +17,12 @@ export const usersMeFn = async (): ApiMutationResponse<IUser> => {
   return res;
 };
 
+export const usersSearchFn = async (query: string): ApiMutationResponse<IUser[]> => {
+  const res = await axiosInstance.get(endpoints.users.search("v1", query));
+
+  return res;
+};
+
 export const usersUpdateMeFn = async (body: IUpdateUserPayload): ApiMutationResponse<IUser> => {
   const res = await axiosInstance.patch(endpoints.users.me("v1"), body);
 

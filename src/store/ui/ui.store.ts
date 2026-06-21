@@ -1,6 +1,21 @@
 import { create } from 'zustand';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 
+type SettingsUiStore = {
+  isProfileEditing: boolean;
+  setProfileEditing: (isEditing: boolean) => void;
+};
+
+export const useSettingsUiStore = create<SettingsUiStore>()(
+  devtools(
+    (set) => ({
+      isProfileEditing: false,
+      setProfileEditing: (isProfileEditing) => set({ isProfileEditing }, false, 'settings/setProfileEditing'),
+    }),
+    { name: 'TripSync Settings UI' },
+  ),
+);
+
 type TripWorkspaceUiStore = {
   collapsedHeroTripIds: Record<string, boolean>;
   isTripHeroExpanded: (tripId: string) => boolean;

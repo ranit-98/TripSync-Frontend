@@ -1,6 +1,7 @@
 export * from "./auth.interface";
 export * from "./chat.interface";
 export * from "./common.interface";
+export * from "./dashboard.interface";
 export * from "./expenses.interface";
 export * from "./files.interface";
 export * from "./gallery.interface";

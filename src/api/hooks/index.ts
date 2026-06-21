@@ -6,6 +6,7 @@ export * from "./gallery/useGallery.hooks";
 export * from "./itinerary/useItinerary.hooks";
 export * from "./map/useMap.hooks";
 export * from "./notifications/useNotifications.hooks";
+export * from "./dashboard/useDashboard.hooks";
 export * from "./trips/useTrips.hooks";
 export * from "./uploads/useUploads.hooks";
 export * from "./users/useUsers.hooks";

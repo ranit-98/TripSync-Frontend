@@ -25,6 +25,9 @@ export const mediaUrl = (url: string) => {
 export type TAPIVersions = "v1";
 
 export const endpoints = {
+  dashboard: {
+    overview: (version: TAPIVersions, period: "month" | "quarter" | "half-year" | "year") => `${version}/dashboard?period=${period}`,
+  },
   app: {
     hello: (version: TAPIVersions) => {
       return `${version}`;
@@ -48,6 +51,9 @@ export const endpoints = {
     },
   },
   users: {
+    search: (version: TAPIVersions, query: string) => {
+      return `${version}/users/search?q=${encodeURIComponent(query)}`;
+    },
     me: (version: TAPIVersions) => {
       return `${version}/users/me`;
     },

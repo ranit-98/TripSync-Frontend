@@ -1,4 +1,5 @@
 import { useTripsInvite } from '@/api/hooks/trips/useTrips.hooks';
+import { useUsersSearch } from '@/api/hooks/users/useUsers.hooks';
 import type { ITrip, ITripMember, TripRole } from '@/typescript/interface/api';
 import CloseIcon from '@mui/icons-material/Close';
 import EditCalendarIcon from '@mui/icons-material/EditCalendar';
@@ -31,6 +32,7 @@ const getInitials = (name?: string, email?: string) => {
 
 export default function InviteModal({ members, onClose, trip, tripId }: InviteModalProps) {
   const [email, setEmail] = useState('');
+  const [isSuggestionsOpen, setIsSuggestionsOpen] = useState(false);
   const [role, setRole] = useState<TripRole>('collaborator');
   const sortedMembers = useMemo(() => {
     return [...members].sort((firstMember, secondMember) => {
@@ -46,6 +48,10 @@ export default function InviteModal({ members, onClose, trip, tripId }: InviteMo
       setEmail('');
     },
   });
+  const { data: usersResponse, isFetching: isSearchingUsers } = useUsersSearch(email);
+  const suggestedUsers = (usersResponse?.data.data ?? []).filter(
+    (user) => !members.some((member) => member.user?.id === user.id),
+  );
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -78,13 +84,29 @@ export default function InviteModal({ members, onClose, trip, tripId }: InviteMo
           <Box className="invite_input_row" component="form" onSubmit={handleSubmit}>
             <label>EMAIL ADDRESS</label>
             <Stack direction="row">
-              <input
-                onChange={(event) => setEmail(event.target.value)}
-                placeholder="e.g. sarah@travel.com"
-                required
-                type="email"
-                value={email}
-              />
+              <Box className="invite_autocomplete">
+                <input
+                  onBlur={() => window.setTimeout(() => setIsSuggestionsOpen(false), 150)}
+                  onChange={(event) => { setEmail(event.target.value); setIsSuggestionsOpen(true); }}
+                  onFocus={() => setIsSuggestionsOpen(true)}
+                  placeholder="Search name or email..."
+                  required
+                  type="email"
+                  value={email}
+                />
+                {isSuggestionsOpen && email.trim().length >= 2 && (
+                  <Box className="invite_suggestions">
+                    {isSearchingUsers && <span className="suggestion_status">Searching users...</span>}
+                    {!isSearchingUsers && suggestedUsers.length === 0 && <span className="suggestion_status">No matching users. You can still invite this email.</span>}
+                    {suggestedUsers.map((user) => (
+                      <button key={user.id} onMouseDown={() => { setEmail(user.email); setIsSuggestionsOpen(false); }} type="button">
+                        {user.avatarUrl ? <Box alt={user.name} component="img" src={user.avatarUrl} /> : <span>{getInitials(user.name, user.email)}</span>}
+                        <Box><strong>{user.name}</strong><small>{user.email}</small></Box>
+                      </button>
+                    ))}
+                  </Box>
+                )}
+              </Box>
               <Button disabled={isPending || !email.trim()} type="submit" variant="contained">
                 {isPending ? 'Sending...' : 'Send Invite'}
               </Button>

@@ -19,5 +19,8 @@ export interface INotification {
   trip_id?: ApiId;
   tripId?: ApiId;
   createdAt?: string;
+  created_at?: string;
+  isRead?: boolean;
+  read?: boolean;
   type?: string;
 }

@@ -3,6 +3,7 @@
 import {
   usersChangePasswordFn,
   usersMeFn,
+  usersSearchFn,
   usersUploadAvatarFn,
   usersUpdateMeFn,
 } from "@/api/functions/users";
@@ -16,6 +17,16 @@ export const useUsersMe = () => {
   return useQuery({
     queryKey: [listOfQueryKeys.users.me],
     queryFn: usersMeFn,
+  });
+};
+
+export const useUsersSearch = (query: string) => {
+  const normalizedQuery = query.trim();
+
+  return useQuery({
+    queryKey: [listOfQueryKeys.users.search, normalizedQuery],
+    queryFn: () => usersSearchFn(normalizedQuery),
+    enabled: normalizedQuery.length >= 2,
   });
 };
 

@@ -134,14 +134,14 @@ const getPendingInvite = (notification: INotification): PendingInvite | null => 
     getRecordValue(notification.metadata, 'status') ||
     getRecordValue(notification.data, 'status') ||
     '';
+  const isInviteActivity = ['trip_invite_declined', 'trip_invite_accepted', 'trip_member_joined'].includes(notification.type ?? '');
   const isInvite =
-    text.includes('invite') ||
-    text.includes('invitation') ||
     resourceType === 'trip_invite' ||
-    resourceType === 'invite';
+    resourceType === 'invite' ||
+    (!isInviteActivity && Boolean(inviteId) && (text.includes('invite') || text.includes('invitation')));
   const isClosedInvite = ['accepted', 'declined', 'expired'].includes(status.toLowerCase());
 
-  if (!inviteId || !isInvite || isClosedInvite) {
+  if (!inviteId || !isInvite || isClosedInvite || isInviteActivity) {
     return null;
   }
 

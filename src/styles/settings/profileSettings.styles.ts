@@ -282,6 +282,22 @@ export const ProfileSettingsWrapper = styled(Box)`
     line-height: 32px;
   }
 
+  .edit_actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .cancel_btn {
+    padding: 9px 14px;
+    border: 1px solid #bcc9c6;
+    border-radius: 999px;
+    background: #ffffff;
+    color: #3d4947;
+    cursor: pointer;
+    font-weight: 800;
+  }
+
   .stats_card {
     border: 1px solid rgba(0, 131, 120, 0.12);
     background-color: rgba(0, 131, 120, 0.04);

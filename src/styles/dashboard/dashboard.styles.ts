@@ -239,6 +239,29 @@ export const DashboardPageWrapper = styled(Box)`
     }
   }
 
+  @media (min-width: 900px) {
+    .dashboard_content { padding-top: 10px; padding-bottom: 10px; }
+    .analytics_head { margin-bottom: 8px; }
+    .analytics_head .section_title { font-size: 18px; line-height: 22px; }
+    .analytics_head .section_copy { font-size: 12px; line-height: 16px; }
+    .analytics_stats { gap: 12px; }
+    .stat_card { gap: 12px; min-height: 66px; padding: 12px 16px; }
+    .stat_icon { width: 36px; height: 36px; }
+    .stat_icon svg { width: 24px; height: 24px; }
+    .metric_value { font-size: 22px; line-height: 26px; }
+    .dashboard_grid { gap: 12px; margin-top: 12px; }
+    .insight_card { padding: 14px 16px; }
+    .section_title, .next_trip_title { font-size: 18px; line-height: 22px; }
+    .section_copy { font-size: 12px; line-height: 16px; }
+    .activity_chart { height: 112px; margin-top: 4px; }
+    .next_trip_card { min-height: 166px; }
+    .spend_card { min-height: 166px; }
+    .category_chart { height: 82px; margin-top: 2px; }
+    .category_legend { gap: 3px; }
+    .category_legend span { font-size: 11px; }
+    .category_legend { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+
   .stats_grid {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -262,6 +285,169 @@ export const DashboardPageWrapper = styled(Box)`
     align-items: center;
     gap: 24px;
     padding: 24px;
+  }
+
+  .dashboard_grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.65fr) minmax(280px, 0.75fr);
+    gap: 24px;
+    margin-top: 24px;
+  }
+
+  .analytics_head {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+
+  .analytics_head .MuiToggleButton-root {
+    border-color: rgba(188, 201, 198, 0.7);
+    color: #3d4947;
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: none;
+  }
+
+  .analytics_head .Mui-selected {
+    background-color: #008378 !important;
+    color: #ffffff !important;
+  }
+
+  .analytics_stats { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .analytics_grid { margin-top: 0; }
+
+  .spend_card { min-height: 316px; }
+  .category_chart { height: 155px; margin-top: 8px; }
+  .category_skeleton { display: block; width: 118px; height: 118px; margin: 14px auto; }
+  .category_legend { display: grid; gap: 6px; }
+  .category_legend span { display: flex; align-items: center; gap: 7px; color: #5f6f74; font-size: 12px; }
+  .category_legend i { width: 8px; height: 8px; border-radius: 50%; }
+  .category_legend strong { margin-left: auto; color: #172124; }
+
+  .lower_grid {
+    grid-template-columns: minmax(0, 1.4fr) minmax(280px, 0.6fr);
+  }
+
+  .insight_card {
+    min-width: 0;
+    padding: 24px;
+    border: 1px solid rgba(188, 201, 198, 0.36);
+    border-radius: 16px;
+    background: #ffffff;
+    box-shadow: 0 5px 18px rgba(23, 29, 28, 0.05);
+  }
+
+  .section_header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .section_title,
+  .next_trip_title {
+    color: #172124;
+    font-size: 20px;
+    font-weight: 800;
+    line-height: 28px;
+  }
+
+  .section_copy {
+    color: #5f6f74;
+    font-size: 13px;
+    line-height: 20px;
+  }
+
+  .trend_icon { color: #008378; }
+
+  .activity_chart {
+    height: 230px;
+    margin-top: 16px;
+
+    .recharts-text { fill: #6d7a77; font-size: 12px; }
+  }
+
+  .next_trip_card {
+    display: flex;
+    min-height: 316px;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 10px;
+    background: linear-gradient(145deg, #073d3b, #008378);
+
+    .metric_label,
+    .next_trip_title,
+    .section_copy { color: #ffffff; }
+
+    .MuiButton-root { margin-top: 12px; color: #ffffff; }
+  }
+
+  .dashboard_trip_list {
+    display: grid;
+    gap: 10px;
+    margin-top: 18px;
+  }
+
+  .dashboard_trip {
+    display: grid;
+    grid-template-columns: 68px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 14px;
+    padding: 8px;
+    border-radius: 12px;
+    color: inherit;
+    text-decoration: none;
+
+    &:hover { background: #f0f5f2; }
+  }
+
+  .trip_cover {
+    width: 68px;
+    height: 52px;
+    border-radius: 9px;
+    object-fit: cover;
+  }
+
+  .trip_title { color: #172124; font-weight: 800; }
+
+  .quick_actions {
+    display: grid;
+    gap: 10px;
+    margin-top: 20px;
+
+    .MuiButton-root { justify-content: flex-start; text-transform: none; }
+  }
+
+  .action_count {
+    margin-left: auto;
+    padding: 2px 7px;
+    border-radius: 999px;
+    background: rgba(0, 104, 95, 0.12);
+    font-size: 12px;
+    font-weight: 800;
+  }
+
+  .empty_dashboard {
+    display: grid;
+    gap: 10px;
+    place-items: start;
+    padding: 20px 0;
+  }
+
+  @media (max-width: 899px) {
+    .dashboard_grid,
+    .lower_grid { grid-template-columns: 1fr; }
+    .next_trip_card { min-height: 220px; }
+    .analytics_stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .analytics_head { align-items: flex-start; flex-direction: column; }
+  }
+
+  @media (max-width: 599px) {
+    .analytics_stats { grid-template-columns: 1fr; }
+    .analytics_head .MuiToggleButton-root { padding: 7px 8px; font-size: 10px; }
   }
 
   .stat_icon {
@@ -628,5 +814,23 @@ export const DashboardPageWrapper = styled(Box)`
     width: 24px;
     height: 24px;
     border: 1px solid #bcc9c6;
+  }
+
+  @media (min-width: 900px) {
+    .analytics_grid,
+    .lower_grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .dashboard_content { padding-top: 16px; padding-bottom: 16px; }
+    .analytics_head { margin-bottom: 12px; }
+    .analytics_stats { gap: 12px; }
+    .stat_card { gap: 14px; padding: 16px; }
+    .stat_icon { width: 40px; height: 40px; }
+    .stat_icon svg { width: 24px; height: 24px; }
+    .dashboard_grid { gap: 16px; margin-top: 16px; }
+    .insight_card { padding: 16px; }
+    .activity_chart { height: 230px; margin-top: 14px; }
+    .next_trip_card { min-height: 292px; }
+    .spend_card { min-height: 350px; }
+    .category_chart { height: 190px; margin-top: 10px; }
+    .category_legend { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   }
 `;

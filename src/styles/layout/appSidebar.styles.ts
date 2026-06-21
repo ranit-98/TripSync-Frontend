@@ -64,6 +64,30 @@ export const AppSidebarWrapper = styled(Box)`
     gap: 8px;
   }
 
+  .nav_icon {
+    position: relative;
+    display: inline-grid;
+    place-items: center;
+  }
+
+  .nav_notification_badge {
+    position: absolute;
+    top: -10px;
+    right: -15px;
+    display: grid;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 4px;
+    place-items: center;
+    border: 2px solid #ffffff;
+    border-radius: 999px;
+    background: #c9402f;
+    color: #ffffff;
+    font-size: 10px;
+    font-weight: 800;
+    line-height: 1;
+  }
+
   .nav_link {
     display: flex;
     align-items: center;

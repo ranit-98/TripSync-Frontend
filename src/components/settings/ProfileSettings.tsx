@@ -12,6 +12,7 @@ import ProfileStats from "@/components/settings/profile/ProfileStats";
 import { useImageUpload } from "@/hooks/useImageUpload";
 import { dashboardAssets } from "@/json/assets";
 import { useAuthStore } from "@/store";
+import { useSettingsUiStore } from "@/store/ui";
 import { ProfileSettingsWrapper } from "@/styles/settings/profileSettings.styles";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import ExploreIcon from "@mui/icons-material/Explore";
@@ -22,13 +23,14 @@ import IconButton from "@mui/material/IconButton";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import Link from "next/link";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo } from "react";
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export default function ProfileSettings() {
   const storedUser = useAuthStore((state) => state.user);
-  const [isProfileEditing, setIsProfileEditing] = useState(false);
+  const isProfileEditing = useSettingsUiStore((state) => state.isProfileEditing);
+  const setProfileEditing = useSettingsUiStore((state) => state.setProfileEditing);
 
   // ── Data ─────────────────────────────────────────────────────────────────
   const { data: profileResponse, isLoading } = useUsersMe();
@@ -45,8 +47,8 @@ export default function ProfileSettings() {
     useImageUpload(uploadAvatarFn);
 
   const handleEditModeChange = useCallback((isEditing: boolean) => {
-    setIsProfileEditing(isEditing);
-  }, []);
+    setProfileEditing(isEditing);
+  }, [setProfileEditing]);
 
   // File selected → immediately upload to backend
   const handleFileSelected = useCallback(

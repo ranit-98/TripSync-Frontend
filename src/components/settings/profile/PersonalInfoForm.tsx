@@ -7,7 +7,7 @@ import SaveIcon from "@mui/icons-material/Save";
 import { yupResolver } from "@hookform/resolvers/yup";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { profileDefaultValues, type ProfileFormValues, profileSchema } from "./profileSettings.schema";
 
@@ -41,19 +41,25 @@ function PersonalInfoForm({
     }),
     [user?.email, user?.name]
   );
-  const { control, formState, handleSubmit } = useForm<ProfileFormValues>({
+  const { control, formState, handleSubmit, reset } = useForm<ProfileFormValues>({
     defaultValues: profileDefaultValues,
     resolver: yupResolver(profileSchema),
-    values: formValues,
   });
+
+  // Do not use RHF's `values` option here: it continuously overwrites user input
+  // whenever the profile query changes. Reset only while the form is read-only.
+  useEffect(() => {
+    if (!isEditing) reset(formValues);
+  }, [formValues, isEditing, reset]);
 
   const openEditMode = useCallback(() => {
     onEditModeChange(true);
   }, [onEditModeChange]);
 
   const closeEditMode = useCallback(() => {
+    reset(formValues);
     onEditModeChange(false);
-  }, [onEditModeChange]);
+  }, [formValues, onEditModeChange, reset]);
 
   const { mutate: updateProfile, isPending } = useUsersUpdateMe({
     optionalCallback: () => {
@@ -94,15 +100,10 @@ function PersonalInfoForm({
           Personal Information
         </Typography>
         {isEditing ? (
-          <button
-            className="save_btn"
-            disabled={isBusy || isLoading}
-            form="profile-settings-form"
-            type="submit"
-          >
-            <SaveIcon />
-            {isBusy ? "Saving..." : "Save Changes"}
-          </button>
+          <Box className="edit_actions">
+            <button className="cancel_btn" disabled={isBusy} onClick={closeEditMode} type="button">Cancel</button>
+            <button className="save_btn" disabled={isBusy || isLoading} form="profile-settings-form" type="submit"><SaveIcon />{isBusy ? "Saving..." : "Save Changes"}</button>
+          </Box>
         ) : (
           <button
             className="save_btn"

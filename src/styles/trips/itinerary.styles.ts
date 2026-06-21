@@ -3996,6 +3996,63 @@ export const TripItineraryWrapper = styled(Box)`
     }
   }
 
+  .invite_autocomplete {
+    position: relative;
+    flex: 1;
+  }
+
+  .invite_autocomplete input {
+    width: 100%;
+  }
+
+  .invite_suggestions {
+    position: absolute;
+    z-index: 10;
+    top: calc(100% + 6px);
+    right: 0;
+    left: 0;
+    overflow: hidden;
+    border: 1px solid rgba(188, 201, 198, 0.7);
+    border-radius: 10px;
+    background: #ffffff;
+    box-shadow: 0 12px 24px rgba(23, 29, 28, 0.14);
+  }
+
+  .invite_suggestions button {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border: 0;
+    border-bottom: 1px solid rgba(188, 201, 198, 0.35);
+    background: #ffffff;
+    color: #172124;
+    cursor: pointer;
+    text-align: left;
+  }
+
+  .invite_suggestions button:hover { background: #f0f5f2; }
+
+  .invite_suggestions button img,
+  .invite_suggestions button > span {
+    display: grid;
+    width: 32px;
+    height: 32px;
+    place-items: center;
+    border-radius: 50%;
+    background: #dae2fd;
+    object-fit: cover;
+    font-size: 12px;
+    font-weight: 800;
+  }
+
+  .invite_suggestions strong,
+  .invite_suggestions small { display: block; }
+  .invite_suggestions small,
+  .suggestion_status { color: #5f6f74; font-size: 12px; }
+  .suggestion_status { display: block; padding: 12px; }
+
   .role_grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));

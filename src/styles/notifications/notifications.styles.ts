@@ -147,6 +147,10 @@ export const NotificationsPageWrapper = styled(Box)`
     background-color: rgba(0, 131, 120, 0.05);
   }
 
+  .notification_card.actionable {
+    cursor: pointer;
+  }
+
   .avatar,
   .icon_avatar {
     width: 48px;
@@ -217,6 +221,23 @@ export const NotificationsPageWrapper = styled(Box)`
     background-color: #00685f;
   }
 
+  .notification_actions {
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-end;
+    min-width: 24px;
+  }
+
+  .notification_actions .MuiIconButton-root {
+    color: #6d7a77;
+  }
+
+  .empty_state {
+    padding: 28px 4px;
+    color: #5f6f74;
+    text-align: center;
+  }
+
   .invite_actions {
     display: flex;
     gap: 8px;
@@ -277,6 +298,9 @@ export const NotificationsPageWrapper = styled(Box)`
     color: #3d4947;
     font-size: 14px;
     font-weight: 700;
+    border: 0;
+    text-align: left;
+    cursor: pointer;
   }
 
   .filter_item.active {

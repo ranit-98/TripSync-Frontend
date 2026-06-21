@@ -1,4 +1,5 @@
 export const listOfQueryKeys = {
+  dashboard: { overview: "dashboard-overview" },
   app: {
     hello: "app-hello",
   },
@@ -10,6 +11,7 @@ export const listOfQueryKeys = {
     me: "auth-me",
   },
   users: {
+    search: "users-search",
     me: "users-me",
     updateMe: "users-update-me",
     avatarUpload: "users-avatar-upload",

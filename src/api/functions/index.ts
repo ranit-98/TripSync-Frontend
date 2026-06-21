@@ -6,6 +6,7 @@ export * from "./gallery";
 export * from "./itinerary";
 export * from "./map";
 export * from "./notifications";
+export * from "./dashboard";
 export * from "./trips";
 export * from "./uploads";
 export * from "./users";

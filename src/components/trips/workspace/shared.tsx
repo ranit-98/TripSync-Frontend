@@ -45,7 +45,6 @@ export const tripTabSlugs: Record<TripWorkspaceTab, string> = {
   Files: 'files',
   Gallery: 'gallery',
   Itinerary: 'itinerary',
-  Map: 'map',
 };
 
 export const getTripTabHref = (tripId: string, tab: TripWorkspaceTab) => `/trips/${tripId}/${tripTabSlugs[tab]}`;

@@ -1,12 +1,10 @@
 'use client';
 
-import { useTripsCreate } from '@/api/hooks/trips/useTrips.hooks';
+import { useTripDetails, useTripsCreate, useTripsUpdate, useTripsUploadCover } from '@/api/hooks/trips/useTrips.hooks';
 import FormDatePicker from '@/components/Forms/FormDatePicker';
 import FormFileUpload from '@/components/Forms/FormFileUpload';
 import FormSelect from '@/components/Forms/FormSelect';
-import FormTextArea from '@/components/Forms/FormTextArea';
 import FormTextField from '@/components/Forms/FormTextField';
-import { dashboardAssets } from '@/json/assets';
 import { CreateTripPageWrapper } from '@/styles/trips/createTrip.styles';
 import type { ICreateTripPayload } from '@/typescript/interface/api';
 import { yupResolver } from '@hookform/resolvers/yup';
@@ -15,24 +13,23 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import DoneIcon from '@mui/icons-material/Done';
 import FlightTakeoffIcon from '@mui/icons-material/FlightTakeoff';
-import GroupIcon from '@mui/icons-material/Group';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import MapIcon from '@mui/icons-material/Map';
 import PaymentsIcon from '@mui/icons-material/Payments';
 import RestaurantIcon from '@mui/icons-material/Restaurant';
 import SavingsIcon from '@mui/icons-material/Savings';
 import TerrainIcon from '@mui/icons-material/Terrain';
-import WalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import IconButton from '@mui/material/IconButton';
 import InputAdornment from '@mui/material/InputAdornment';
 import MenuItem from '@mui/material/MenuItem';
 import Typography from '@mui/material/Typography';
+import dayjs from 'dayjs';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useMemo, useState } from 'react';
-import { Controller, FieldPath, SubmitHandler, useForm } from 'react-hook-form';
+import { useEffect, useMemo, useState } from 'react';
+import { Controller, type SubmitHandler, useForm } from 'react-hook-form';
 import * as yup from 'yup';
 
 const tripStyles = [
@@ -49,426 +46,212 @@ const currencies = [
   { label: 'JPY (Yen)', value: 'JPY' },
 ] as const;
 
-type CreateTripFormValues = {
-  budget: number;
+type TripFormValues = {
   coverPhoto: File | null;
   currency: string;
   destination: string;
   endDate: string;
-  inviteEmail: string;
-  inviteRole: 'collaborator' | 'viewer';
-  notes: string;
   startDate: string;
   title: string;
   tripStyles: string[];
 };
 
-const schema: yup.ObjectSchema<CreateTripFormValues> = yup.object({
-  budget: yup
-    .number()
-    .typeError('Enter a valid budget')
-    .positive('Budget must be greater than 0')
-    .required('Budget is required'),
+const schema: yup.ObjectSchema<TripFormValues> = yup.object({
   coverPhoto: yup.mixed<File>().nullable().defined(),
   currency: yup.string().required('Currency is required'),
   destination: yup.string().trim().required('Destination is required'),
   endDate: yup
     .string()
     .required('End date is required')
-    .test('end-after-start', 'End date must be after start date', function validateEndDate(value) {
+    .test('end-after-start', 'End date must be on or after the start date', function validateEndDate(value) {
       const { startDate } = this.parent as { startDate?: string };
-
-      if (!value || !startDate) {
-        return true;
-      }
-
-      return new Date(value).getTime() >= new Date(startDate).getTime();
+      return !value || !startDate || !dayjs(value).isBefore(dayjs(startDate), 'day');
     }),
-  inviteEmail: yup.string().trim().email('Enter a valid email').defined(),
-  inviteRole: yup.mixed<'collaborator' | 'viewer'>().oneOf(['collaborator', 'viewer']).required('Role is required'),
-  notes: yup.string().trim().max(300, 'Notes must be 300 characters or less').defined(),
   startDate: yup.string().required('Start date is required'),
   title: yup.string().trim().required('Trip title is required'),
-  tripStyles: yup
-    .array()
-    .of(yup.string().required())
-    .min(1, 'Choose at least one trip style')
-    .required('Choose at least one trip style'),
+  tripStyles: yup.array().of(yup.string().required()).min(1, 'Choose at least one trip category').required(),
 });
 
-const defaultValues: CreateTripFormValues = {
-  budget: 2500,
+const defaultValues: TripFormValues = {
   coverPhoto: null,
   currency: 'USD',
   destination: '',
   endDate: '',
-  inviteEmail: '',
-  inviteRole: 'collaborator',
-  notes: '',
   startDate: '',
   title: '',
   tripStyles: ['adventure'],
 };
 
-const stepFields: Record<number, FieldPath<CreateTripFormValues>[]> = {
-  1: ['title', 'destination', 'startDate', 'endDate'],
-  2: ['currency', 'budget', 'tripStyles'],
-  3: ['inviteEmail', 'inviteRole', 'notes'],
-};
-
-export default function CreateTripFlow() {
+export default function CreateTripFlow({ tripId }: { tripId?: string }) {
   const router = useRouter();
-  const [step, setStep] = useState(1);
-  const { mutateAsync: createTrip, isPending: isCreatingTrip } = useTripsCreate({
-    optionalCallback: () => undefined,
-  });
-  const {
-    control,
-    formState: { errors },
-    handleSubmit,
-    trigger,
-    watch,
-  } = useForm<CreateTripFormValues>({
+  const isEditing = Boolean(tripId);
+  const { data: tripResponse, isLoading: isLoadingTrip } = useTripDetails(tripId);
+  const trip = tripResponse?.data.data;
+  const { mutateAsync: createTrip, isPending: isCreating } = useTripsCreate({ optionalCallback: () => undefined });
+  const { mutateAsync: updateTrip, isPending: isUpdating } = useTripsUpdate({ optionalCallback: () => undefined });
+  const { mutateAsync: uploadCover, isPending: isUploadingCover } = useTripsUploadCover({ optionalCallback: () => undefined });
+  const { control, formState: { errors }, handleSubmit, reset, watch } = useForm<TripFormValues>({
     defaultValues,
     mode: 'onBlur',
     resolver: yupResolver(schema),
   });
-
   const coverPhoto = watch('coverPhoto');
-  const selectedStyles = watch('tripStyles');
-  const destination = watch('destination');
-  const budget = watch('budget');
-  const progress = `${(step / 3) * 100}%`;
+  const startDate = watch('startDate');
+  const isSubmitting = isCreating || isUpdating || isUploadingCover;
+  const [coverPreviewUrl, setCoverPreviewUrl] = useState<string | null>(null);
+  const coverImageSrc = coverPreviewUrl ?? trip?.coverUrl;
 
-  const coverPhotoName = useMemo(() => {
+  useEffect(() => {
+    if (!trip) return;
+
+    reset({
+      coverPhoto: null,
+      currency: trip.currency ?? 'USD',
+      destination: trip.destination,
+      endDate: trip.endDate.slice(0, 10),
+      startDate: trip.startDate.slice(0, 10),
+      title: trip.title,
+      tripStyles: trip.styles?.length ? trip.styles : [],
+    });
+  }, [reset, trip]);
+
+  useEffect(() => {
     if (!coverPhoto) {
-      return 'Upload Trip Cover Photo';
+      setCoverPreviewUrl(null);
+      return;
     }
 
-    return coverPhoto.name ?? 'Cover photo selected';
+    const previewUrl = URL.createObjectURL(coverPhoto);
+    setCoverPreviewUrl(previewUrl);
+    return () => URL.revokeObjectURL(previewUrl);
   }, [coverPhoto]);
 
-  const handleNext = async () => {
-    const isValid = await trigger(stepFields[step]);
+  const coverPhotoName = useMemo(
+    () => coverPhoto?.name ?? 'Add a cover photo (optional)',
+    [coverPhoto],
+  );
 
-    if (isValid) {
-      setStep((currentStep) => Math.min(currentStep + 1, 3));
-    }
-  };
-
-  const onSubmit: SubmitHandler<CreateTripFormValues> = async (values) => {
+  const onSubmit: SubmitHandler<TripFormValues> = async (values) => {
     const payload: ICreateTripPayload = {
-      budget: values.budget,
+      cover: values.coverPhoto ?? undefined,
       currency: values.currency,
       destination: values.destination.trim(),
       endDate: values.endDate,
-      cover: values.coverPhoto ?? undefined,
-      inviteEmail: values.inviteEmail.trim() || undefined,
-      inviteNotes: values.notes.trim() || undefined,
-      inviteRole: values.inviteEmail.trim() ? values.inviteRole : undefined,
       startDate: values.startDate,
       styles: values.tripStyles,
       title: values.title.trim(),
     };
 
-    const createResponse = await createTrip(payload);
-    const createdTrip = createResponse.data.data;
+    if (tripId) {
+      await updateTrip({
+        body: {
+          currency: payload.currency,
+          destination: payload.destination,
+          endDate: payload.endDate,
+          startDate: payload.startDate,
+          styles: payload.styles,
+          title: payload.title,
+        },
+        tripId,
+      });
+      if (values.coverPhoto) {
+        await uploadCover({ body: { cover: values.coverPhoto }, tripId });
+      }
+      router.push(`/trips/${tripId}/itinerary`);
+      return;
+    }
 
-    router.push(createdTrip?.id ? `/trips/${createdTrip.id}/itinerary` : '/trips');
+    const response = await createTrip(payload);
+    router.push(response.data.data?.id ? `/trips/${response.data.data.id}/itinerary` : '/trips');
   };
-
-  const isSubmitting = isCreatingTrip;
 
   return (
     <CreateTripPageWrapper>
       <Box className="create_header" component="header">
         <Box className="create_header_inner">
           <Box className="brand_lockup">
-            <IconButton className="close_link" component={Link} href="/dashboard" aria-label="Close">
+            <IconButton className="close_link" component={Link} href={isEditing && tripId ? `/trips/${tripId}/itinerary` : '/dashboard'} aria-label="Close">
               <ArrowBackIcon />
             </IconButton>
             <Typography className="brand_name">TripSync</Typography>
           </Box>
-
-          <Box className="step_meter">
-            <span>Step {step} of 3</span>
-            <Box className="progress_track">
-              <span className="progress_bar" style={{ width: progress }} />
-            </Box>
-          </Box>
+          <Typography className="create_mode">{isEditing ? 'Edit trip' : 'New trip'}</Typography>
         </Box>
       </Box>
 
       <Box className="create_main" component="main">
-        <Typography className="eyebrow">New trip</Typography>
-        <Typography className="page_title" component="h1">
-          Plan your next adventure
-        </Typography>
-        <Typography className="page_subtitle">
-          Start with the essentials, shape the budget, then invite your travel crew.
-        </Typography>
+        <Typography className="eyebrow">{isEditing ? 'Edit trip' : 'New trip'}</Typography>
+        <Typography className="page_title" component="h1">{isEditing ? 'Update your trip details' : 'Plan your next adventure'}</Typography>
+        <Typography className="page_subtitle">Add the destination, dates, currency, and travel categories in one place.</Typography>
 
-        <Box className="wizard_shell" component="form" onSubmit={handleSubmit(onSubmit)} noValidate>
-          <FormFileUpload
-            name="coverPhoto"
-            control={control}
-            acceptedFormats="image/*"
-            className="cover_upload"
-            overlayClassName="cover_overlay"
-            previewImageAlt="Tropical coastline at sunset"
-            previewImageSrc={dashboardAssets.bali}
-            showPreview={false}
-            uploadButtonClassName="upload_prompt"
-            uploadButtonLabel={coverPhotoName}
-            uploadButtonStartIcon={<AddAPhotoIcon />}
-          />
+        <Box className="wizard_shell" component="form" noValidate onSubmit={handleSubmit(onSubmit)}>
+          <Box className={`cover_upload${coverImageSrc ? ' has_image' : ''}`}>
+            {coverImageSrc && <Box alt="Trip cover preview" component="img" src={coverImageSrc} />}
+            <FormFileUpload
+              acceptedFormats="image/*"
+              control={control}
+              name="coverPhoto"
+              overlayClassName="cover_overlay"
+              showPreview={false}
+              uploadButtonClassName="upload_prompt"
+              uploadButtonLabel={coverPhotoName}
+              uploadButtonStartIcon={<AddAPhotoIcon />}
+            />
+          </Box>
 
           <Box className="form_body">
-            <Box className={`step_panel${step === 1 ? ' active' : ''}`}>
+            <Box className="step_panel active">
               <Box className="step_heading">
                 <span className="step_number">1</span>
-                <Typography className="step_title" component="h2">
-                  Destination & Dates
-                </Typography>
+                <Typography className="step_title" component="h2">Trip details</Typography>
               </Box>
 
               <Box className="field_grid">
                 <Box className="full_span">
-                  <FormTextField
-                    control={control}
-                    labelName="Trip title"
-                    name="title"
-                    placeHolder="e.g. Spring in Tokyo"
-                    startAdornment={
-                      <InputAdornment position="start">
-                        <FlightTakeoffIcon color="action" />
-                      </InputAdornment>
-                    }
-                  />
+                  <FormTextField control={control} labelName="Trip title" name="title" placeHolder="e.g. Spring in Tokyo" startAdornment={<InputAdornment position="start"><FlightTakeoffIcon color="action" /></InputAdornment>} />
                 </Box>
-                <FormTextField
-                  className="full_span"
-                  control={control}
-                  labelName="Where to?"
-                  name="destination"
-                  placeHolder="Search cities, countries..."
-                  startAdornment={
-                    <InputAdornment position="start">
-                      <LocationOnIcon color="action" />
-                    </InputAdornment>
-                  }
-                />
+                <FormTextField className="full_span" control={control} labelName="Where to?" name="destination" placeHolder="Search cities, countries..." startAdornment={<InputAdornment position="start"><LocationOnIcon color="action" /></InputAdornment>} />
                 <Box>
-                  <Typography className="form_label" component="label">
-                    Start date
-                  </Typography>
-                  <FormDatePicker
-                    control={control}
-                    errors={errors}
-                    name="startDate"
-                    placeHolder="Select start date"
-                  />
+                  <Typography className="form_label" component="label">Start date</Typography>
+                  <FormDatePicker control={control} errors={errors} minDate={dayjs().startOf('day')} name="startDate" placeHolder="Select start date" />
                 </Box>
                 <Box>
-                  <Typography className="form_label" component="label">
-                    End date
-                  </Typography>
-                  <FormDatePicker
-                    control={control}
-                    errors={errors}
-                    name="endDate"
-                    placeHolder="Select end date"
-                  />
+                  <Typography className="form_label" component="label">End date</Typography>
+                  <FormDatePicker control={control} disabled={!startDate} errors={errors} minDate={startDate ? dayjs(startDate) : null} name="endDate" placeHolder={startDate ? 'Select end date' : 'Select a start date first'} />
                 </Box>
-              </Box>
-            </Box>
-
-            <Box className={`step_panel${step === 2 ? ' active' : ''}`}>
-              <Box className="step_heading">
-                <span className="step_number">2</span>
-                <Typography className="step_title" component="h2">
-                  Budget & Style
-                </Typography>
-              </Box>
-
-              <Box className="field_grid">
-                <FormSelect
-                  name="currency"
-                  control={control}
-                  initialvalue="Select currency"
-                  labelClassName="form_label"
-                  labelName="Currency"
-                  showStaticLabel
-                >
-                  {currencies.map((currency) => (
-                    <MenuItem key={currency.value} value={currency.value}>
-                      {currency.label}
-                    </MenuItem>
-                  ))}
+                <FormSelect className="currency_select" control={control} initialvalue="Select currency" labelClassName="form_label" labelName="Currency" name="currency" showStaticLabel>
+                  {currencies.map((currency) => <MenuItem key={currency.value} value={currency.value}>{currency.label}</MenuItem>)}
                 </FormSelect>
-
-                <FormTextField
-                  control={control}
-                  labelName="Budget"
-                  name="budget"
-                  placeHolder="Enter amount"
-                  startAdornment={
-                    <InputAdornment position="start">
-                      <WalletIcon color="action" />
-                    </InputAdornment>
-                  }
-                  type="number"
-                />
-
                 <Box className="full_span">
-                  <Typography className="form_label">Trip type</Typography>
-                  <Controller
-                    name="tripStyles"
-                    control={control}
-                    render={({ field }) => (
-                      <Box className="category_grid">
-                        {tripStyles.map((tripStyle) => {
-                          const Icon = tripStyle.icon;
-                          const active = field.value?.includes(tripStyle.value);
-
-                          return (
-                            <Box
-                              className={`category_chip${active ? ' active' : ''}`}
-                              component="label"
-                              key={tripStyle.value}
-                            >
-                              <input
-                                checked={active}
-                                type="checkbox"
-                                onChange={() => {
-                                  const currentValue = field.value ?? [];
-                                  const nextValue = active
-                                    ? currentValue.filter((value) => value !== tripStyle.value)
-                                    : [...currentValue, tripStyle.value];
-
-                                  field.onChange(nextValue);
-                                }}
-                              />
-                              <Icon fontSize="small" />
-                              {tripStyle.label}
-                            </Box>
-                          );
-                        })}
-                      </Box>
-                    )}
-                  />
-                  {errors.tripStyles?.message && (
-                    <Typography color="error" variant="caption">
-                      {errors.tripStyles.message}
-                    </Typography>
-                  )}
-                </Box>
-              </Box>
-            </Box>
-
-            <Box className={`step_panel${step === 3 ? ' active' : ''}`}>
-              <Box className="step_heading">
-                <span className="step_number">3</span>
-                <Typography className="step_title" component="h2">
-                  Invite Members
-                </Typography>
-              </Box>
-
-              <Box className="invite_stack">
-                <Box className="invite_row">
-                  <FormTextField
-                    control={control}
-                    labelName="Invite by email"
-                    name="inviteEmail"
-                    placeHolder="friend@example.com"
-                    type="email"
-                  />
-                  <FormSelect
-                    name="inviteRole"
-                    control={control}
-                    className="invite_role"
-                    initialvalue="Select role"
-                    labelClassName="form_label"
-                    labelName="Role"
-                    showStaticLabel
-                    wrapperClassName="invite_role_wrap"
-                  >
-                    <MenuItem value="collaborator">Collaborator</MenuItem>
-                    <MenuItem value="viewer">Viewer</MenuItem>
-                  </FormSelect>
-                </Box>
-
-                <FormTextArea
-                  control={control}
-                  labelName="Trip notes"
-                  name="notes"
-                  placeHolder="Add booking references, preferences, or reminders..."
-                  rows={3}
-                />
-              </Box>
-
-              <Box className="review_grid">
-                <Box className="review_tile">
-                  <span>Destination</span>
-                  <strong>{destination || 'Not set'}</strong>
-                </Box>
-                <Box className="review_tile">
-                  <span>Budget</span>
-                  <strong>{budget ? `$${budget}` : 'Not set'}</strong>
-                </Box>
-                <Box className="review_tile">
-                  <span>Style tags</span>
-                  <strong>{selectedStyles?.length ?? 0}</strong>
+                  <Typography className="form_label">Trip categories</Typography>
+                  <Controller control={control} name="tripStyles" render={({ field }) => (
+                    <Box className="category_grid">
+                      {tripStyles.map((tripStyle) => {
+                        const Icon = tripStyle.icon;
+                        const active = field.value.includes(tripStyle.value);
+                        return <Box className={`category_chip${active ? ' active' : ''}`} component="label" key={tripStyle.value}><input checked={active} type="checkbox" onChange={() => field.onChange(active ? field.value.filter((value) => value !== tripStyle.value) : [...field.value, tripStyle.value])} /><Icon fontSize="small" />{tripStyle.label}</Box>;
+                      })}
+                    </Box>
+                  )} />
+                  {errors.tripStyles?.message && <Typography color="error" variant="caption">{errors.tripStyles.message}</Typography>}
                 </Box>
               </Box>
             </Box>
           </Box>
 
           <Box className="action_bar">
-            <Button color="primary" onClick={() => console.log('Draft trip payload:', watch())}>
-              Save Draft
-            </Button>
             <Box className="action_group">
-              {step > 1 && (
-                <Button variant="outlined" onClick={() => setStep((currentStep) => currentStep - 1)}>
-                  Back
-                </Button>
-              )}
-              {step < 3 ? (
-                <Button variant="contained" endIcon={<ArrowForwardIcon />} onClick={handleNext}>
-                  Continue
-                </Button>
-              ) : (
-                <Button disabled={isSubmitting} variant="contained" endIcon={<DoneIcon />} type="submit">
-                  {isSubmitting ? 'Creating...' : 'Create Trip'}
-                </Button>
-              )}
+              <Button disabled={isSubmitting || (isEditing && isLoadingTrip)} endIcon={isEditing ? <DoneIcon /> : <ArrowForwardIcon />} type="submit" variant="contained">
+                {isSubmitting ? 'Saving...' : isEditing ? 'Save Changes' : 'Create Trip'}
+              </Button>
             </Box>
           </Box>
         </Box>
 
         <Box className="help_grid">
-          <Box className="help_card">
-            <GroupIcon />
-            <Box>
-              <strong>Collaborative</strong>
-              <p>Invite friends to split costs and plan activities together.</p>
-            </Box>
-          </Box>
-          <Box className="help_card">
-            <MapIcon />
-            <Box>
-              <strong>Smart routing</strong>
-              <p>Use trip tags to shape local suggestions and daily routes.</p>
-            </Box>
-          </Box>
-          <Box className="help_card">
-            <PaymentsIcon />
-            <Box>
-              <strong>Auto-budget</strong>
-              <p>Keep currencies, estimates, and member costs in one place.</p>
-            </Box>
-          </Box>
+          <Box className="help_card"><FlightTakeoffIcon /><Box><strong>Ready to plan</strong><p>Add people anytime from your trip workspace.</p></Box></Box>
+          <Box className="help_card"><MapIcon /><Box><strong>Smart routing</strong><p>Use trip categories to shape local suggestions and daily routes.</p></Box></Box>
+          <Box className="help_card"><PaymentsIcon /><Box><strong>Expense tracking</strong><p>Track shared costs directly in your trip workspace.</p></Box></Box>
         </Box>
       </Box>
     </CreateTripPageWrapper>

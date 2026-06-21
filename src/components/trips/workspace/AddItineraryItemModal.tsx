@@ -4,11 +4,12 @@ import {
   useItineraryCreateActivity,
   useItineraryCreateDay,
   useItineraryUpdateActivity,
+  useItineraryUpdateDay,
 } from '@/api/hooks/itinerary/useItinerary.hooks';
 import FormDatePicker from '@/components/Forms/FormDatePicker';
 import FormTextArea from '@/components/Forms/FormTextArea';
 import FormTextField from '@/components/Forms/FormTextField';
-import type { IActivity } from '@/typescript/interface/api';
+import type { IActivity, IItineraryDay } from '@/typescript/interface/api';
 import CloseIcon from '@mui/icons-material/Close';
 import EventIcon from '@mui/icons-material/Event';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
@@ -27,6 +28,7 @@ type AddItineraryMode = 'activity' | 'day';
 type AddItineraryItemModalProps = {
   dayId?: string;
   initialActivity?: IActivity;
+  initialDay?: IItineraryDay;
   mode: AddItineraryMode;
   onClose: () => void;
   tripId: string;
@@ -56,7 +58,7 @@ const daySchema: yup.ObjectSchema<AddItineraryFormValues> = yup.object({
   endTime: yup.string().defined(),
   location: yup.string().defined(),
   startTime: yup.string().defined(),
-  title: yup.string().trim().max(80, 'Title must be 80 characters or less').defined(),
+  title: yup.string().trim().required('Day title is required').max(80, 'Title must be 80 characters or less').defined(),
 });
 
 const activitySchema: yup.ObjectSchema<AddItineraryFormValues> = yup.object({
@@ -73,12 +75,14 @@ export type { AddItineraryMode };
 export default function AddItineraryItemModal({
   dayId,
   initialActivity,
+  initialDay,
   mode,
   onClose,
   tripId,
 }: AddItineraryItemModalProps) {
   const isDayMode = mode === 'day';
   const isEditingActivity = Boolean(initialActivity?.id);
+  const isEditingDay = Boolean(initialDay?.id);
   const { mutate: createDay, isPending: isCreatingDay } = useItineraryCreateDay({
     optionalCallback: onClose,
   });
@@ -88,12 +92,15 @@ export default function AddItineraryItemModal({
   const { mutate: updateActivity, isPending: isUpdatingActivity } = useItineraryUpdateActivity({
     optionalCallback: onClose,
   });
+  const { mutate: updateDay, isPending: isUpdatingDay } = useItineraryUpdateDay({ optionalCallback: onClose });
   const {
     control,
     formState: { errors },
     handleSubmit,
   } = useForm<AddItineraryFormValues>({
-    defaultValues: initialActivity
+    defaultValues: initialDay
+      ? { ...defaultValues, date: initialDay.date || '', title: initialDay.title || '' }
+      : initialActivity
       ? {
           date: '',
           description: initialActivity.description ?? '',
@@ -106,15 +113,19 @@ export default function AddItineraryItemModal({
     mode: 'onBlur',
     resolver: yupResolver(isDayMode ? daySchema : activitySchema),
   });
-  const isSubmitting = isCreatingDay || isCreatingActivity || isUpdatingActivity;
+  const isSubmitting = isCreatingDay || isCreatingActivity || isUpdatingActivity || isUpdatingDay;
 
   const onSubmit: SubmitHandler<AddItineraryFormValues> = (values) => {
     if (isDayMode) {
+      if (initialDay?.id) {
+        updateDay({ dayId: initialDay.id, tripId, body: { title: values.title.trim() } });
+        return;
+      }
       createDay({
         tripId,
         body: {
           date: values.date,
-          title: values.title.trim() || undefined,
+          title: values.title.trim(),
         },
       });
       return;
@@ -150,11 +161,11 @@ export default function AddItineraryItemModal({
         <Box className="document_modal_header">
           <Box>
             <Typography component="h3">
-              {isDayMode ? 'Add itinerary day' : isEditingActivity ? 'Edit activity' : 'Add activity'}
+              {isDayMode ? isEditingDay ? 'Edit itinerary day' : 'Add itinerary day' : isEditingActivity ? 'Edit activity' : 'Add activity'}
             </Typography>
             <Typography>
               {isDayMode
-                ? 'Create a day before adding activities.'
+                ? isEditingDay ? 'Update this day title.' : 'Create a day before adding activities.'
                 : 'Add the details needed for this activity.'}
             </Typography>
           </Box>
@@ -166,7 +177,7 @@ export default function AddItineraryItemModal({
         <Box className="document_modal_body itinerary_modal_body">
           {isDayMode ? (
             <>
-              <Box>
+              {!isEditingDay && <Box>
                 <Typography className="form_label" component="label">
                   Date
                 </Typography>
@@ -176,7 +187,7 @@ export default function AddItineraryItemModal({
                   name="date"
                   placeHolder="Select day date"
                 />
-              </Box>
+              </Box>}
               <FormTextField
                 control={control}
                 labelName="Day title"
@@ -243,7 +254,7 @@ export default function AddItineraryItemModal({
             Cancel
           </Button>
           <Button disabled={isSubmitting} type="submit" variant="contained">
-            {isSubmitting ? 'Saving...' : isDayMode ? 'Add Day' : isEditingActivity ? 'Save Activity' : 'Add Activity'}
+            {isSubmitting ? 'Saving...' : isDayMode ? isEditingDay ? 'Save Day' : 'Add Day' : isEditingActivity ? 'Save Activity' : 'Add Activity'}
           </Button>
         </Box>
       </Box>

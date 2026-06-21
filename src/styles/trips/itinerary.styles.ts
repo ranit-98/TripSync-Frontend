@@ -1390,11 +1390,17 @@ export const TripItineraryWrapper = styled(Box)`
       background-color: rgba(0, 131, 120, 0.05);
     }
 
+    &.settled {
+      border: 1px solid rgba(88, 109, 103, 0.18);
+      background-color: #f5f8f7;
+    }
+
     &.warning {
       margin-top: 12px;
       border: 1px solid rgba(176, 94, 61, 0.12);
       background-color: rgba(176, 94, 61, 0.05);
     }
+
   }
 
   .person_avatar {
@@ -1458,6 +1464,15 @@ export const TripItineraryWrapper = styled(Box)`
         color: #924628;
       }
     }
+
+    &.settled {
+      strong { color: #536460; }
+
+      span {
+        background-color: rgba(83, 100, 96, 0.1);
+        color: #536460;
+      }
+    }
   }
 
   .net_balance {
@@ -1486,6 +1501,22 @@ export const TripItineraryWrapper = styled(Box)`
     border-radius: 12px;
     font-weight: 800;
     text-transform: none;
+  }
+
+  .settlement_complete {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 16px;
+    padding: 14px;
+    border-radius: 10px;
+    background-color: rgba(0, 131, 120, 0.08);
+    color: ${({ theme }) => theme.palette.primary.main};
+
+    strong,
+    span { display: block; }
+    strong { font-size: 14px; }
+    span { color: #536460; font-size: 12px; }
   }
 
   .primary_wide {
@@ -1556,8 +1587,8 @@ export const TripItineraryWrapper = styled(Box)`
 
   .expense_modal {
     display: flex;
-    width: min(100%, 720px);
-    max-height: min(92vh, 820px);
+    width: min(100%, 760px);
+    max-height: min(90vh, 760px);
     flex-direction: column;
     overflow: hidden;
     border: 1px solid rgba(188, 201, 198, 0.45);
@@ -1573,7 +1604,7 @@ export const TripItineraryWrapper = styled(Box)`
     align-items: center;
     justify-content: space-between;
     gap: 16px;
-    padding: 20px 24px;
+    padding: 18px 24px;
   }
 
   .expense_modal_header {
@@ -1596,8 +1627,8 @@ export const TripItineraryWrapper = styled(Box)`
   .expense_modal_body {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    column-gap: 18px;
-    row-gap: 16px;
+    column-gap: 16px;
+    row-gap: 18px;
     overflow-y: auto;
     padding: 24px;
 
@@ -1608,9 +1639,9 @@ export const TripItineraryWrapper = styled(Box)`
 
     .MuiInputBase-input,
     .MuiSelect-select {
-      min-height: 24px;
-      padding-top: 13px;
-      padding-bottom: 13px;
+      min-height: 22px;
+      padding-top: 11px;
+      padding-bottom: 11px;
     }
 
     .MuiFormHelperText-root {
@@ -1642,19 +1673,20 @@ export const TripItineraryWrapper = styled(Box)`
 
   .split_member_grid {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 12px;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 10px;
   }
 
   .split_member {
     position: relative;
     display: flex;
-    min-height: 78px;
-    flex-direction: column;
+    min-width: 0;
+    min-height: 56px;
+    flex-direction: row;
     align-items: center;
-    justify-content: center;
-    gap: 7px;
-    padding: 10px;
+    justify-content: flex-start;
+    gap: 10px;
+    padding: 10px 12px;
     border: 1px solid #bcc9c6;
     border-radius: 8px;
     background-color: #f5faf8;
@@ -1662,7 +1694,7 @@ export const TripItineraryWrapper = styled(Box)`
     cursor: pointer;
     font-size: 12px;
     font-weight: 800;
-    text-align: center;
+    text-align: left;
     transition:
       border-color 160ms ease,
       background-color 160ms ease,
@@ -1682,8 +1714,9 @@ export const TripItineraryWrapper = styled(Box)`
   }
 
   .split_avatar {
-    width: 32px;
-    height: 32px;
+    width: 34px;
+    height: 34px;
+    flex: 0 0 34px;
     border-radius: 50%;
     object-fit: cover;
   }
@@ -1696,7 +1729,7 @@ export const TripItineraryWrapper = styled(Box)`
   .expense_modal_footer {
     justify-content: flex-end;
     border-top: 1px solid rgba(188, 201, 198, 0.28);
-    background-color: #f0f5f2;
+    background-color: #f4f8f6;
 
     .MuiButton-root {
       min-width: 120px;
@@ -3378,6 +3411,73 @@ export const TripItineraryWrapper = styled(Box)`
       color: #6d7a77;
       font-size: 13px;
     }
+
+    &.is_dragging {
+      border-color: ${({ theme }) => theme.palette.primary.main};
+      background-color: rgba(0, 131, 120, 0.14);
+      box-shadow: inset 0 0 0 1px ${({ theme }) => theme.palette.primary.main};
+    }
+
+    .MuiButton-root {
+      margin-top: 4px;
+      border-radius: 8px;
+      font-weight: 800;
+    }
+
+    &.is_disabled {
+      border-color: rgba(188, 201, 198, 0.65);
+      background-color: #f7f9f8;
+      color: #a1aaa7;
+      cursor: not-allowed;
+      opacity: 0.7;
+    }
+  }
+
+  .selected_photo_list {
+    display: grid;
+    max-height: 232px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    overflow-y: auto;
+  }
+
+  .selected_photo {
+    position: relative;
+    min-width: 0;
+    overflow: hidden;
+    border-radius: 8px;
+    background-color: #f5faf8;
+
+    img {
+      display: block;
+      width: 100%;
+      aspect-ratio: 1;
+      object-fit: cover;
+    }
+
+    span {
+      overflow: hidden;
+      display: block;
+      padding: 7px 8px;
+      color: #45514e;
+      font-size: 13px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .MuiIconButton-root {
+      position: absolute;
+      top: 5px;
+      right: 5px;
+      width: 28px;
+      height: 28px;
+      background-color: rgba(255, 255, 255, 0.88);
+      color: #45514e;
+
+      &:hover {
+        background-color: #ffffff;
+      }
+    }
   }
 
   .add_photo_footer {
@@ -3435,10 +3535,87 @@ export const TripItineraryWrapper = styled(Box)`
     }
   }
 
+  .documents_actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+
   .folder_list {
     display: grid;
     gap: 10px;
     padding: 16px;
+  }
+
+  .folder_tree {
+    display: grid;
+    gap: 4px;
+    padding: 12px;
+  }
+
+  .folder_tree_node {
+    min-width: 0;
+  }
+
+  .folder_tree_row {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    border-radius: 8px;
+
+    &.active {
+      background-color: rgba(0, 131, 120, 0.1);
+
+      .folder_action {
+        display: inline-flex;
+      }
+    }
+
+    .MuiIconButton-root {
+      width: 28px;
+      height: 28px;
+      flex: 0 0 28px;
+
+      svg {
+        width: 18px;
+        height: 18px;
+      }
+    }
+
+    .folder_action {
+      display: none;
+    }
+
+    &:hover .folder_action,
+    &:focus-within .folder_action {
+      display: inline-flex;
+    }
+
+    .MuiButton-root {
+      min-width: 0;
+      flex: 1;
+      justify-content: flex-start;
+      overflow: hidden;
+      color: #263432;
+      text-overflow: ellipsis;
+      text-transform: none;
+      white-space: nowrap;
+
+      .MuiButton-startIcon {
+        flex: 0 0 auto;
+      }
+
+      .folder_tree_name {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+    }
+  }
+
+  .folder_collapsed {
+    transform: rotate(-90deg);
   }
 
   .folder_card {
@@ -3568,6 +3745,34 @@ export const TripItineraryWrapper = styled(Box)`
       font-size: 13px;
       line-height: 20px;
     }
+
+    &.is_dragging {
+      border-color: ${({ theme }) => theme.palette.primary.main};
+      background-color: rgba(0, 131, 120, 0.14);
+      box-shadow: inset 0 0 0 1px ${({ theme }) => theme.palette.primary.main};
+    }
+  }
+
+  .document_upload_progress {
+    display: grid;
+    gap: 10px;
+    margin: 0 24px 20px;
+    padding: 14px;
+    border-radius: 10px;
+    background-color: #f5faf8;
+
+    .MuiLinearProgress-root { height: 7px; border-radius: 999px; }
+  }
+
+  .upload_progress_label {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 5px;
+    color: #566360;
+    font-size: 12px;
+
+    span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   }
 
   .document_table {
@@ -3576,9 +3781,9 @@ export const TripItineraryWrapper = styled(Box)`
 
   .document_row {
     display: grid;
-    grid-template-columns: minmax(280px, 1fr) minmax(220px, 0.7fr);
+    grid-template-columns: minmax(260px, 1fr) minmax(180px, 0.7fr) 116px;
     align-items: center;
-    min-width: 560px;
+    min-width: 640px;
     min-height: 76px;
     border-top: 1px solid rgba(188, 201, 198, 0.24);
 
@@ -3631,6 +3836,77 @@ export const TripItineraryWrapper = styled(Box)`
     color: ${({ theme }) => theme.palette.primary.main};
   }
 
+  .document_actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .documents_empty {
+    display: grid;
+    min-height: 250px;
+    place-items: center;
+    align-content: center;
+    gap: 8px;
+    padding: 32px;
+    color: #6d7a77;
+    text-align: center;
+
+    > svg {
+      width: 44px;
+      height: 44px;
+      color: ${({ theme }) => theme.palette.primary.main};
+    }
+
+    h4 {
+      margin: 4px 0 0;
+      color: ${({ theme }) => theme.palette.text.primary};
+      font-size: 18px;
+      font-weight: 800;
+    }
+
+    p {
+      font-size: 14px;
+    }
+
+    > div {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 10px;
+    }
+  }
+
+  .documents_no_selection {
+    display: grid;
+    min-height: 420px;
+    place-items: center;
+    align-content: center;
+    gap: 12px;
+    padding: 32px;
+    text-align: center;
+
+    > svg {
+      width: 48px;
+      height: 48px;
+      color: ${({ theme }) => theme.palette.primary.main};
+    }
+
+    h3 {
+      color: ${({ theme }) => theme.palette.text.primary};
+      font-size: 22px;
+      font-weight: 800;
+    }
+
+    p {
+      max-width: 380px;
+      color: #6d7a77;
+      font-size: 14px;
+      line-height: 21px;
+    }
+  }
+
   .document_modal_overlay {
     position: fixed;
     inset: 0;
@@ -3653,6 +3929,14 @@ export const TripItineraryWrapper = styled(Box)`
     border-radius: 16px;
     background-color: rgba(255, 255, 255, 0.96);
     box-shadow: 0 24px 48px rgba(23, 29, 28, 0.2);
+  }
+
+  .folder_modal {
+    width: min(100%, 600px);
+
+    .document_modal_body {
+      padding: 28px 32px;
+    }
   }
 
   .document_modal_header,

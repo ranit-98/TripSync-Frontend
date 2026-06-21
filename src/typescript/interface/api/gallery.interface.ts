@@ -1,4 +1,5 @@
 import type { ApiId } from "./common.interface";
+import type { ITrip } from "./trips.interface";
 
 export interface ICreatePhotoPayload {
   objectKey: string;
@@ -15,10 +16,6 @@ export interface IPhoto extends ICreatePhotoPayload {
   id: ApiId;
 }
 
-export interface IAlbum {
-  tripId: ApiId;
-  title?: string;
-  coverUrl?: string;
+export interface IAlbum extends ITrip {
   photoCount?: number;
-  photos?: IPhoto[];
 }

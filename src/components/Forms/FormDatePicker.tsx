@@ -14,12 +14,14 @@ interface IFormDatePickerProps<T extends FieldValues> {
   disabled?: boolean;
   className?: string;
   label?: string;
+  minDate?: Dayjs | null;
 }
 
 const FormDatePicker = <T extends FieldValues>({
   name,
   control,
   label = '',
+  minDate,
   errors,
   labelName,
   placeHolder,
@@ -51,6 +53,7 @@ const FormDatePicker = <T extends FieldValues>({
               disabled={disabled}
               className={className}
               labelName={label}
+              minDate={minDate ?? undefined}
             />
           );
         }}

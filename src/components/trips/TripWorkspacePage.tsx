@@ -3,21 +3,25 @@
 import {
   useTripDetails,
   useTripMembers,
+  useTripsArchive,
 } from "@/api/hooks/trips/useTrips.hooks";
 import AppSidebar from "@/components/layout/AppSidebar";
 import ErrorBoundary from "@/components/errors/ErrorBoundary";
 import { PageLoader } from "@/components/skeleton";
 import { useTripWorkspaceUiStore } from "@/store";
 import { TripItineraryWrapper } from "@/styles/trips/itinerary.styles";
-import AddIcon from "@mui/icons-material/Add";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogTitle from "@mui/material/DialogTitle";
 import IconButton from "@mui/material/IconButton";
 import Typography from "@mui/material/Typography";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import ActiveTab from "./workspace/ActiveTab";
 import InviteModal from "./workspace/InviteModal";
@@ -31,6 +35,7 @@ export default function TripWorkspacePage({
   activeTab: TripWorkspaceTab;
 }) {
   const params = useParams<{ tripId?: string }>();
+  const router = useRouter();
   const tripId = params.tripId ?? "";
   const showHero = useTripWorkspaceUiStore((state) =>
     state.isTripHeroExpanded(tripId),
@@ -39,12 +44,14 @@ export default function TripWorkspacePage({
     (state) => state.setTripHeroExpanded,
   );
   const [showInviteModal, setShowInviteModal] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isHeroMounted, setIsHeroMounted] = useState(showHero);
   const { data: tripResponse, isLoading: isTripLoading } =
     useTripDetails(tripId);
   const { data: membersResponse } = useTripMembers(tripId);
   const trip = tripResponse?.data.data ?? null;
   const members = membersResponse?.data.data ?? [];
+  const archiveTrip = useTripsArchive({ optionalCallback: () => router.push("/trips") });
 
   useEffect(() => {
     if (showHero) {
@@ -70,6 +77,8 @@ export default function TripWorkspacePage({
             isLoading={isTripLoading}
             members={members}
             onCollapse={() => setTripHeroExpanded(tripId, false)}
+            onDelete={() => setShowDeleteDialog(true)}
+            onEdit={() => router.push(`/trips/${tripId}/edit`)}
             onInvite={() => setShowInviteModal(true)}
             trip={trip}
           />
@@ -113,16 +122,6 @@ export default function TripWorkspacePage({
         </ErrorBoundary>
       </Box>
 
-      {activeTab === "Itinerary" && (
-        <Button
-          className="mobile_fab"
-          variant="contained"
-          aria-label="Add activity"
-        >
-          <AddIcon />
-        </Button>
-      )}
-
       {showInviteModal && (
         <InviteModal
           members={members}
@@ -131,6 +130,15 @@ export default function TripWorkspacePage({
           tripId={tripId}
         />
       )}
+
+      <Dialog onClose={() => setShowDeleteDialog(false)} open={showDeleteDialog}>
+        <DialogTitle>Delete trip?</DialogTitle>
+        <DialogContent>This will permanently remove {trip?.title || "this trip"} and its shared trip data.</DialogContent>
+        <DialogActions>
+          <Button disabled={archiveTrip.isPending} onClick={() => setShowDeleteDialog(false)}>Cancel</Button>
+          <Button color="error" disabled={archiveTrip.isPending} onClick={() => archiveTrip.mutate({ tripId })} variant="contained">{archiveTrip.isPending ? "Deleting..." : "Delete trip"}</Button>
+        </DialogActions>
+      </Dialog>
     </TripItineraryWrapper>
   );
 }

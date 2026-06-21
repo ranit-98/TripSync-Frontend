@@ -1,295 +1,122 @@
+'use client';
+
+import { useFilesCreateDocument, useFilesCreateFolder, useFilesDeleteFolder, useFilesDocuments, useFilesFolders } from '@/api/hooks/files/useFiles.hooks';
+import { useUploadsSign } from '@/api/hooks/uploads/useUploads.hooks';
+import type { ICloudinaryUploadResponse, IDocument, IFolder, ISignedUpload } from '@/typescript/interface/api';
 import { yupResolver } from '@hookform/resolvers/yup';
 import CloseIcon from '@mui/icons-material/Close';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import CreateNewFolderIcon from '@mui/icons-material/CreateNewFolder';
+import DescriptionIcon from '@mui/icons-material/Description';
+import DeleteIcon from '@mui/icons-material/Delete';
+import DownloadIcon from '@mui/icons-material/Download';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import FolderIcon from '@mui/icons-material/Folder';
 import FolderOpenIcon from '@mui/icons-material/FolderOpen';
+import VisibilityIcon from '@mui/icons-material/Visibility';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import IconButton from '@mui/material/IconButton';
-import Stack from '@mui/material/Stack';
+import LinearProgress from '@mui/material/LinearProgress';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
-import { useState } from 'react';
-import { Controller, type SubmitHandler, useForm } from 'react-hook-form';
-import {
-  addFolderDefaultValues,
-  addFolderSchema,
-  documentFolders,
-  folderDocuments,
-  uploadDocumentDefaultValues,
-  uploadDocumentSchema,
-  type AddFolderFormValues,
-  type UploadDocumentFormValues,
-} from '../shared';
+import { ChangeEvent, DragEvent, type ReactNode, useMemo, useRef, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import toast from 'react-hot-toast';
+import * as yup from 'yup';
 
-function AddFolderModal({ onClose }: { onClose: () => void }) {
-  const {
-    control,
-    formState: { errors },
-    handleSubmit,
-  } = useForm<AddFolderFormValues>({
-    defaultValues: addFolderDefaultValues,
-    mode: 'onBlur',
-    resolver: yupResolver(addFolderSchema),
-  });
+const toArray = <T,>(value: unknown): T[] => Array.isArray(value) ? value as T[] : [];
 
-  const onSubmit: SubmitHandler<AddFolderFormValues> = (values) => {
-    const payload = {
-      description: values.description.trim(),
-      name: values.name.trim(),
-    };
+type FolderFormValues = { name: string };
 
-    console.log('Add folder payload:', payload);
-    onClose();
-  };
+const folderSchema: yup.ObjectSchema<FolderFormValues> = yup.object({
+  name: yup.string().trim().required('Folder name is required.').min(2, 'Use at least 2 characters.').max(60, 'Folder name must be 60 characters or less.').defined(),
+});
 
-  return (
-    <Box className="document_modal_overlay">
-      <Box className="document_modal" component="form" noValidate onSubmit={handleSubmit(onSubmit)}>
-        <Box className="document_modal_header">
-          <Box>
-            <Typography component="h3">New Folder</Typography>
-            <Typography>Create a place to organize trip files.</Typography>
-          </Box>
-          <IconButton aria-label="Close new folder modal" onClick={onClose}>
-            <CloseIcon />
-          </IconButton>
-        </Box>
-        <Box className="document_modal_body">
-          <Controller
-            control={control}
-            name="name"
-            render={({ field }) => (
-              <TextField
-                {...field}
-                error={!!errors.name}
-                fullWidth
-                helperText={errors.name?.message}
-                label="Folder name"
-                placeholder="e.g. Restaurant bills"
-              />
-            )}
-          />
-          <Controller
-            control={control}
-            name="description"
-            render={({ field }) => (
-              <TextField
-                {...field}
-                error={!!errors.description}
-                fullWidth
-                helperText={errors.description?.message}
-                label="Short description"
-                placeholder="What should be stored here?"
-              />
-            )}
-          />
-        </Box>
-        <Box className="document_modal_footer">
-          <Button onClick={onClose}>Cancel</Button>
-          <Button type="submit" variant="contained">
-            Create Folder
-          </Button>
-        </Box>
-      </Box>
-    </Box>
-  );
+const uploadFile = async (file: File, signed: ISignedUpload) => {
+  if (!signed.uploadUrl) throw new Error('Upload URL missing.');
+  if (signed.signature || signed.apiKey) {
+    const data = new FormData();
+    data.append('file', file);
+    if (signed.apiKey) data.append('api_key', signed.apiKey);
+    if (signed.signature) data.append('signature', signed.signature);
+    if (signed.timestamp) data.append('timestamp', String(signed.timestamp));
+    if (signed.folder) data.append('folder', signed.folder);
+    if (signed.publicId) data.append('public_id', signed.publicId);
+    const response = await fetch(signed.uploadUrl, { method: 'POST', body: data });
+    if (!response.ok) throw new Error('Upload failed.');
+    const result = await response.json() as ICloudinaryUploadResponse;
+    return result.secure_url || result.url || '';
+  }
+  const response = await fetch(signed.uploadUrl, { method: 'PUT', body: file, headers: { 'Content-Type': file.type || 'application/octet-stream' } });
+  if (!response.ok) throw new Error('Upload failed.');
+  return signed.uploadUrl.split('?')[0];
+};
+
+function FolderModal({ parent, onClose, onCreate }: { parent?: IFolder; onClose: () => void; onCreate: (name: string) => void }) {
+  const { formState: { errors }, handleSubmit, register } = useForm<FolderFormValues>({ defaultValues: { name: '' }, mode: 'onBlur', resolver: yupResolver(folderSchema) });
+  return <Box className="document_modal_overlay"><Box className="document_modal folder_modal" component="form" noValidate onSubmit={handleSubmit((values) => onCreate(values.name.trim()))}>
+    <Box className="document_modal_header"><Box><Typography component="h3">New Folder</Typography><Typography>{parent ? `Create a folder inside ${parent.name}.` : 'Create a top-level folder.'}</Typography></Box><IconButton onClick={onClose}><CloseIcon /></IconButton></Box>
+    <Box className="document_modal_body"><TextField {...register('name')} autoFocus error={!!errors.name} fullWidth helperText={errors.name?.message || 'Use a clear name to organize this trip.'} label="Folder name" placeholder="e.g. Hotel bookings" slotProps={{ inputLabel: { shrink: true } }} /></Box>
+    <Box className="document_modal_footer"><Button onClick={onClose}>Cancel</Button><Button type="submit" variant="contained">Create Folder</Button></Box>
+  </Box></Box>;
 }
 
-function UploadDocumentModal({ folderName, onClose }: { folderName: string; onClose: () => void }) {
-  const {
-    control,
-    formState: { errors },
-    handleSubmit,
-    watch,
-  } = useForm<UploadDocumentFormValues>({
-    defaultValues: uploadDocumentDefaultValues,
-    mode: 'onBlur',
-    resolver: yupResolver(uploadDocumentSchema),
-  });
-
-  const document = watch('document');
-  const documentName = document?.[0]?.name;
-
-  const onSubmit: SubmitHandler<UploadDocumentFormValues> = (values) => {
-    const payload = {
-      fileName: values.document?.[0]?.name ?? null,
-      folderName,
-      name: values.name.trim(),
-    };
-
-    console.log('Upload document payload:', payload);
-    onClose();
-  };
-
-  return (
-    <Box className="document_modal_overlay">
-      <Box className="document_modal" component="form" noValidate onSubmit={handleSubmit(onSubmit)}>
-        <Box className="document_modal_header">
-          <Box>
-            <Typography component="h3">Upload Document</Typography>
-            <Typography>Add a document to {folderName}.</Typography>
-          </Box>
-          <IconButton aria-label="Close upload document modal" onClick={onClose}>
-            <CloseIcon />
-          </IconButton>
-        </Box>
-        <Box className="document_modal_body">
-          <Controller
-            control={control}
-            name="document"
-            render={({ field: { onChange, ref } }) => (
-              <Button className="document_file_dropzone" component="label">
-                <CloudUploadIcon />
-                <strong>{documentName ?? 'Choose document'}</strong>
-                <span>PDF, JPG, PNG, or DOC files</span>
-                <input
-                  ref={ref}
-                  hidden
-                  accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-                  type="file"
-                  onChange={(event) => onChange(event.target.files)}
-                />
-              </Button>
-            )}
-          />
-          {errors.document?.message && (
-            <Typography color="error" variant="caption">
-              {errors.document.message}
-            </Typography>
-          )}
-          <Controller
-            control={control}
-            name="name"
-            render={({ field }) => (
-              <TextField
-                {...field}
-                error={!!errors.name}
-                fullWidth
-                helperText={errors.name?.message}
-                label="Display name"
-                placeholder="e.g. Hotel invoice"
-              />
-            )}
-          />
-        </Box>
-        <Box className="document_modal_footer">
-          <Button onClick={onClose}>Cancel</Button>
-          <Button type="submit" variant="contained">
-            Upload
-          </Button>
-        </Box>
-      </Box>
-    </Box>
-  );
+function DeleteFolderModal({ folder, isDeleting, onClose, onConfirm }: { folder: IFolder; isDeleting: boolean; onClose: () => void; onConfirm: () => void }) {
+  return <Box className="document_modal_overlay"><Box className="document_modal confirm_delete_modal">
+    <Box className="document_modal_header"><Box><Typography component="h3">Delete folder?</Typography><Typography>{folder.name} and every subfolder and file inside it will be permanently removed.</Typography></Box><IconButton disabled={isDeleting} onClick={onClose}><CloseIcon /></IconButton></Box>
+    <Box className="document_modal_footer"><Button disabled={isDeleting} onClick={onClose}>Cancel</Button><Button color="error" disabled={isDeleting} onClick={onConfirm} variant="contained">{isDeleting ? 'Deleting...' : 'Delete Folder'}</Button></Box>
+  </Box></Box>;
 }
 
-export default function FilesTab() {
-  const [activeFolderId, setActiveFolderId] = useState<(typeof documentFolders)[number]['id']>('bills');
-  const [showAddFolderModal, setShowAddFolderModal] = useState(false);
-  const [showUploadDocumentModal, setShowUploadDocumentModal] = useState(false);
-  const activeFolder = documentFolders.find((folder) => folder.id === activeFolderId) ?? documentFolders[0];
+export default function FilesTab({ tripId }: { tripId: string }) {
+  const [activeFolderId, setActiveFolderId] = useState<string>();
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [folderParent, setFolderParent] = useState<IFolder | null | undefined>();
+  const [folderToDelete, setFolderToDelete] = useState<IFolder | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
+  const inputRef = useRef<HTMLInputElement>(null);
+  const { data: foldersResponse, isLoading: foldersLoading } = useFilesFolders(tripId);
+  const folders = toArray<IFolder>(foldersResponse?.data.data);
+  const activeFolder = folders.find((folder) => folder.id === activeFolderId) || folders[0];
+  const { data: documentsResponse, isLoading: documentsLoading } = useFilesDocuments(tripId, activeFolder?.id);
+  const documents = toArray<IDocument>(documentsResponse?.data.data);
+  const createFolder = useFilesCreateFolder({ optionalCallback: () => setFolderParent(undefined) });
+  const deleteFolder = useFilesDeleteFolder({ optionalCallback: () => { setActiveFolderId(undefined); setFolderToDelete(null); } });
+  const createDocument = useFilesCreateDocument({ optionalCallback: () => undefined });
+  const signUpload = useUploadsSign({ optionalCallback: () => undefined });
+
+  const childrenByParent = useMemo(() => folders.reduce<Record<string, IFolder[]>>((result, folder) => { const key = folder.parentId || 'root'; (result[key] ||= []).push(folder); return result; }, {}), [folders]);
+  const selectFolder = (folder: IFolder) => { setActiveFolderId(folder.id); setExpanded((current) => new Set(current).add(folder.id)); };
+  const toggleFolder = (id: string) => setExpanded((current) => { const next = new Set(current); if (next.has(id)) next.delete(id); else next.add(id); return next; });
+  const uploadFiles = async (files: FileList | File[]) => {
+    if (!activeFolder) return toast.error('Create or select a folder first.');
+    const selected = Array.from(files);
+    if (!selected.length) return;
+    setUploadProgress(Object.fromEntries(selected.map((file) => [file.name, 5])));
+    try { await Promise.all(selected.map(async (file) => { setUploadProgress((current) => ({ ...current, [file.name]: 20 })); const signedResponse = await signUpload.mutateAsync({ body: { fileName: file.name, mimeType: file.type || 'application/octet-stream', target: 'document' }, tripId }); const signed = signedResponse.data.data; if (!signed) throw new Error(); setUploadProgress((current) => ({ ...current, [file.name]: 55 })); const url = await uploadFile(file, signed); setUploadProgress((current) => ({ ...current, [file.name]: 85 })); await createDocument.mutateAsync({ tripId, folderId: activeFolder.id, body: { displayName: file.name.replace(/\.[^.]+$/, ''), mimeType: file.type || 'application/octet-stream', objectKey: signed.objectKey || signed.publicId || file.name, originalFileName: file.name, size: file.size, url } }); setUploadProgress((current) => ({ ...current, [file.name]: 100 })); })); toast.success(`${selected.length} file${selected.length === 1 ? '' : 's'} uploaded.`); window.setTimeout(() => setUploadProgress({}), 1200); } catch { toast.error('Some files could not be uploaded.'); }
+  };
+  const onDrop = (event: DragEvent<HTMLDivElement>) => { event.preventDefault(); setIsDragging(false); void uploadFiles(event.dataTransfer.files); };
+  const renderFolders = (parentId: string | null, depth = 0): ReactNode => (childrenByParent[parentId || 'root'] || []).map((folder) => { const children = childrenByParent[folder.id] || []; const open = expanded.has(folder.id); return <Box className="folder_tree_node" key={folder.id} sx={{ pl: `${Math.min(depth, 3) * 10}px` }}><Box className={`folder_tree_row${activeFolder?.id === folder.id ? ' active' : ''}`}><IconButton aria-label={`${open ? 'Collapse' : 'Expand'} ${folder.name}`} disabled={!children.length} onClick={() => toggleFolder(folder.id)}><ExpandMoreIcon className={open ? '' : 'folder_collapsed'} /></IconButton><Button onClick={() => selectFolder(folder)} startIcon={open ? <FolderOpenIcon /> : <FolderIcon />} title={folder.name}><span className="folder_tree_name">{folder.name}</span></Button><IconButton className="folder_action" aria-label={`Create folder inside ${folder.name}`} onClick={() => setFolderParent(folder)}><CreateNewFolderIcon fontSize="small" /></IconButton><IconButton className="folder_action" aria-label={`Delete ${folder.name}`} color="error" onClick={() => setFolderToDelete(folder)}><DeleteIcon fontSize="small" /></IconButton></Box>{open && renderFolders(folder.id, depth + 1)}</Box>; });
 
   return (
     <Box className="tab_page padded_page">
-      <Box className="files_header">
-        <Box>
-          <Typography className="section_heading" component="h2">
-            Trip Documents
-          </Typography>
-          <Typography className="files_subtitle">
-            Create folders for scanned bills, booking proofs, IDs, and shared travel documents.
-          </Typography>
-        </Box>
-        <Stack className="files_actions" direction="row">
-          <Button startIcon={<CreateNewFolderIcon />} variant="outlined" onClick={() => setShowAddFolderModal(true)}>
-            New Folder
-          </Button>
-         
-        </Stack>
-      </Box>
-
+      <Box className="files_header"><Box><Typography className="section_heading" component="h2">Trip Documents</Typography><Typography className="files_subtitle">Organize nested folders and upload multiple files into any folder.</Typography></Box><Button startIcon={<CreateNewFolderIcon />} variant="outlined" onClick={() => setFolderParent(null)}>New Folder</Button></Box>
       <Box className="files_grid">
-        <Box className="folder_panel">
-          <Box className="folder_panel_header">
-            <Typography component="h3">Folders</Typography>
-            <span>{documentFolders.length} folders</span>
-          </Box>
-          <Box className="folder_list">
-            {documentFolders.map((folder) => (
-              <Button
-                className={`folder_card${activeFolderId === folder.id ? ' active' : ''}`}
-                key={folder.id}
-                onClick={() => setActiveFolderId(folder.id)}
-              >
-                <Box className="folder_icon">
-                  <FolderOpenIcon />
-                </Box>
-                <Box className="folder_copy">
-                  <strong>{folder.name}</strong>
-                  <span>{folder.subtitle}</span>
-                  <small>{folder.updatedAt}</small>
-                </Box>
-                <Box className="folder_count">
-                  <strong>{folder.count}</strong>
-                  <span>{folder.size}</span>
-                </Box>
-              </Button>
-            ))}
-          </Box>
-        </Box>
-
+        <Box className="folder_panel"><Box className="folder_panel_header"><Typography component="h3">Folders</Typography><span>{folders.length} folders</span></Box>{foldersLoading ? <Box className="empty_inline">Loading folders...</Box> : <Box className="folder_tree">{renderFolders(null)}</Box>}</Box>
         <Box className="documents_panel">
-          <Box className="documents_header">
-            <Box>
-              <Typography component="h3">{activeFolder.name}</Typography>
-              <Typography>
-                {activeFolder.count} files - {activeFolder.size}
-              </Typography>
-            </Box>
-            <Button startIcon={<CloudUploadIcon />} variant="outlined" onClick={() => setShowUploadDocumentModal(true)}>
-              Upload Document
-            </Button>
-          </Box>
-
-          <Box className="scan_dropzone">
-            <CloudUploadIcon />
-            <Box>
-              <strong>Drop documents here</strong>
-              <span>PDF, JPG, PNG, or DOC files will be stored inside {activeFolder.name}.</span>
-            </Box>
-          </Box>
-
-          <Box className="document_table">
-            <Box className="document_row document_head">
-              <span>Document</span>
-              <span>File</span>
-            </Box>
-            {folderDocuments.map((document) => {
-              const Icon = document.icon;
-
-              return (
-                <Box className="document_row" key={document.name}>
-                  <Stack className="document_name" direction="row">
-                    <span className="document_icon">
-                      <Icon />
-                    </span>
-                    <Box>
-                      <strong>{document.name}</strong>
-                      <small>{document.type}</small>
-                    </Box>
-                  </Stack>
-                  <span className="muted_text">{document.fileName}</span>
-                </Box>
-              );
-            })}
-          </Box>
+          {!activeFolder ? <Box className="documents_no_selection"><FolderOpenIcon /><Typography component="h3">Choose a folder first</Typography><Typography>Select a folder from the left to view its files, add subfolders, or upload documents.</Typography><Button startIcon={<CreateNewFolderIcon />} variant="contained" onClick={() => setFolderParent(null)}>Create a Folder</Button></Box> : <>
+          <Box className="documents_header"><Box><Typography component="h3">{activeFolder?.name || 'Select a folder'}</Typography><Typography>{documents.length} files</Typography></Box><Box className="documents_actions"><Button disabled={!activeFolder} startIcon={<CreateNewFolderIcon />} variant="outlined" onClick={() => setFolderParent(activeFolder)}>Add Subfolder</Button><Button disabled={!activeFolder} startIcon={<CloudUploadIcon />} variant="outlined" onClick={() => inputRef.current?.click()}>Upload Files</Button></Box></Box>
+          <Box aria-disabled={!activeFolder} className={`scan_dropzone${isDragging ? ' is_dragging' : ''}${!activeFolder ? ' is_disabled' : ''}`} onDragEnter={() => activeFolder && setIsDragging(true)} onDragLeave={() => setIsDragging(false)} onDragOver={(event) => event.preventDefault()} onDrop={(event) => { event.preventDefault(); if (activeFolder) onDrop(event); }}><CloudUploadIcon /><Box><strong>Drop multiple documents here</strong><span>{activeFolder ? `Files will be stored inside ${activeFolder.name}.` : 'Create a folder before uploading files.'}</span></Box></Box>
+          {Object.entries(uploadProgress).length > 0 && <Box className="document_upload_progress">{Object.entries(uploadProgress).map(([name, progress]) => <Box key={name}><Box className="upload_progress_label"><span>{name}</span><strong>{progress}%</strong></Box><LinearProgress value={progress} variant="determinate" /></Box>)}</Box>}
+          <input accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" hidden multiple ref={inputRef} type="file" onChange={(event: ChangeEvent<HTMLInputElement>) => { if (event.target.files) void uploadFiles(event.target.files); event.target.value = ''; }} />
+          <Box className="document_table">{documentsLoading ? <Box className="empty_inline">Loading files...</Box> : documents.length ? <><Box className="document_row document_head"><span>Document</span><span>File</span><span>Actions</span></Box>{documents.map((document) => <Box className="document_row" key={document.id}><Box className="document_name"><span className="document_icon"><DescriptionIcon /></span><Box><strong>{document.displayName}</strong><small>{document.mimeType}</small></Box></Box><span className="muted_text">{document.originalFileName}</span><Box className="document_actions"><IconButton aria-label={`Preview ${document.displayName}`} onClick={() => window.open(document.url, '_blank', 'noopener,noreferrer')}><VisibilityIcon fontSize="small" /></IconButton><IconButton aria-label={`Download ${document.displayName}`} component="a" download={document.originalFileName} href={document.url} target="_blank"><DownloadIcon fontSize="small" /></IconButton></Box></Box>)}</> : <Box className="documents_empty"><FolderOpenIcon /><Typography component="h4">This folder is empty</Typography><Typography>Upload files or create a subfolder to keep this trip organized.</Typography><Box><Button startIcon={<CreateNewFolderIcon />} variant="outlined" onClick={() => setFolderParent(activeFolder)}>Add Subfolder</Button><Button startIcon={<CloudUploadIcon />} variant="contained" onClick={() => inputRef.current?.click()}>Upload Files</Button></Box></Box>}</Box>
+          </>}
         </Box>
       </Box>
-      {showAddFolderModal && <AddFolderModal onClose={() => setShowAddFolderModal(false)} />}
-      {showUploadDocumentModal && (
-        <UploadDocumentModal folderName={activeFolder.name} onClose={() => setShowUploadDocumentModal(false)} />
-      )}
+      {folderParent !== undefined && <FolderModal parent={folderParent || undefined} onClose={() => setFolderParent(undefined)} onCreate={(name) => createFolder.mutate({ tripId, body: { name, parentId: folderParent?.id || null } })} />}
+      {folderToDelete && <DeleteFolderModal folder={folderToDelete} isDeleting={deleteFolder.isPending} onClose={() => setFolderToDelete(null)} onConfirm={() => deleteFolder.mutate({ tripId, folderId: folderToDelete.id })} />}
     </Box>
   );
 }

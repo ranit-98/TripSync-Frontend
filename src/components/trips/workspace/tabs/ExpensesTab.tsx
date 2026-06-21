@@ -218,6 +218,8 @@ const getSettlementText = (
 };
 
 const isSettlementPaid = (settlement: ISettlement) => settlement.isPaid || settlement.status === 'paid';
+const isSettlementOutstanding = (settlement: ISettlement) =>
+  !isSettlementPaid(settlement) && Number(settlement.amount || 0) > 0.005;
 
 function AddExpenseModal({
   currency,
@@ -506,9 +508,10 @@ export default function ExpensesTab({ tripId }: { tripId: string }) {
   const totalSpent = expenses.reduce((total, expense) => total + Number(expense.amount || 0), 0);
   const plannedBudget = Number(trip?.budget || 0);
   const utilization = plannedBudget > 0 ? Math.round((totalSpent / plannedBudget) * 100) : 0;
-  const activeSettlement = settlements.find((settlement) => !isSettlementPaid(settlement));
+  const activeSettlement = settlements.find(isSettlementOutstanding);
+  const hasOutstandingSettlement = Boolean(activeSettlement);
   const netBalance = settlements.reduce((total, settlement) => {
-    if (isSettlementPaid(settlement)) return total;
+    if (!isSettlementOutstanding(settlement)) return total;
 
     const amount = Number(settlement.amount || 0);
 
@@ -732,17 +735,19 @@ export default function ExpensesTab({ tripId }: { tripId: string }) {
               settlements.slice(0, 3).map((settlement) => {
                 const settlementText = getSettlementText(settlement, membersById, currentUser?.id);
                 const positive = settlement.toUserId === currentUser?.id;
+                const isPaid = isSettlementPaid(settlement);
+                const isOutstanding = isSettlementOutstanding(settlement);
 
                 return (
-                  <Box className={`balance_item ${positive ? 'positive' : 'warning'}`} key={settlement.id}>
+                  <Box className={`balance_item ${isPaid ? 'settled' : positive ? 'positive' : 'warning'}`} key={settlement.id}>
                     <ImageComp alt="" className="person_avatar" isAvatar src={settlementText.avatar} />
                     <Box className="balance_copy">
                       <strong>{settlementText.title}</strong>
-                      <span>{isSettlementPaid(settlement) ? 'Settled' : 'Pending settlement'}</span>
+                      <span>{isPaid ? 'Settled' : isOutstanding ? 'Pending settlement' : 'No payment due'}</span>
                     </Box>
-                    <Box className={`balance_amount${positive ? '' : ' warning'}`}>
+                    <Box className={`balance_amount${isPaid ? ' settled' : positive ? '' : ' warning'}`}>
                       <strong>{formatMoney(settlement.amount || 0, settlement.currency || currency)}</strong>
-                      <span>{isSettlementPaid(settlement) ? 'Paid' : 'Pending'}</span>
+                      <span>{isPaid ? 'Paid' : isOutstanding ? 'Due' : 'Clear'}</span>
                     </Box>
                   </Box>
                 );
@@ -757,21 +762,21 @@ export default function ExpensesTab({ tripId }: { tripId: string }) {
                 {formatMoney(Math.abs(netBalance), currency)}
               </strong>
             </Box>
-            <Button
-              className="primary_wide"
-              disabled={!activeSettlement || markSettlementPaid.isPending}
-              onClick={handleMarkSettled}
-              startIcon={<CheckCircleIcon />}
-            >
-              {markSettlementPaid.isPending ? 'Settling...' : 'Mark Settled'}
-            </Button>
-            <Button
-              className="outline_wide"
-              disabled={!settlements.length || sendReminders.isPending}
-              onClick={() => sendReminders.mutate({ tripId })}
-            >
-              {sendReminders.isPending ? 'Sending...' : 'Send Reminders'}
-            </Button>
+            {hasOutstandingSettlement ? (
+              <>
+                <Button className="primary_wide" disabled={markSettlementPaid.isPending} onClick={handleMarkSettled} startIcon={<CheckCircleIcon />}>
+                  {markSettlementPaid.isPending ? 'Settling...' : 'Mark Settled'}
+                </Button>
+                <Button className="outline_wide" disabled={sendReminders.isPending} onClick={() => sendReminders.mutate({ tripId })}>
+                  {sendReminders.isPending ? 'Sending...' : 'Send Reminders'}
+                </Button>
+              </>
+            ) : (
+              <Box className="settlement_complete">
+                <CheckCircleIcon />
+                <Box><strong>All settled</strong><span>No outstanding balances or reminders.</span></Box>
+              </Box>
+            )}
           </Box>
           <Box className="insight_card">
             <span>

@@ -82,11 +82,14 @@ export const useTripsUpdate = ({ optionalCallback }: IMutationHookOptions) => {
 };
 
 export const useTripsArchive = ({ optionalCallback }: IMutationHookOptions) => {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationKey: [listOfQueryKeys.trips.archive],
     mutationFn: tripsArchiveFn,
     onSuccess: (res) => {
       if (isSuccessResponse(res?.data.statusCode)) {
+        queryClient.invalidateQueries({ queryKey: [listOfQueryKeys.trips.list] });
         optionalCallback();
       }
     },

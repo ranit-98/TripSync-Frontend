@@ -1,5 +1,7 @@
-import TripWorkspacePage from '@/components/trips/TripWorkspacePage';
+import { redirect } from 'next/navigation';
 
-export default function TripMapDetailPage() {
-  return <TripWorkspacePage activeTab="Map" />;
+export default async function TripMapDetailPage({ params }: { params: Promise<{ tripId: string }> }) {
+  const { tripId } = await params;
+
+  redirect(`/trips/${tripId}/itinerary`);
 }

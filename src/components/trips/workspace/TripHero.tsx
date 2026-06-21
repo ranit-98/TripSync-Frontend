@@ -11,9 +11,12 @@ import ShareIcon from '@mui/icons-material/Share';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import IconButton from '@mui/material/IconButton';
+import Menu from '@mui/material/Menu';
+import MenuItem from '@mui/material/MenuItem';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import Link from 'next/link';
+import { useState } from 'react';
 
 const formatHeroDateRange = (startDate?: string, endDate?: string) => {
   if (!startDate || !endDate) {
@@ -67,11 +70,14 @@ type TripHeroProps = {
   isLoading?: boolean;
   members: ITripMember[];
   onCollapse: () => void;
+  onDelete: () => void;
+  onEdit: () => void;
   onInvite: () => void;
   trip?: ITrip | null;
 };
 
-export default function TripHero({ isLoading = false, members, onCollapse, onInvite, trip }: TripHeroProps) {
+export default function TripHero({ isLoading = false, members, onCollapse, onDelete, onEdit, onInvite, trip }: TripHeroProps) {
+  const [settingsAnchor, setSettingsAnchor] = useState<HTMLElement | null>(null);
   if (isLoading) {
     return <TripHeroSkeleton />;
   }
@@ -125,9 +131,13 @@ export default function TripHero({ isLoading = false, members, onCollapse, onInv
             <Button className="invite_btn" onClick={onInvite} startIcon={<PersonAddIcon />}>
               Invite
             </Button>
-            <IconButton className="glass_icon_btn" aria-label="Trip settings">
+            <IconButton className="glass_icon_btn" aria-label="Trip settings" onClick={(event) => setSettingsAnchor(event.currentTarget)}>
               <SettingsIcon />
             </IconButton>
+            <Menu anchorEl={settingsAnchor} anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }} onClose={() => setSettingsAnchor(null)} open={Boolean(settingsAnchor)} transformOrigin={{ horizontal: 'right', vertical: 'top' }}>
+              <MenuItem onClick={() => { setSettingsAnchor(null); onEdit(); }}>Edit trip</MenuItem>
+              <MenuItem onClick={() => { setSettingsAnchor(null); onDelete(); }}>Delete trip</MenuItem>
+            </Menu>
           </Stack>
         </Stack>
       </Box>

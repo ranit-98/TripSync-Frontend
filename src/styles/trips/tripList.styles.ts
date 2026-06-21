@@ -46,29 +46,47 @@ export const TripListPageWrapper = styled(Box)`
 
   .search_wrap {
     position: relative;
-    width: min(100%, 320px);
+    width: clamp(280px, 26vw, 380px);
+    flex: 0 1 380px;
   }
 
   .search_icon {
     position: absolute;
     top: 50%;
-    left: 16px;
+    left: 14px;
     z-index: 1;
     color: #6d7a77;
     transform: translateY(-50%);
   }
 
   .search_input .MuiOutlinedInput-root {
+    min-height: 44px;
     border-radius: 999px;
-    background-color: #eaefed;
+    background-color: #ffffff;
+    box-shadow: 0 1px 2px rgba(23, 29, 28, 0.04);
+    transition: border-color 160ms ease, box-shadow 160ms ease;
   }
 
   .search_input input {
-    padding-left: 42px;
+    padding: 10px 14px 10px 42px;
+    color: #263432;
+    font-size: 14px;
   }
 
   .search_input fieldset {
-    border: 0;
+    border-color: rgba(188, 201, 198, 0.8);
+  }
+
+  .search_input .MuiOutlinedInput-root:hover fieldset {
+    border-color: #8ba7a1;
+  }
+
+  .search_input .MuiOutlinedInput-root.Mui-focused {
+    box-shadow: 0 0 0 3px rgba(0, 131, 120, 0.13);
+  }
+
+  .search_input .MuiOutlinedInput-root.Mui-focused fieldset {
+    border-color: #00685f;
   }
 
   .trips_content {
@@ -425,6 +443,7 @@ export const TripListPageWrapper = styled(Box)`
 
     .search_wrap {
       width: 100%;
+      flex-basis: auto;
     }
 
     .trips_content {

@@ -156,6 +156,8 @@ export default function ItineraryTab({ tripId }: { tripId: string }) {
   const [addModal, setAddModal] = useState<{ dayId?: string; mode: AddItineraryMode } | null>(null);
   const [selectedActivity, setSelectedActivity] = useState<IActivity | null>(null);
   const [editingActivity, setEditingActivity] = useState<IActivity | null>(null);
+  const [editingDay, setEditingDay] = useState<IItineraryDay | null>(null);
+  const [expandedDayIds, setExpandedDayIds] = useState<Set<string>>(new Set());
   const [deleteActivityCandidate, setDeleteActivityCandidate] = useState<IActivity | null>(null);
   const { data: itineraryResponse, isLoading } = useItinerary(tripId);
   const deleteActivity = useItineraryDeleteActivity({
@@ -182,11 +184,11 @@ export default function ItineraryTab({ tripId }: { tripId: string }) {
             <>
               {days.map((day, index) => {
               const dateParts = formatDayParts(day.date);
-              const expanded = index === 0;
+              const expanded = expandedDayIds.has(day.id);
 
               return (
                 <Box className="day_card" key={day.id}>
-                  <Stack className={`day_header${expanded ? ' expanded' : ''}`} direction="row">
+                  <Stack className={`day_header${expanded ? ' expanded' : ''}`} direction="row" onClick={() => setExpandedDayIds((current) => { const next = new Set(current); if (next.has(day.id)) next.delete(day.id); else next.add(day.id); return next; })}>
                     <Stack className="day_title_group" direction="row">
                       <Box className={`date_badge${expanded ? ' active' : ''}`}>
                         <span className="date_month">{dateParts.month}</span>
@@ -197,7 +199,10 @@ export default function ItineraryTab({ tripId }: { tripId: string }) {
                         <Typography className="day_meta">{getDayDescription(day)}</Typography>
                       </Box>
                     </Stack>
-                    <ExpandMoreIcon />
+                    <Stack direction="row">
+                      <IconButton aria-label={`Edit ${day.title || `Day ${index + 1}`}`} onClick={(event) => { event.stopPropagation(); setEditingDay(day); }}><EditIcon fontSize="small" /></IconButton>
+                      <ExpandMoreIcon />
+                    </Stack>
                   </Stack>
 
                   {expanded && (
@@ -329,6 +334,7 @@ export default function ItineraryTab({ tripId }: { tripId: string }) {
           tripId={tripId}
         />
       )}
+      {editingDay && <AddItineraryItemModal initialDay={editingDay} mode="day" onClose={() => setEditingDay(null)} tripId={tripId} />}
       {selectedActivity && (
         <Box className="expense_modal_overlay">
           <Box className="expense_modal details_modal">

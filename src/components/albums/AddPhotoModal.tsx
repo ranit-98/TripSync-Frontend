@@ -1,5 +1,8 @@
 'use client';
 
+import { useGalleryCreatePhoto } from '@/api/hooks/gallery/useGallery.hooks';
+import { useUploadsSign } from '@/api/hooks/uploads/useUploads.hooks';
+import type { ICloudinaryUploadResponse, ISignedUpload } from '@/typescript/interface/api';
 import { yupResolver } from '@hookform/resolvers/yup';
 import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate';
 import CloseIcon from '@mui/icons-material/Close';
@@ -8,53 +11,146 @@ import Button from '@mui/material/Button';
 import IconButton from '@mui/material/IconButton';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
-import { Controller, SubmitHandler, useForm } from 'react-hook-form';
+import { SubmitHandler, useForm } from 'react-hook-form';
+import { DragEvent, useEffect, useRef, useState } from 'react';
+import toast from 'react-hot-toast';
 import * as yup from 'yup';
 
-type AddPhotoFormValues = {
-  caption: string;
-  photos: FileList | null;
-};
+type AddPhotoFormValues = { caption: string };
 
 const addPhotoSchema: yup.ObjectSchema<AddPhotoFormValues> = yup.object({
   caption: yup.string().trim().max(160, 'Caption must be 160 characters or less').defined(),
-  photos: yup.mixed<FileList>().nullable().defined(),
 });
 
-const defaultValues: AddPhotoFormValues = {
-  caption: '',
-  photos: null,
+const uploadPhotoFile = async (file: File, signedUpload: ISignedUpload) => {
+  if (!signedUpload.uploadUrl) throw new Error('Upload URL missing.');
+
+  if (signedUpload.signature || signedUpload.apiKey) {
+    const formData = new FormData();
+    formData.append('file', file);
+    if (signedUpload.apiKey) formData.append('api_key', signedUpload.apiKey);
+    if (signedUpload.signature) formData.append('signature', signedUpload.signature);
+    if (signedUpload.timestamp) formData.append('timestamp', String(signedUpload.timestamp));
+    if (signedUpload.folder) formData.append('folder', signedUpload.folder);
+    if (signedUpload.publicId) formData.append('public_id', signedUpload.publicId);
+
+    const response = await fetch(signedUpload.uploadUrl, { body: formData, method: 'POST' });
+    if (!response.ok) throw new Error('Upload failed.');
+
+    const uploaded = (await response.json()) as ICloudinaryUploadResponse;
+    return uploaded.secure_url || uploaded.url || '';
+  }
+
+  const response = await fetch(signedUpload.uploadUrl, {
+    body: file,
+    headers: { 'Content-Type': file.type || 'application/octet-stream' },
+    method: 'PUT',
+  });
+  if (!response.ok) throw new Error('Upload failed.');
+
+  return signedUpload.uploadUrl.split('?')[0];
 };
 
 type AddPhotoModalProps = {
   albumTitle: string;
   onClose: () => void;
+  tripId?: string;
 };
 
-export default function AddPhotoModal({ albumTitle, onClose }: AddPhotoModalProps) {
+export default function AddPhotoModal({ albumTitle, onClose, tripId }: AddPhotoModalProps) {
+  const [photos, setPhotos] = useState<{ file: File; previewUrl: string }[]>([]);
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const previewUrlsRef = useRef<string[]>([]);
+  const createPhoto = useGalleryCreatePhoto({ optionalCallback: () => undefined });
+  const signUpload = useUploadsSign({ optionalCallback: () => undefined });
   const {
-    control,
     formState: { errors },
     handleSubmit,
-    watch,
+    register,
   } = useForm<AddPhotoFormValues>({
-    defaultValues,
+    defaultValues: { caption: '' },
     mode: 'onBlur',
     resolver: yupResolver(addPhotoSchema),
   });
+  const isSubmitting = signUpload.isPending || createPhoto.isPending;
 
-  const photos = watch('photos');
-  const photoCount = photos?.length ?? 0;
+  useEffect(() => () => previewUrlsRef.current.forEach((url) => URL.revokeObjectURL(url)), []);
 
-  const onSubmit: SubmitHandler<AddPhotoFormValues> = (values) => {
-    const payload = {
-      albumTitle,
-      caption: values.caption.trim() || null,
-      photoNames: values.photos ? Array.from(values.photos).map((photo) => photo.name) : [],
-    };
+  const addFiles = (fileList: FileList | File[]) => {
+    const images = Array.from(fileList).filter((file) => file.type.startsWith('image/'));
+    if (!images.length) {
+      toast.error('Please choose image files only.');
+      return;
+    }
 
-    console.log('Add photo payload:', payload);
-    onClose();
+    const newPhotos = images.map((file) => {
+      const previewUrl = URL.createObjectURL(file);
+      previewUrlsRef.current.push(previewUrl);
+      return { file, previewUrl };
+    });
+    setPhotos((current) => [...current, ...newPhotos]);
+  };
+
+  const removePhoto = (index: number) => {
+    setPhotos((current) => {
+      const photo = current[index];
+      if (photo) {
+        URL.revokeObjectURL(photo.previewUrl);
+        previewUrlsRef.current = previewUrlsRef.current.filter((url) => url !== photo.previewUrl);
+      }
+      return current.filter((_, photoIndex) => photoIndex !== index);
+    });
+  };
+
+  const handleDrop = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    setIsDragging(false);
+    addFiles(event.dataTransfer.files);
+  };
+
+  const onSubmit: SubmitHandler<AddPhotoFormValues> = async (values) => {
+    if (!tripId) {
+      toast.error('A trip is required before photos can be uploaded.');
+      return;
+    }
+
+    if (!photos.length) {
+      toast.error('Select at least one photo to upload.');
+      return;
+    }
+
+    try {
+      await Promise.all(
+        photos.map(async ({ file }) => {
+          const signedResponse = await signUpload.mutateAsync({
+            body: { fileName: file.name, mimeType: file.type || 'image/*', target: 'photo' },
+            tripId,
+          });
+          const signedUpload = signedResponse.data.data;
+          if (!signedUpload) throw new Error('Upload signature missing.');
+
+          const url = await uploadPhotoFile(file, signedUpload);
+          if (!url) throw new Error('Uploaded photo URL missing.');
+
+          await createPhoto.mutateAsync({
+            body: {
+              caption: values.caption.trim() || undefined,
+              mimeType: file.type || 'image/*',
+              objectKey: signedUpload.objectKey || signedUpload.publicId || file.name,
+              originalFileName: file.name,
+              size: file.size,
+              url,
+            },
+            tripId,
+          });
+        }),
+      );
+      toast.success(`${photos.length} photo${photos.length === 1 ? '' : 's'} added to ${albumTitle}.`);
+      onClose();
+    } catch {
+      toast.error('Some photos could not be uploaded. Please try again.');
+    }
   };
 
   return (
@@ -63,56 +159,70 @@ export default function AddPhotoModal({ albumTitle, onClose }: AddPhotoModalProp
         <Box className="add_photo_header">
           <Box>
             <Typography component="h3">Add Photos</Typography>
-            <Typography>Upload memories to {albumTitle}. Photo and caption are optional.</Typography>
+            <Typography>Drop multiple photos or browse to upload them to {albumTitle}.</Typography>
           </Box>
-          <IconButton aria-label="Close add photo modal" onClick={onClose}>
+          <IconButton aria-label="Close add photo modal" disabled={isSubmitting} onClick={onClose}>
             <CloseIcon />
           </IconButton>
         </Box>
 
         <Box className="add_photo_body">
-          <Controller
-            control={control}
-            name="photos"
-            render={({ field: { onChange, ref } }) => (
-              <Button className="photo_dropzone" component="label">
-                <AddPhotoAlternateIcon />
-                <strong>{photoCount ? `${photoCount} photo${photoCount > 1 ? 's' : ''} selected` : 'Choose photos'}</strong>
-                <span>JPG, PNG, or HEIC files can be added now or later.</span>
-                <input
-                  ref={ref}
-                  hidden
-                  multiple
-                  accept="image/*"
-                  type="file"
-                  onChange={(event) => onChange(event.target.files)}
-                />
-              </Button>
-            )}
-          />
+          <Box
+            className={`photo_dropzone${isDragging ? ' is_dragging' : ''}`}
+            onDragEnter={() => setIsDragging(true)}
+            onDragLeave={() => setIsDragging(false)}
+            onDragOver={(event) => event.preventDefault()}
+            onDrop={handleDrop}
+          >
+            <AddPhotoAlternateIcon />
+            <strong>{photos.length ? `${photos.length} photo${photos.length === 1 ? '' : 's'} selected` : 'Drag and drop photos here'}</strong>
+            <span>Choose multiple JPG, PNG, HEIC, or other image files at once.</span>
+            <Button disabled={isSubmitting} onClick={() => fileInputRef.current?.click()} type="button" variant="outlined">
+              Browse files
+            </Button>
+            <input
+              accept="image/*"
+              hidden
+              multiple
+              ref={fileInputRef}
+              type="file"
+              onChange={(event) => {
+                if (event.target.files) addFiles(event.target.files);
+                event.target.value = '';
+              }}
+            />
+          </Box>
 
-          <Controller
-            control={control}
-            name="caption"
-            render={({ field }) => (
-              <TextField
-                {...field}
-                error={!!errors.caption}
-                fullWidth
-                helperText={errors.caption?.message}
-                label="Caption"
-                multiline
-                placeholder="Optional caption for this upload..."
-                rows={3}
-              />
-            )}
+          {photos.length > 0 && (
+            <Box className="selected_photo_list" aria-label="Selected photos">
+              {photos.map(({ file, previewUrl }, index) => (
+                <Box className="selected_photo" key={`${file.name}-${file.lastModified}-${index}`}>
+                  <Box component="img" src={previewUrl} alt={file.name} />
+                  <span title={file.name}>{file.name}</span>
+                  <IconButton aria-label={`Remove ${file.name}`} disabled={isSubmitting} onClick={() => removePhoto(index)}>
+                    <CloseIcon fontSize="small" />
+                  </IconButton>
+                </Box>
+              ))}
+            </Box>
+          )}
+
+          <TextField
+            {...register('caption')}
+            error={!!errors.caption}
+            fullWidth
+            helperText={errors.caption?.message || 'This caption will be applied to every photo in this batch.'}
+            label="Caption"
+            multiline
+            placeholder="Optional caption for this upload..."
+            rows={3}
           />
         </Box>
 
         <Box className="add_photo_footer">
-          <Button onClick={onClose}>Cancel</Button>
-          <Button type="submit" variant="contained">
-            Save Photos
+          <Button disabled={isSubmitting} onClick={onClose}>Cancel</Button>
+          <Button disabled={!photos.length || isSubmitting} type="submit" variant="contained">
+            {isSubmitting ? 'Uploading...' : `Save ${photos.length || ''} Photo${photos.length === 1 ? '' : 's'}`}
           </Button>
         </Box>
       </Box>

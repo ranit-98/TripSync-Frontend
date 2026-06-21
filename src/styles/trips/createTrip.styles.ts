@@ -41,6 +41,53 @@ export const CreateTripPageWrapper = styled(Box)`
     align-items: center;
   }
 
+  .create_invite_suggestions {
+    display: grid;
+    overflow: hidden;
+    border: 1px solid rgba(188, 201, 198, 0.5);
+    border-radius: 8px;
+    background-color: #ffffff;
+
+    > p {
+      padding: 12px 14px;
+      color: #6d7a77;
+      font-size: 13px;
+    }
+
+    .MuiButton-root {
+      display: flex;
+      justify-content: flex-start;
+      gap: 10px;
+      padding: 10px 14px;
+      border-radius: 0;
+      color: #263432;
+      text-align: left;
+      text-transform: none;
+
+      &:hover { background-color: #f0f5f2; }
+    }
+
+    img,
+    .MuiButton-root > span {
+      display: grid;
+      width: 32px;
+      height: 32px;
+      flex: 0 0 32px;
+      place-items: center;
+      border-radius: 50%;
+      background-color: rgba(0, 104, 95, 0.12);
+      color: #00685f;
+      object-fit: cover;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    strong,
+    small { display: block; }
+    strong { font-size: 13px; font-weight: 800; }
+    small { color: #6d7a77; font-size: 12px; }
+  }
+
   .brand_lockup {
     gap: 12px;
     min-width: 0;
@@ -128,7 +175,22 @@ export const CreateTripPageWrapper = styled(Box)`
     position: relative;
     height: 236px;
     overflow: hidden;
-    background-color: #e4e9e7;
+    background:
+      radial-gradient(circle at 15% 30%, rgba(0, 131, 120, 0.16), transparent 34%),
+      linear-gradient(135deg, #edf6f3, #dfece8);
+  }
+
+  .cover_upload:not(.has_image)::before {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: min(340px, calc(100% - 48px));
+    color: #536460;
+    content: 'A cover photo is optional — add one to make this trip easy to spot.';
+    font-size: 15px;
+    line-height: 22px;
+    text-align: center;
+    transform: translate(-50%, -50%);
   }
 
   .cover_upload img {
@@ -141,6 +203,16 @@ export const CreateTripPageWrapper = styled(Box)`
     position: absolute;
     inset: 0;
     background: linear-gradient(180deg, rgba(23, 29, 28, 0.06), rgba(23, 29, 28, 0.44));
+  }
+
+  .cover_upload:not(.has_image) .cover_overlay {
+    background: transparent;
+  }
+
+  .create_mode {
+    color: #6d7a77;
+    font-size: 14px;
+    font-weight: 800;
   }
 
   .upload_prompt {
@@ -241,6 +313,15 @@ export const CreateTripPageWrapper = styled(Box)`
     padding-bottom: 0;
   }
 
+  .currency_select .MuiSelect-select {
+    display: flex;
+    min-height: 48px;
+    align-items: center;
+    box-sizing: border-box;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+
   textarea.MuiOutlinedInput-input {
     min-height: 96px;
     padding-top: 14px;
@@ -334,7 +415,7 @@ export const CreateTripPageWrapper = styled(Box)`
   }
 
   .action_bar {
-    justify-content: space-between;
+    justify-content: flex-end;
     gap: 16px;
     padding: 16px 28px;
     border-top: 1px solid rgba(188, 201, 198, 0.35);
@@ -433,5 +514,15 @@ export const CreateTripPageWrapper = styled(Box)`
     .action_bar > .MuiButton-root {
       width: 100%;
     }
+  }
+
+  @media (max-width: 599px) {
+    .create_main { padding-top: 28px; padding-bottom: 32px; }
+    .cover_upload { height: 168px; }
+    .upload_prompt { right: 12px; bottom: 12px; max-width: calc(100% - 24px); }
+    .step_heading { margin-bottom: 18px; }
+    .step_title { font-size: 21px; line-height: 28px; }
+    .form_body { padding: 16px; }
+    .action_bar { padding: 14px 16px; }
   }
 `;

@@ -14,7 +14,7 @@ import {
 import type { IMutationHookOptions } from "@/api/hooks/types";
 import { isSuccessResponse } from "@/api/hooks/types";
 import { listOfQueryKeys } from "@/lib/functions/listOfQueryKeys";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export const useFilesFolders = (tripId?: string) => {
   return useQuery({
@@ -41,11 +41,13 @@ export const useFilesDownloadDocument = (tripId?: string, documentId?: string) =
 };
 
 export const useFilesCreateFolder = ({ optionalCallback }: IMutationHookOptions) => {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationKey: [listOfQueryKeys.files.folders, "create"],
     mutationFn: filesCreateFolderFn,
-    onSuccess: (res) => {
+    onSuccess: (res, variables) => {
       if (isSuccessResponse(res?.data.statusCode)) {
+        queryClient.invalidateQueries({ queryKey: [listOfQueryKeys.files.folders, variables.tripId] });
         optionalCallback();
       }
     },
@@ -65,11 +67,13 @@ export const useFilesUpdateFolder = ({ optionalCallback }: IMutationHookOptions)
 };
 
 export const useFilesDeleteFolder = ({ optionalCallback }: IMutationHookOptions) => {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationKey: [listOfQueryKeys.files.folders, "delete"],
     mutationFn: filesDeleteFolderFn,
-    onSuccess: (res) => {
+    onSuccess: (res, variables) => {
       if (isSuccessResponse(res?.data.statusCode)) {
+        queryClient.invalidateQueries({ queryKey: [listOfQueryKeys.files.folders, variables.tripId] });
         optionalCallback();
       }
     },
@@ -77,11 +81,13 @@ export const useFilesDeleteFolder = ({ optionalCallback }: IMutationHookOptions)
 };
 
 export const useFilesCreateDocument = ({ optionalCallback }: IMutationHookOptions) => {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationKey: [listOfQueryKeys.files.documents, "create"],
     mutationFn: filesCreateDocumentFn,
-    onSuccess: (res) => {
+    onSuccess: (res, variables) => {
       if (isSuccessResponse(res?.data.statusCode)) {
+        queryClient.invalidateQueries({ queryKey: [listOfQueryKeys.files.documents, variables.tripId, variables.folderId] });
         optionalCallback();
       }
     },

@@ -58,6 +58,22 @@ export const AlbumsPageWrapper = styled(Box)`
     box-shadow: 0 16px 38px rgba(23, 29, 28, 0.16);
   }
 
+  .empty_album_panel {
+    display: grid;
+    min-height: 220px;
+    place-items: center;
+    align-content: center;
+    gap: 12px;
+    border: 1px dashed rgba(0, 104, 95, 0.42);
+    border-radius: 12px;
+    background-color: rgba(0, 131, 120, 0.05);
+    text-align: center;
+
+    .MuiButton-root {
+      margin-top: 6px;
+    }
+  }
+
   .hero_album img {
     position: absolute;
     inset: 0;
@@ -409,6 +425,65 @@ export const AlbumsPageWrapper = styled(Box)`
     span {
       color: #6d7a77;
       font-size: 13px;
+    }
+
+    &.is_dragging {
+      border-color: ${({ theme }) => theme.palette.primary.main};
+      background-color: rgba(0, 131, 120, 0.14);
+      box-shadow: inset 0 0 0 1px ${({ theme }) => theme.palette.primary.main};
+    }
+
+    .MuiButton-root {
+      margin-top: 4px;
+      border-radius: 8px;
+      font-weight: 800;
+    }
+  }
+
+  .selected_photo_list {
+    display: grid;
+    max-height: 232px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    overflow-y: auto;
+  }
+
+  .selected_photo {
+    position: relative;
+    min-width: 0;
+    overflow: hidden;
+    border-radius: 8px;
+    background-color: #f5faf8;
+
+    img {
+      display: block;
+      width: 100%;
+      aspect-ratio: 1;
+      object-fit: cover;
+    }
+
+    span {
+      display: block;
+      overflow: hidden;
+      padding: 7px 8px;
+      color: #45514e;
+      font-size: 13px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .MuiIconButton-root {
+      position: absolute;
+      top: 5px;
+      right: 5px;
+      width: 28px;
+      height: 28px;
+      background-color: rgba(255, 255, 255, 0.88);
+      color: #45514e;
+
+      &:hover {
+        background-color: #ffffff;
+      }
     }
   }
 

@@ -3,6 +3,7 @@ import type { ApiId } from "./common.interface";
 export interface ICreateFolderPayload {
   name: string;
   description?: string;
+  parentId?: ApiId | null;
 }
 
 export type IUpdateFolderPayload = Partial<ICreateFolderPayload>;
@@ -11,6 +12,7 @@ export interface IFolder {
   id: ApiId;
   name: string;
   description?: string;
+  parentId?: ApiId | null;
 }
 
 export interface ICreateDocumentPayload {

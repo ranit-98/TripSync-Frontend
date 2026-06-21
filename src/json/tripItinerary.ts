@@ -11,7 +11,7 @@ export const tripNavItems = [
 export const tripTabs = [
   { icon: 'calendar_month', label: 'Itinerary', active: true },
   { icon: 'payments', label: 'Expenses', active: false },
-  { icon: 'map', label: 'Map', active: false },
+  // { icon: 'map', label: 'Map', active: false },
   { icon: 'chat', label: 'Chat', active: false },
   { icon: 'collections', label: 'Gallery', active: false },
   { icon: 'folder_open', label: 'Files', active: false },

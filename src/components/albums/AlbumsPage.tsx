@@ -13,6 +13,7 @@ import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
 import Link from 'next/link';
+import { useMemo } from 'react';
 
 const toAlbums = (value: unknown): IAlbum[] => {
   if (Array.isArray(value)) return value as IAlbum[];
@@ -34,7 +35,7 @@ const formatTripDates = (startDate?: string, endDate?: string) => {
 
 export default function AlbumsPage() {
   const { data: albumsResponse, isLoading } = useGalleryAlbums();
-  const albums = toAlbums(albumsResponse?.data.data);
+  const albums = useMemo(() => albumsResponse?.pages.flatMap((page) => toAlbums(page.data.data)) ?? [], [albumsResponse?.pages]);
   const featuredAlbum = albums[0];
 
   if (isLoading) return <PageLoader wrapperCls="page-loader" />;

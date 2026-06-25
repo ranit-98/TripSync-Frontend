@@ -9,6 +9,7 @@ import type {
   IBodyPayload,
   ICreateTripPayload,
   IInviteMemberPayload,
+  IPageParams,
   ITrip,
   ITripInvite,
   ITripMember,
@@ -20,8 +21,8 @@ import type {
   IWithTripId,
 } from "@/typescript/interface/api";
 
-export const tripsListFn = async (): ApiMutationResponse<ITrip[]> => {
-  const res = await axiosInstance.get(endpoints.trips.list("v1"));
+export const tripsListFn = async ({ page = 1, limit = 20 }: IPageParams = {}): ApiMutationResponse<ITrip[]> => {
+  const res = await axiosInstance.get(endpoints.trips.list("v1", { page, limit }));
 
   return res;
 };

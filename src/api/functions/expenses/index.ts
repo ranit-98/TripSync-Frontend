@@ -9,6 +9,7 @@ import type {
   IBodyPayload,
   ICreateExpensePayload,
   IExpense,
+  IPageParams,
   ISettlement,
   IUpdateExpensePayload,
   IWithExpenseId,
@@ -16,8 +17,8 @@ import type {
   IWithTripId,
 } from "@/typescript/interface/api";
 
-export const expensesListFn = async ({ tripId }: IWithTripId): ApiMutationResponse<IExpense[]> => {
-  const res = await axiosInstance.get(endpoints.expenses.list("v1", tripId));
+export const expensesListFn = async ({ tripId, page = 1, limit = 10 }: IWithTripId & IPageParams): ApiMutationResponse<IExpense[]> => {
+  const res = await axiosInstance.get(endpoints.expenses.list("v1", tripId), { params: { page, limit } });
 
   return res;
 };
@@ -68,8 +69,13 @@ export const expensesMarkSettlementPaidFn = async ({
   return res;
 };
 
-export const expensesSendSettlementRemindersFn = async ({ tripId }: IWithTripId): ApiMutationResponse => {
-  const res = await axiosInstance.post(endpoints.expenses.sendSettlementReminders("v1", tripId));
+export const expensesConfirmSettlementPaidFn = async ({ settlementId, tripId }: IWithSettlementId): ApiMutationResponse<ISettlement> => {
+  const res = await axiosInstance.post(endpoints.expenses.confirmSettlementPaid("v1", tripId, settlementId));
+  return res;
+};
+
+export const expensesSendSettlementRemindersFn = async ({ tripId, settlementId }: IWithSettlementId): ApiMutationResponse => {
+  const res = await axiosInstance.post(endpoints.expenses.sendSettlementReminders("v1", tripId, settlementId));
 
   return res;
 };

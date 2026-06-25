@@ -68,7 +68,7 @@ export default function LoginForm() {
         isPassword
         labelName="Password"
         name="password"
-        placeHolder=""
+        placeHolder="Enter your password"
         rules={{
           required: 'Password is required',
         }}

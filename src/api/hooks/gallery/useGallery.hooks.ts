@@ -11,13 +11,18 @@ import {
 import type { IMutationHookOptions } from "@/api/hooks/types";
 import { isSuccessResponse } from "@/api/hooks/types";
 import { listOfQueryKeys } from "@/lib/functions/listOfQueryKeys";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useWindowInfiniteScroll } from "@/hooks/useWindowInfiniteScroll";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export const useGalleryAlbums = () => {
-  return useQuery({
+  const query = useInfiniteQuery({
     queryKey: [listOfQueryKeys.gallery.albums],
-    queryFn: galleryAlbumsFn,
+    initialPageParam: 1,
+    queryFn: ({ pageParam }) => galleryAlbumsFn({ page: pageParam }),
+    getNextPageParam: (lastPage) => lastPage.data.pagination?.hasNextPage ? lastPage.data.pagination.page + 1 : undefined,
   });
+  useWindowInfiniteScroll(query.hasNextPage, query.isFetchingNextPage, query.fetchNextPage);
+  return query;
 };
 
 export const useGalleryAlbum = (tripId?: string) => {
@@ -29,11 +34,15 @@ export const useGalleryAlbum = (tripId?: string) => {
 };
 
 export const useGalleryPhotos = (tripId?: string) => {
-  return useQuery({
+  const query = useInfiniteQuery({
     queryKey: [listOfQueryKeys.gallery.photos, tripId],
-    queryFn: () => galleryPhotosFn({ tripId: tripId ?? "" }),
+    initialPageParam: 1,
+    queryFn: ({ pageParam }) => galleryPhotosFn({ tripId: tripId ?? "", page: pageParam }),
+    getNextPageParam: (lastPage) => lastPage.data.pagination?.hasNextPage ? lastPage.data.pagination.page + 1 : undefined,
     enabled: Boolean(tripId),
   });
+  useWindowInfiniteScroll(query.hasNextPage, query.isFetchingNextPage, query.fetchNextPage);
+  return query;
 };
 
 export const useGalleryCreatePhoto = ({ optionalCallback }: IMutationHookOptions) => {

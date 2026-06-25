@@ -2,6 +2,7 @@
 
 import {
   expensesCreateFn,
+  expensesConfirmSettlementPaidFn,
   expensesDeleteFn,
   expensesDetailsFn,
   expensesListFn,
@@ -15,10 +16,10 @@ import { isSuccessResponse } from "@/api/hooks/types";
 import { listOfQueryKeys } from "@/lib/functions/listOfQueryKeys";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-export const useExpensesList = (tripId?: string) => {
+export const useExpensesList = (tripId?: string, page = 1) => {
   return useQuery({
-    queryKey: [listOfQueryKeys.expenses.list, tripId],
-    queryFn: () => expensesListFn({ tripId: tripId ?? "" }),
+    queryKey: [listOfQueryKeys.expenses.list, tripId, page],
+    queryFn: () => expensesListFn({ tripId: tripId ?? "", page }),
     enabled: Boolean(tripId),
   });
 };
@@ -94,6 +95,20 @@ export const useExpensesMarkSettlementPaid = ({ optionalCallback }: IMutationHoo
   return useMutation({
     mutationKey: [listOfQueryKeys.expenses.settlements, "mark-paid"],
     mutationFn: expensesMarkSettlementPaidFn,
+    onSuccess: (res, variables) => {
+      if (isSuccessResponse(res?.data.statusCode)) {
+        queryClient.invalidateQueries({ queryKey: [listOfQueryKeys.expenses.settlements, variables.tripId] });
+        optionalCallback();
+      }
+    },
+  });
+};
+
+export const useExpensesConfirmSettlementPaid = ({ optionalCallback }: IMutationHookOptions) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationKey: [listOfQueryKeys.expenses.settlements, "confirm-paid"],
+    mutationFn: expensesConfirmSettlementPaidFn,
     onSuccess: (res, variables) => {
       if (isSuccessResponse(res?.data.statusCode)) {
         queryClient.invalidateQueries({ queryKey: [listOfQueryKeys.expenses.settlements, variables.tripId] });

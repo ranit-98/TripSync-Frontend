@@ -7,6 +7,20 @@ export interface BaseApiResponse<T = unknown> {
   success?: boolean;
   status?: boolean;
   statusCode?: number;
+  pagination?: IPagination;
+}
+
+export interface IPagination {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  hasNextPage: boolean;
+}
+
+export interface IPageParams {
+  page?: number;
+  limit?: number;
 }
 
 export type ApiResponse<T = unknown> = AxiosResponse<BaseApiResponse<T>>;

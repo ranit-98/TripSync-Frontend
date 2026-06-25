@@ -388,6 +388,7 @@ export const TripItineraryWrapper = styled(Box)`
 
   .member_avatar,
   .member_more,
+  .member_initial.compact,
   .assignee_avatar,
   .feed_avatar {
     border-radius: 50%;
@@ -395,7 +396,8 @@ export const TripItineraryWrapper = styled(Box)`
   }
 
   .member_avatar,
-  .member_more {
+  .member_more,
+  .member_initial.compact {
     width: 40px;
     height: 40px;
     margin-left: -12px;
@@ -406,13 +408,134 @@ export const TripItineraryWrapper = styled(Box)`
     }
   }
 
-  .member_more {
+  .member_more,
+  .member_initial.compact {
     display: grid;
     place-items: center;
+  }
+
+  .member_more {
+    cursor: default;
     background-color: #dee4e1;
     color: ${({ theme }) => theme.palette.text.secondary};
     font-size: 12px;
     font-weight: 800;
+    padding: 0;
+  }
+
+  .member_more_button {
+    cursor: pointer;
+    font-family: inherit;
+
+    &:hover {
+      background-color: #cfd9d5;
+    }
+  }
+
+  .member_initial.compact {
+    background-color: #dae2fd;
+    color: #131b2e;
+    font-size: 14px;
+    font-weight: 800;
+  }
+
+  .members_popover {
+    width: min(300px, calc(100vw - 32px));
+    max-height: 360px;
+    overflow-y: auto;
+    border: 1px solid rgba(188, 201, 198, 0.45);
+    background-color: #ffffff;
+    padding: 12px;
+  }
+
+  .members_popover_header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 2px 4px 10px;
+
+    h3 {
+      color: ${({ theme }) => theme.palette.text.primary};
+      font-size: 15px;
+      font-weight: 800;
+      line-height: 20px;
+    }
+
+    span {
+      display: grid;
+      min-width: 28px;
+      height: 28px;
+      place-items: center;
+      border-radius: 999px;
+      background-color: #eef5f2;
+      color: ${({ theme }) => theme.palette.primary.main};
+      font-size: 12px;
+      font-weight: 800;
+    }
+  }
+
+  .members_popover_item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-radius: 8px;
+    padding: 8px 6px;
+
+    &:hover {
+      background-color: #f4f8f6;
+    }
+
+    strong,
+    small {
+      display: block;
+    }
+
+    strong {
+      overflow: hidden;
+      max-width: 190px;
+      color: ${({ theme }) => theme.palette.text.primary};
+      font-size: 14px;
+      font-weight: 800;
+      line-height: 18px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    small {
+      color: #6d7a77;
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 16px;
+    }
+  }
+
+  .members_popover_avatar,
+  .members_popover_initial {
+    width: 36px;
+    height: 36px;
+    flex: 0 0 36px;
+    border-radius: 50%;
+  }
+
+  .members_popover_avatar {
+    object-fit: cover;
+  }
+
+  .members_popover_initial {
+    display: grid;
+    place-items: center;
+    background-color: #dae2fd;
+    color: #131b2e;
+    font-size: 13px;
+    font-weight: 800;
+  }
+
+  .members_popover_empty {
+    color: #6d7a77;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 10px 4px 4px;
   }
 
   .invite_btn {
@@ -1382,6 +1505,7 @@ export const TripItineraryWrapper = styled(Box)`
     align-items: center;
     justify-content: space-between;
     gap: 14px;
+    flex-wrap: wrap;
     border-radius: 8px;
     padding: 16px;
 
@@ -1401,6 +1525,21 @@ export const TripItineraryWrapper = styled(Box)`
       background-color: rgba(176, 94, 61, 0.05);
     }
 
+  }
+
+  .settlement_card_action {
+    flex: 0 0 100%;
+    min-height: 36px;
+    margin-top: 2px;
+    border-radius: 9px;
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: none;
+
+    &.reminder {
+      border-color: rgba(146, 70, 40, 0.35);
+      color: #924628;
+    }
   }
 
   .person_avatar {
@@ -1637,11 +1776,18 @@ export const TripItineraryWrapper = styled(Box)`
       background-color: #f5faf8;
     }
 
-    .MuiInputBase-input,
+    .MuiOutlinedInput-root:not(.MuiInputBase-multiline) {
+      min-height: 48px;
+      box-sizing: border-box;
+    }
+
+    .MuiOutlinedInput-root:not(.MuiInputBase-multiline) .MuiInputBase-input,
     .MuiSelect-select {
-      min-height: 22px;
-      padding-top: 11px;
-      padding-bottom: 11px;
+      height: 46px;
+      min-height: 46px;
+      box-sizing: border-box;
+      padding-top: 0;
+      padding-bottom: 0;
     }
 
     .MuiFormHelperText-root {
@@ -1724,6 +1870,117 @@ export const TripItineraryWrapper = styled(Box)`
   .expense_error {
     display: block;
     margin-top: 6px;
+  }
+
+  .split_amounts_table {
+    overflow: hidden;
+    border: 1px solid rgba(188, 201, 198, 0.45);
+    border-radius: 10px;
+  }
+
+  .split_amounts_head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    background-color: rgba(0, 131, 120, 0.06);
+    border-bottom: 1px solid rgba(188, 201, 198, 0.3);
+
+    span {
+      color: #6d7a77;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+  }
+
+  .split_amounts_row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 16px;
+    border-bottom: 1px solid rgba(188, 201, 198, 0.2);
+    background-color: #f9fbfa;
+    transition: background-color 140ms ease;
+
+    &:last-of-type {
+      border-bottom: 0;
+    }
+
+    &:hover {
+      background-color: rgba(0, 131, 120, 0.04);
+    }
+  }
+
+  .split_amounts_member {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    flex: 1;
+
+    span {
+      min-width: 0;
+      overflow: hidden;
+      color: ${({ theme }) => theme.palette.text.primary};
+      font-size: 13px;
+      font-weight: 700;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+
+  .split_amount_input {
+    width: 140px;
+    flex: 0 0 140px;
+
+    .MuiOutlinedInput-root {
+      background-color: #ffffff;
+      border-radius: 8px;
+    }
+
+    .MuiInputBase-input {
+      font-weight: 700;
+      text-align: right;
+    }
+  }
+
+  .split_amounts_footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 10px 16px;
+    border-top: 1px solid rgba(188, 201, 198, 0.3);
+
+    span {
+      color: #6d7a77;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    strong {
+      font-size: 15px;
+    }
+
+    &.balanced {
+      background-color: rgba(0, 131, 120, 0.07);
+      strong { color: ${({ theme }) => theme.palette.primary.main}; }
+    }
+
+    &.unbalanced {
+      background-color: rgba(176, 94, 61, 0.06);
+      strong { color: #924628; }
+    }
+  }
+
+  .split_remaining_hint {
+    width: 100%;
+    display: block;
+    font-weight: 600;
   }
 
   .expense_modal_footer {
@@ -3495,15 +3752,20 @@ export const TripItineraryWrapper = styled(Box)`
   .files_grid {
     display: grid;
     grid-template-columns: 360px minmax(0, 1fr);
+    align-items: start;
     gap: 24px;
   }
 
   .folder_panel,
   .documents_panel {
+    display: flex;
+    height: clamp(560px, calc(100vh - 230px), 760px);
+    min-height: 0;
+    flex-direction: column;
     border: 1px solid rgba(188, 201, 198, 0.35);
     border-radius: 12px;
     background-color: #ffffff;
-    box-shadow: 0 6px 20px rgba(23, 29, 28, 0.06);
+    box-shadow: 0 14px 34px rgba(23, 29, 28, 0.08);
   }
 
   .folder_panel {
@@ -3518,7 +3780,8 @@ export const TripItineraryWrapper = styled(Box)`
     gap: 16px;
     padding: 20px 24px;
     border-bottom: 1px solid rgba(188, 201, 198, 0.24);
-    background-color: #f0f5f2;
+    background: linear-gradient(180deg, #f7fbfa 0%, #eef6f3 100%);
+    flex: 0 0 auto;
 
     h3 {
       color: ${({ theme }) => theme.palette.text.primary};
@@ -3540,6 +3803,12 @@ export const TripItineraryWrapper = styled(Box)`
     flex-wrap: wrap;
     justify-content: flex-end;
     gap: 8px;
+
+    .MuiButton-root {
+      border-radius: 8px;
+      font-weight: 800;
+      text-transform: none;
+    }
   }
 
   .folder_list {
@@ -3549,9 +3818,13 @@ export const TripItineraryWrapper = styled(Box)`
   }
 
   .folder_tree {
-    display: grid;
+    display: block;
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
     gap: 4px;
-    padding: 12px;
+    padding: 12px 12px 16px;
+    scrollbar-gutter: stable;
   }
 
   .folder_tree_node {
@@ -3561,11 +3834,14 @@ export const TripItineraryWrapper = styled(Box)`
   .folder_tree_row {
     display: flex;
     align-items: center;
+    min-height: 42px;
     min-width: 0;
     border-radius: 8px;
+    transition: background-color 160ms ease, box-shadow 160ms ease;
 
     &.active {
       background-color: rgba(0, 131, 120, 0.1);
+      box-shadow: inset 3px 0 0 ${({ theme }) => theme.palette.primary.main};
 
       .folder_action {
         display: inline-flex;
@@ -3585,6 +3861,7 @@ export const TripItineraryWrapper = styled(Box)`
 
     .folder_action {
       display: none;
+      color: #6b7774;
     }
 
     &:hover .folder_action,
@@ -3598,6 +3875,7 @@ export const TripItineraryWrapper = styled(Box)`
       justify-content: flex-start;
       overflow: hidden;
       color: #263432;
+      font-weight: 800;
       text-overflow: ellipsis;
       text-transform: none;
       white-space: nowrap;
@@ -3707,6 +3985,13 @@ export const TripItineraryWrapper = styled(Box)`
     overflow: hidden;
   }
 
+  .documents_panel_body {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    scrollbar-gutter: stable;
+  }
+
   .documents_header .MuiButton-root {
     border-radius: 8px;
     font-weight: 800;
@@ -3717,10 +4002,10 @@ export const TripItineraryWrapper = styled(Box)`
     align-items: center;
     gap: 16px;
     margin: 20px 24px;
-    padding: 18px;
+    padding: 18px 20px;
     border: 1px dashed rgba(0, 104, 95, 0.38);
-    border-radius: 10px;
-    background-color: rgba(0, 131, 120, 0.06);
+    border-radius: 12px;
+    background: linear-gradient(135deg, rgba(0, 131, 120, 0.08), rgba(218, 226, 253, 0.32));
     color: ${({ theme }) => theme.palette.primary.main};
 
     svg {
@@ -3777,6 +4062,7 @@ export const TripItineraryWrapper = styled(Box)`
 
   .document_table {
     overflow-x: auto;
+    border-top: 1px solid rgba(188, 201, 198, 0.24);
   }
 
   .document_row {
@@ -3784,17 +4070,27 @@ export const TripItineraryWrapper = styled(Box)`
     grid-template-columns: minmax(260px, 1fr) minmax(180px, 0.7fr) 116px;
     align-items: center;
     min-width: 640px;
-    min-height: 76px;
+    min-height: 80px;
     border-top: 1px solid rgba(188, 201, 198, 0.24);
+    background-color: #ffffff;
+    transition: background-color 140ms ease;
 
     > * {
       padding: 0 20px;
     }
+
+    &:hover:not(.document_head) {
+      background-color: #f8fbfa;
+    }
   }
 
   .document_head {
+    position: sticky;
+    top: 0;
+    z-index: 1;
     min-height: 52px;
-    background-color: #f0f5f2;
+    border-top: 0;
+    background-color: #eef5f2;
     color: #3d4947;
     font-size: 12px;
     font-weight: 800;
@@ -3803,8 +4099,10 @@ export const TripItineraryWrapper = styled(Box)`
   }
 
   .document_name {
+    display: flex;
     align-items: center;
     gap: 12px;
+    min-width: 0;
 
     strong,
     small {
@@ -3812,10 +4110,13 @@ export const TripItineraryWrapper = styled(Box)`
     }
 
     strong {
+      overflow: hidden;
       color: ${({ theme }) => theme.palette.text.primary};
       font-size: 14px;
       font-weight: 800;
       line-height: 20px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     small {
@@ -3836,10 +4137,46 @@ export const TripItineraryWrapper = styled(Box)`
     color: ${({ theme }) => theme.palette.primary.main};
   }
 
+  .document_file_meta {
+    min-width: 0;
+
+    strong,
+    small {
+      display: block;
+    }
+
+    strong {
+      overflow: hidden;
+      color: #52605d;
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 20px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    small {
+      color: #87908d;
+      font-size: 12px;
+      line-height: 18px;
+    }
+  }
+
   .document_actions {
     display: flex;
     align-items: center;
     gap: 4px;
+
+    .MuiIconButton-root {
+      width: 34px;
+      height: 34px;
+      color: #6b7774;
+
+      &:hover {
+        background-color: rgba(0, 131, 120, 0.1);
+        color: ${({ theme }) => theme.palette.primary.main};
+      }
+    }
   }
 
   .documents_empty {
@@ -3929,6 +4266,268 @@ export const TripItineraryWrapper = styled(Box)`
     border-radius: 16px;
     background-color: rgba(255, 255, 255, 0.96);
     box-shadow: 0 24px 48px rgba(23, 29, 28, 0.2);
+  }
+
+  .preview_overlay {
+    z-index: 1500;
+    padding: 20px;
+  }
+
+  .document_preview_modal {
+    width: min(1180px, 96vw);
+    height: min(860px, 92vh);
+    max-height: 92vh;
+    background-color: #ffffff;
+  }
+
+  .preview_modal_header {
+    flex: 0 0 auto;
+
+    h3 {
+      overflow: hidden;
+      max-width: min(760px, 66vw);
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+
+  .document_preview_body {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    background-color: #eef3f1;
+  }
+
+  /* PDF / video / image / object all fill the preview body */
+  .iframe_document_preview,
+  .video_document_preview,
+  .image_document_preview {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border: 0;
+  }
+
+  /* <object> used for PDF blob rendering needs the same sizing */
+  object.iframe_document_preview {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  .iframe_document_preview {
+    background-color: #ffffff;
+  }
+
+  .image_document_preview {
+    object-fit: contain;
+    padding: 20px;
+  }
+
+  .pdf_blob_preview {
+    background-color: #202423;
+  }
+
+  .video_document_preview {
+    background-color: #17211f;
+  }
+
+  /* Spinner shown while PDF / text / spreadsheet loads */
+  .pdf_preview_loading {
+    display: flex;
+    height: 100%;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    color: #6d7a77;
+
+    p {
+      font-size: 14px;
+      font-weight: 600;
+    }
+  }
+
+  /* Wrapper used for Office viewer (iframe + overlay) */
+  .iframe_loader_wrap {
+    position: relative;
+    width: 100%;
+    height: 100%;
+  }
+
+  .iframe_loading_overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    background-color: #eef3f1;
+    color: #6d7a77;
+
+    p {
+      font-size: 14px;
+      font-weight: 600;
+    }
+  }
+
+  .iframe_loader_wrap iframe {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+  }
+
+  /* Open-in-new-tab + close button cluster in preview header */
+  .preview_header_actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+
+  .text_document_preview {
+    height: 100%;
+    overflow: auto;
+    background-color: #ffffff;
+    padding: 20px;
+
+    pre {
+      margin: 0;
+      color: #24312f;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 13px;
+      line-height: 21px;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+  }
+
+  .spreadsheet_preview {
+    display: flex;
+    height: 100%;
+    min-height: 0;
+    flex-direction: column;
+    background-color: #ffffff;
+  }
+
+  .spreadsheet_tabs {
+    display: flex;
+    flex: 0 0 auto;
+    gap: 6px;
+    overflow-x: auto;
+    border-bottom: 1px solid rgba(188, 201, 198, 0.34);
+    background-color: #f5faf8;
+    padding: 10px 14px 0;
+
+    button {
+      min-height: 36px;
+      border: 1px solid transparent;
+      border-bottom: 0;
+      border-radius: 8px 8px 0 0;
+      background-color: transparent;
+      color: #52605d;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 800;
+      padding: 0 14px;
+    }
+
+    button.active {
+      border-color: rgba(188, 201, 198, 0.5);
+      background-color: #ffffff;
+      color: ${({ theme }) => theme.palette.primary.main};
+    }
+  }
+
+  .spreadsheet_table_wrap {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    padding: 18px;
+
+    table {
+      width: max-content;
+      min-width: 100%;
+      border-collapse: collapse;
+      background-color: #ffffff;
+      box-shadow: 0 0 0 1px rgba(188, 201, 198, 0.36);
+    }
+
+    td {
+      min-width: 130px;
+      max-width: 280px;
+      border: 1px solid rgba(188, 201, 198, 0.36);
+      color: #24312f;
+      font-size: 13px;
+      line-height: 20px;
+      overflow: hidden;
+      padding: 9px 12px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .header_cell {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      background-color: #eef6f3;
+      color: ${({ theme }) => theme.palette.text.primary};
+      font-weight: 900;
+    }
+  }
+
+  .spreadsheet_preview_status {
+    display: grid;
+    height: 100%;
+    place-items: center;
+    color: #6d7a77;
+    font-size: 14px;
+    font-weight: 800;
+  }
+
+  .document_preview_fallback {
+    display: grid;
+    min-height: 100%;
+    place-items: center;
+    align-content: center;
+    gap: 10px;
+    padding: 32px;
+    color: #6d7a77;
+    text-align: center;
+
+    > svg {
+      width: 52px;
+      height: 52px;
+      color: ${({ theme }) => theme.palette.primary.main};
+    }
+
+    h4 {
+      color: ${({ theme }) => theme.palette.text.primary};
+      font-size: 20px;
+      font-weight: 800;
+    }
+
+    p {
+      max-width: 360px;
+      font-size: 14px;
+      line-height: 22px;
+    }
+
+    .MuiButton-root {
+      margin-top: 8px;
+      border-radius: 8px;
+      font-weight: 800;
+      text-transform: none;
+    }
+  }
+
+  .preview_modal_footer {
+    flex: 0 0 auto;
   }
 
   .folder_modal {

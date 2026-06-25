@@ -68,7 +68,7 @@ export const LoginPageWrapper = styled(Box)`
     position: absolute;
     z-index: 0;
     inset: 0;
-    background-color: #172124;
+    background-color: #102a2c;
   }
 
   .auth_hero_img {
@@ -76,17 +76,17 @@ export const LoginPageWrapper = styled(Box)`
     width: 100%;
     height: 100%;
     object-fit: cover;
+    object-position: center;
+    filter: saturate(1.08) contrast(1.04);
   }
 
   .auth_hero_overlay {
     position: absolute;
     inset: 0;
-    background: linear-gradient(
-      180deg,
-      rgba(0, 0, 0, 0.02) 0%,
-      rgba(0, 0, 0, 0.22) 58%,
-      rgba(0, 0, 0, 0.44) 100%
-    );
+    background:
+      radial-gradient(ellipse 30% 42% at 50% 50%, rgba(8, 33, 35, 0.62) 0%, rgba(8, 33, 35, 0.34) 54%, transparent 100%),
+      linear-gradient(180deg, rgba(8, 33, 35, 0.08) 0%, rgba(8, 33, 35, 0.20) 100%),
+      linear-gradient(90deg, rgba(5, 27, 30, 0.16) 0%, transparent 45%, rgba(5, 27, 30, 0.12) 100%);
   }
 
   .auth_card_body {
@@ -137,14 +137,16 @@ export const LoginCardWrapper = styled(Paper)`
   z-index: 1;
   width: 100%;
   max-width: 480px;
+  min-height: 590px;
   padding: 32px 34px 30px;
-  border: 1px solid rgba(226, 232, 240, 0.62);
+  border: 1px solid rgba(255, 255, 255, 0.72);
   border-radius: 32px;
-  background-color: rgba(255, 255, 255, 0.72);
-  box-shadow: 0 28px 70px rgba(23, 29, 28, 0.34);
-  backdrop-filter: blur(22px);
+  background-color: rgba(252, 254, 253, 0.92);
+  box-shadow: 0 18px 42px rgba(9, 34, 35, 0.22);
+  backdrop-filter: none;
 
   @media (max-width: 599px) {
+    min-height: 0;
     padding: 24px;
   }
 `;

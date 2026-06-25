@@ -3,6 +3,7 @@
 import { AppSidebarWrapper } from '@/styles/layout/appSidebar.styles';
 import { useNotificationsList } from '@/api/hooks/notifications/useNotifications.hooks';
 import { useTripsPendingInvites } from '@/api/hooks/trips/useTrips.hooks';
+import { useAuthLogout } from '@/api/hooks/auth/useAuth.hooks';
 import { mergeNotifications, notificationList, pendingInviteNotifications } from '@/lib/functions/notifications.lib';
 import AddIcon from '@mui/icons-material/Add';
 import CollectionsIcon from '@mui/icons-material/Collections';
@@ -18,6 +19,7 @@ import Drawer from '@mui/material/Drawer';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 type SidebarKey = 'dashboard' | 'trips' | 'albums' | 'notifications' | 'settings';
@@ -42,6 +44,8 @@ export default function AppSidebar({
   showNewTrip = false,
 }: AppSidebarProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const router = useRouter();
+  const logout = useAuthLogout({ optionalCallback: () => router.replace('/login') });
   const { data: notificationsResponse } = useNotificationsList();
   const { data: pendingInvitesResponse } = useTripsPendingInvites();
   const notifications = mergeNotifications(
@@ -64,7 +68,7 @@ export default function AppSidebar({
         })}
       </Box>
       {showNewTrip && <Button className="new_trip_btn" component={Link} href="/trips/create" startIcon={<AddIcon />} variant="contained">New Trip</Button>}
-      <Box className="nav_link logout_link" component="a" href="#"><LogoutIcon /><span>Logout</span></Box>
+      <Button className="nav_link logout_link" disabled={logout.isPending} onClick={() => logout.mutate()} startIcon={<LogoutIcon />}>{logout.isPending ? 'Logging out...' : 'Logout'}</Button>
     </>
   );
 

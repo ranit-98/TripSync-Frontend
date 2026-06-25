@@ -11,7 +11,7 @@ import type { IMutationHookOptions } from "@/api/hooks/types";
 import { isSuccessResponse } from "@/api/hooks/types";
 import { listOfQueryKeys } from "@/lib/functions/listOfQueryKeys";
 import { useAuthStore } from "@/store";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 
 export const useAuthRegister = ({ optionalCallback }: IMutationHookOptions) => {
@@ -70,6 +70,7 @@ export const useAuthRefresh = ({ optionalCallback }: IMutationHookOptions) => {
 
 export const useAuthLogout = ({ optionalCallback }: IMutationHookOptions) => {
   const clearAuth = useAuthStore((state) => state.clearAuth);
+  const queryClient = useQueryClient();
 
   return useMutation({
     mutationKey: [listOfQueryKeys.auth.logout],
@@ -77,8 +78,15 @@ export const useAuthLogout = ({ optionalCallback }: IMutationHookOptions) => {
     onSuccess: (res) => {
       if (isSuccessResponse(res?.data.statusCode)) {
         clearAuth();
+        queryClient.clear();
         optionalCallback();
       }
+    },
+    onError: () => {
+      // The local session must still end when the server cookie has already expired.
+      clearAuth();
+      queryClient.clear();
+      optionalCallback();
     },
   });
 };

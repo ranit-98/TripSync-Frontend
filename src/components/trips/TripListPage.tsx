@@ -25,7 +25,7 @@ import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 const formatTripDateRange = (startDate?: string, endDate?: string) => {
   if (!startDate || !endDate) {
@@ -166,12 +166,28 @@ const getPendingInvite = (notification: INotification): PendingInvite | null => 
 export default function TripListPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [dismissedInviteIds, setDismissedInviteIds] = useState<string[]>([]);
-  const { data: tripsResponse, isLoading } = useTripsList();
+  const { data: tripsResponse, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } = useTripsList();
   const { data: notificationsResponse } = useNotificationsList();
   const { data: pendingInvitesResponse } = useTripsPendingInvites();
   const acceptInvite = useTripsAcceptInvite({ optionalCallback: () => undefined });
   const declineInvite = useTripsDeclineInvite({ optionalCallback: () => undefined });
-  const trips = useMemo(() => tripsResponse?.data.data ?? [], [tripsResponse?.data.data]);
+  const loadMoreRef = useRef<HTMLDivElement>(null);
+  const trips = useMemo(
+    () => tripsResponse?.pages.flatMap((page) => page.data.data ?? []) ?? [],
+    [tripsResponse?.pages]
+  );
+  useEffect(() => {
+    const target = loadMoreRef.current;
+    if (!target || !hasNextPage) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !isFetchingNextPage) fetchNextPage();
+      },
+      { rootMargin: '240px' }
+    );
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
   const pendingInvites = useMemo(
     () => {
       const invitesFromApi = toArray<ITripInvite>(pendingInvitesResponse?.data.data)
@@ -380,6 +396,8 @@ export default function TripListPage() {
               )}
             </Box>
           )}
+          {hasNextPage && <Box ref={loadMoreRef} sx={{ height: 1 }} />}
+          {isFetchingNextPage && <Typography align="center" className="page_subtitle">Loading more trips...</Typography>}
         </Box>
       </Box>
     </TripListPageWrapper>

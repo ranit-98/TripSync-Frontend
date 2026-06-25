@@ -2,6 +2,7 @@
 
 import {
   useExpensesCreate,
+  useExpensesConfirmSettlementPaid,
   useExpensesDelete,
   useExpensesList,
   useExpensesMarkSettlementPaid,
@@ -45,11 +46,12 @@ import IconButton from '@mui/material/IconButton';
 import InputAdornment from '@mui/material/InputAdornment';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
+import Pagination from '@mui/material/Pagination';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
-import { useMemo, useState } from 'react';
-import { Controller, type SubmitHandler, useForm } from 'react-hook-form';
+import { useEffect, useMemo, useState } from 'react';
+import { Controller, type SubmitHandler, useForm, useWatch } from 'react-hook-form';
 import {
   addExpenseSchema,
   expenseCategories,
@@ -240,10 +242,36 @@ function AddExpenseModal({
 }) {
   const defaultMemberIds = members.map((member) => member.userId);
   const initialSplitIds = initialExpense?.splits?.map((split) => split.userId) ?? defaultMemberIds;
+
+  const buildEqualAmounts = (ids: string[], total: number): Record<string, number> => {
+    if (!ids.length) return {};
+    const each = Number((total / ids.length).toFixed(2));
+    const result: Record<string, number> = {};
+    let assigned = 0;
+    ids.forEach((id, i) => {
+      if (i === ids.length - 1) {
+        result[id] = Number((total - assigned).toFixed(2));
+      } else {
+        result[id] = each;
+        assigned += each;
+      }
+    });
+    return result;
+  };
+
+  const initialSplitAmounts: Record<string, number> = (() => {
+    if (initialExpense?.splits?.length) {
+      return Object.fromEntries(initialExpense.splits.map((s) => [s.userId, s.amount]));
+    }
+    return buildEqualAmounts(initialSplitIds.length ? initialSplitIds : defaultMemberIds, initialExpense?.amount ?? 0);
+  })();
+
   const {
     control,
     formState: { errors },
     handleSubmit,
+    setValue,
+    getValues,
   } = useForm<AddExpenseFormValues>({
     defaultValues: {
       amount: initialExpense?.amount ?? 0,
@@ -253,10 +281,23 @@ function AddExpenseModal({
       notes: initialExpense?.notes ?? '',
       paidBy: initialExpense?.paidByUserId ?? defaultMemberIds[0] ?? '',
       splitWith: initialSplitIds.length ? initialSplitIds : defaultMemberIds,
+      splitAmounts: initialSplitAmounts,
     },
     mode: 'onBlur',
     resolver: yupResolver(addExpenseSchema),
   });
+
+  const watchedAmount = useWatch({ control, name: 'amount' });
+  const watchedSplitWith = useWatch({ control, name: 'splitWith' });
+
+  // Auto-recalculate equal split when member selection or amount changes
+  useEffect(() => {
+    const ids = getValues('splitWith');
+    const total = getValues('amount');
+    if (!ids?.length || !total) return;
+    setValue('splitAmounts', buildEqualAmounts(ids, total));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [watchedSplitWith, watchedAmount]);
 
   const onSubmit: SubmitHandler<AddExpenseFormValues> = (values) => {
     onSubmitExpense(values);
@@ -382,6 +423,7 @@ function AddExpenseModal({
             />
           </Box>
 
+          {/* ── Split with: member checkboxes ── */}
           <Box className="expense_field full">
             <Typography className="expense_modal_label">Split with</Typography>
             <Controller
@@ -402,11 +444,10 @@ function AddExpenseModal({
                           checked={active}
                           type="checkbox"
                           onChange={() => {
-                            const nextValue = active
-                              ? field.value.filter((value) => value !== member.userId)
+                            const nextIds = active
+                              ? field.value.filter((v) => v !== member.userId)
                               : [...field.value, member.userId];
-
-                            field.onChange(nextValue);
+                            field.onChange(nextIds);
                           }}
                         />
                         <ImageComp alt="" className="split_avatar" isAvatar src={member.avatar} />
@@ -423,6 +464,81 @@ function AddExpenseModal({
               </Typography>
             )}
           </Box>
+
+          {/* ── Split amounts table (shown after member selection) ── */}
+          {watchedSplitWith?.length > 0 && (
+            <Box className="expense_field full">
+              <Typography className="expense_modal_label">Split amounts</Typography>
+              <Controller
+                control={control}
+                name="splitAmounts"
+                render={({ field: amountsField }) => {
+                  const selectedMembers = members.filter((m) => watchedSplitWith.includes(m.userId));
+                  const currentAmounts = amountsField.value as Record<string, number>;
+                  const total = Number(watchedAmount) || 0;
+                  const assignedSum = watchedSplitWith.reduce(
+                    (acc, id) => acc + (Number(currentAmounts[id]) || 0),
+                    0
+                  );
+                  const remaining = Number((total - assignedSum).toFixed(2));
+                  const isBalanced = Math.abs(remaining) < 0.01;
+
+                  return (
+                    <Box className="split_amounts_table">
+                      <Box className="split_amounts_head">
+                        <span>Member</span>
+                        <span>Amount ({currency})</span>
+                      </Box>
+                      {selectedMembers.map((member) => (
+                        <Box className="split_amounts_row" key={member.userId}>
+                          <Box className="split_amounts_member">
+                            <ImageComp alt="" className="split_avatar" isAvatar src={member.avatar} />
+                            <span>{member.label}</span>
+                          </Box>
+                          <TextField
+                            className="split_amount_input"
+                            size="small"
+                            type="number"
+                            value={currentAmounts[member.userId] ?? ''}
+                            onChange={(e) => {
+                              amountsField.onChange({
+                                ...currentAmounts,
+                                [member.userId]: Number(e.target.value),
+                              });
+                            }}
+                            slotProps={{
+                              htmlInput: { min: 0, step: 0.01 },
+                              input: {
+                                startAdornment: (
+                                  <InputAdornment position="start">{currency}</InputAdornment>
+                                ),
+                              },
+                            }}
+                          />
+                        </Box>
+                      ))}
+                      <Box className={`split_amounts_footer${isBalanced ? ' balanced' : ' unbalanced'}`}>
+                        <span>Remaining</span>
+                        <strong>
+                          {remaining > 0 ? '+' : ''}{remaining.toFixed(2)}
+                        </strong>
+                        {!isBalanced && (
+                          <Typography className="split_remaining_hint" color="error" variant="caption">
+                            Split amounts must equal the total ({currency} {total.toFixed(2)})
+                          </Typography>
+                        )}
+                      </Box>
+                    </Box>
+                  );
+                }}
+              />
+              {errors.splitAmounts?.message && (
+                <Typography className="expense_error" color="error" variant="caption">
+                  {String(errors.splitAmounts.message)}
+                </Typography>
+              )}
+            </Box>
+          )}
 
           <Box className="expense_field full">
             <Typography className="expense_modal_label">Notes</Typography>
@@ -465,10 +581,11 @@ export default function ExpensesTab({ tripId }: { tripId: string }) {
   const [deleteExpenseCandidate, setDeleteExpenseCandidate] = useState<IExpense | null>(null);
   const [filterAnchor, setFilterAnchor] = useState<null | HTMLElement>(null);
   const [categoryFilter, setCategoryFilter] = useState('all');
+  const [expensePage, setExpensePage] = useState(1);
   const currentUser = useAuthStore((state) => state.user);
   const { data: tripResponse } = useTripDetails(tripId);
   const { data: membersResponse } = useTripMembers(tripId);
-  const { data: expensesResponse, isLoading: isExpensesLoading } = useExpensesList(tripId);
+  const { data: expensesResponse, isLoading: isExpensesLoading } = useExpensesList(tripId, expensePage);
   const { data: settlementsResponse, isLoading: isSettlementsLoading } = useExpensesSettlements(tripId);
   const createExpense = useExpensesCreate({ optionalCallback: () => setShowAddExpenseModal(false) });
   const updateExpense = useExpensesUpdate({ optionalCallback: () => setEditingExpense(null) });
@@ -479,6 +596,7 @@ export default function ExpensesTab({ tripId }: { tripId: string }) {
     },
   });
   const markSettlementPaid = useExpensesMarkSettlementPaid({ optionalCallback: () => undefined });
+  const confirmSettlementPaid = useExpensesConfirmSettlementPaid({ optionalCallback: () => undefined });
   const sendReminders = useExpensesSendSettlementReminders({ optionalCallback: () => undefined });
   const trip = tripResponse?.data.data ?? null;
   const currency = trip?.currency || 'USD';
@@ -494,6 +612,7 @@ export default function ExpensesTab({ tripId }: { tripId: string }) {
     () => toArray<IExpense>(expensesResponse?.data.data),
     [expensesResponse?.data.data]
   );
+  const expensePagination = expensesResponse?.data.pagination;
   const settlements = useMemo(
     () => toArray<ISettlement>(settlementsResponse?.data.data),
     [settlementsResponse?.data.data]
@@ -506,10 +625,9 @@ export default function ExpensesTab({ tripId }: { tripId: string }) {
     [categoryFilter, expenses]
   );
   const totalSpent = expenses.reduce((total, expense) => total + Number(expense.amount || 0), 0);
-  const plannedBudget = Number(trip?.budget || 0);
-  const utilization = plannedBudget > 0 ? Math.round((totalSpent / plannedBudget) * 100) : 0;
-  const activeSettlement = settlements.find(isSettlementOutstanding);
-  const hasOutstandingSettlement = Boolean(activeSettlement);
+  const activeSettlement = settlements.find((settlement) => settlement.status === 'pending' && settlement.fromUserId === currentUser?.id);
+  const pendingConfirmation = settlements.find((settlement) => settlement.status === 'payment_declared' && settlement.toUserId === currentUser?.id);
+  const hasOutstandingSettlement = Boolean(activeSettlement || pendingConfirmation);
   const netBalance = settlements.reduce((total, settlement) => {
     if (!isSettlementOutstanding(settlement)) return total;
 
@@ -536,7 +654,8 @@ export default function ExpensesTab({ tripId }: { tripId: string }) {
   }
 
   const getExpensePayload = (values: AddExpenseFormValues): ICreateExpensePayload => {
-    const splitAmount = Number((values.amount / values.splitWith.length).toFixed(2));
+    // Use custom split amounts; fall back to equal split if amounts map is empty
+    const equalAmount = Number((values.amount / values.splitWith.length).toFixed(2));
 
     return {
       amount: values.amount,
@@ -547,7 +666,7 @@ export default function ExpensesTab({ tripId }: { tripId: string }) {
       notes: values.notes.trim() || undefined,
       paidByUserId: values.paidBy,
       splits: values.splitWith.map((userId) => ({
-        amount: splitAmount,
+        amount: Number(values.splitAmounts?.[userId] ?? equalAmount),
         userId,
       })),
     };
@@ -571,12 +690,6 @@ export default function ExpensesTab({ tripId }: { tripId: string }) {
     deleteExpense.mutate({ expenseId: deleteExpenseCandidate.id, tripId });
   };
 
-  const handleMarkSettled = () => {
-    if (!activeSettlement?.id) return;
-
-    markSettlementPaid.mutate({ settlementId: activeSettlement.id, tripId });
-  };
-
   return (
     <Box className="tab_page padded_page">
       {showBudget ? (
@@ -590,21 +703,21 @@ export default function ExpensesTab({ tripId }: { tripId: string }) {
           </IconButton>
           <Stack className="budget_content" direction="row">
             <Box>
-              <Typography className="eyebrow">Total Trip Budget</Typography>
+              <Typography className="eyebrow">Total spent so far</Typography>
               <Stack className="budget_amount" direction="row">
                 <Typography component="h2">{formatMoney(totalSpent, currency)}</Typography>
                 <span>
-                  / {plannedBudget ? `${formatMoney(plannedBudget, currency)} planned` : 'Budget not set'}
+                  / {expenses.length} recorded expense{expenses.length === 1 ? '' : 's'}
                 </span>
               </Stack>
             </Box>
             <Box className="budget_progress">
               <Stack direction="row">
-                <span>Budget Utilization</span>
-                <strong>{plannedBudget ? `${utilization}%` : '--'}</strong>
+                <span>Spending activity</span>
+                <strong>Live</strong>
               </Stack>
               <Box className="progress_track">
-                <span style={{ width: `${Math.min(utilization, 100)}%` }} />
+                <span style={{ width: '100%' }} />
               </Box>
             </Box>
           </Stack>
@@ -722,6 +835,11 @@ export default function ExpensesTab({ tripId }: { tripId: string }) {
               </Box>
             )}
           </Box>
+          {expensePagination && expensePagination.totalPages > 1 && (
+            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+              <Pagination count={expensePagination.totalPages} page={expensePage} onChange={(_, page) => setExpensePage(page)} />
+            </Box>
+          )}
         </Box>
 
         <Box className="settlement_summary">
@@ -732,7 +850,7 @@ export default function ExpensesTab({ tripId }: { tripId: string }) {
             {isSettlementsLoading ? (
               <Box className="empty_inline">Loading settlements...</Box>
             ) : settlements.length ? (
-              settlements.slice(0, 3).map((settlement) => {
+              settlements.map((settlement) => {
                 const settlementText = getSettlementText(settlement, membersById, currentUser?.id);
                 const positive = settlement.toUserId === currentUser?.id;
                 const isPaid = isSettlementPaid(settlement);
@@ -749,6 +867,9 @@ export default function ExpensesTab({ tripId }: { tripId: string }) {
                       <strong>{formatMoney(settlement.amount || 0, settlement.currency || currency)}</strong>
                       <span>{isPaid ? 'Paid' : isOutstanding ? 'Due' : 'Clear'}</span>
                     </Box>
+                    {settlement.status === 'pending' && settlement.fromUserId === currentUser?.id && <Button className="settlement_card_action" onClick={() => markSettlementPaid.mutate({ tripId, settlementId: settlement.id })} startIcon={<CheckCircleIcon />} variant="contained">Declare payment sent</Button>}
+                    {settlement.status === 'payment_declared' && settlement.toUserId === currentUser?.id && <Button className="settlement_card_action" onClick={() => confirmSettlementPaid.mutate({ tripId, settlementId: settlement.id })} startIcon={<CheckCircleIcon />} variant="contained">Confirm you received it</Button>}
+                    {settlement.status === 'pending' && settlement.toUserId === currentUser?.id && <Button className="settlement_card_action reminder" onClick={() => sendReminders.mutate({ tripId, settlementId: settlement.id })} variant="outlined">Send payment reminder</Button>}
                   </Box>
                 );
               })
@@ -762,16 +883,7 @@ export default function ExpensesTab({ tripId }: { tripId: string }) {
                 {formatMoney(Math.abs(netBalance), currency)}
               </strong>
             </Box>
-            {hasOutstandingSettlement ? (
-              <>
-                <Button className="primary_wide" disabled={markSettlementPaid.isPending} onClick={handleMarkSettled} startIcon={<CheckCircleIcon />}>
-                  {markSettlementPaid.isPending ? 'Settling...' : 'Mark Settled'}
-                </Button>
-                <Button className="outline_wide" disabled={sendReminders.isPending} onClick={() => sendReminders.mutate({ tripId })}>
-                  {sendReminders.isPending ? 'Sending...' : 'Send Reminders'}
-                </Button>
-              </>
-            ) : (
+            {!hasOutstandingSettlement && (
               <Box className="settlement_complete">
                 <CheckCircleIcon />
                 <Box><strong>All settled</strong><span>No outstanding balances or reminders.</span></Box>

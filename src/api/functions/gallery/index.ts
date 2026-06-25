@@ -9,6 +9,7 @@ import type {
   IAlbum,
   IBodyPayload,
   ICreatePhotoPayload,
+  IPageParams,
   IPhoto,
   IUpdatePhotoPayload,
   IWithPhotoId,
@@ -17,8 +18,8 @@ import type {
 
 
 
-export const galleryAlbumsFn = async (): ApiMutationResponse<IAlbum[]> => {
-  const res = await axiosInstance.get(endpoints.gallery.albums("v1"));
+export const galleryAlbumsFn = async ({ page = 1, limit = 20 }: IPageParams = {}): ApiMutationResponse<IAlbum[]> => {
+  const res = await axiosInstance.get(endpoints.gallery.albums("v1"), { params: { page, limit } });
 
   return res;
 };
@@ -29,8 +30,8 @@ export const galleryAlbumFn = async ({ tripId }: IWithTripId): ApiMutationRespon
   return res;
 };
 
-export const galleryPhotosFn = async ({ tripId }: IWithTripId): ApiMutationResponse<IPhoto[]> => {
-  const res = await axiosInstance.get(endpoints.gallery.photos("v1", tripId));
+export const galleryPhotosFn = async ({ tripId, page = 1, limit = 20 }: IWithTripId & IPageParams): ApiMutationResponse<IPhoto[]> => {
+  const res = await axiosInstance.get(endpoints.gallery.photos("v1", tripId), { params: { page, limit } });
 
   return res;
 };

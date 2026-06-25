@@ -108,6 +108,9 @@ axiosInstance.interceptors.response.use(
         return axiosInstance(originalConfig);
       } catch (refreshError) {
         useAuthStore.getState().clearAuth();
+        if (typeof window !== "undefined") {
+          window.location.replace("/login");
+        }
 
         return Promise.reject(refreshError);
       } finally {

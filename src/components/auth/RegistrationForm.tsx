@@ -26,7 +26,7 @@ export default function RegistrationForm() {
 
   const { mutate: signUpMutation, isPending } = useAuthRegister({
     optionalCallback: () => {
-      router.push("/");
+      router.push("/login");
     },
   });
 
@@ -126,7 +126,7 @@ export default function RegistrationForm() {
 
       <Typography className="auth_signup_text">
         Already have an account?{" "}
-        <Link className="auth_link" href="/">
+        <Link className="auth_link" href="/login">
           Login
         </Link>
       </Typography>

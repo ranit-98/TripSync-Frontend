@@ -40,5 +40,5 @@ export interface ISettlement {
   amount?: number;
   currency?: string;
   isPaid?: boolean;
-  status?: "pending" | "paid";
+  status?: "pending" | "payment_declared" | "paid";
 }

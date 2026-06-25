@@ -33,7 +33,7 @@ export default function AlbumGalleryPage({ tripId }: AlbumGalleryPageProps) {
   const { data: albumResponse, isLoading: isAlbumLoading } = useGalleryAlbum(tripId);
   const { data: photosResponse, isLoading: isPhotosLoading } = useGalleryPhotos(tripId);
   const album = albumResponse?.data.data;
-  const photos = useMemo(() => toPhotos(photosResponse?.data.data), [photosResponse?.data.data]);
+  const photos = useMemo(() => photosResponse?.pages.flatMap((page) => toPhotos(page.data.data)) ?? [], [photosResponse?.pages]);
   const albumTitle = album?.title || 'Trip Gallery';
   const coverUrl = album?.coverUrl || photos[0]?.url;
   const photoCount = album?.photoCount ?? photos.length;

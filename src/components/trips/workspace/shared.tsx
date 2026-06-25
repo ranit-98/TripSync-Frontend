@@ -183,6 +183,7 @@ export type AddExpenseFormValues = {
   notes: string;
   paidBy: string;
   splitWith: string[];
+  splitAmounts: Record<string, number>;
 };
 
 export type AddFolderFormValues = {
@@ -211,6 +212,19 @@ export const addExpenseSchema: yup.ObjectSchema<AddExpenseFormValues> = yup.obje
     .of(yup.string().required())
     .min(1, 'Select at least one member')
     .required('Select at least one member'),
+  splitAmounts: yup
+    .object()
+    .test(
+      'amounts-sum',
+      'Split amounts must add up to the total expense amount',
+      function (value) {
+        const { amount, splitWith } = this.parent as AddExpenseFormValues;
+        if (!value || !splitWith?.length || !amount) return true;
+        const sum = splitWith.reduce((acc, id) => acc + (Number((value as Record<string, number>)[id]) || 0), 0);
+        return Math.abs(sum - amount) < 0.01;
+      }
+    )
+    .required() as yup.ObjectSchema<Record<string, number>>,
 });
 
 export const addFolderSchema: yup.ObjectSchema<AddFolderFormValues> = yup.object({
@@ -235,6 +249,7 @@ export const addExpenseDefaultValues: AddExpenseFormValues = {
   notes: '',
   paidBy: 'you',
   splitWith: ['you', 'priya', 'alex', 'david'],
+  splitAmounts: {},
 };
 
 export const addFolderDefaultValues: AddFolderFormValues = {

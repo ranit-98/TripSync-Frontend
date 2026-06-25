@@ -65,8 +65,8 @@ export const endpoints = {
     },
   },
   trips: {
-    list: (version: TAPIVersions) => {
-      return `${version}/trips`;
+    list: (version: TAPIVersions, { page = 1, limit = 20 }: { page?: number; limit?: number } = {}) => {
+      return `${version}/trips?page=${page}&limit=${limit}`;
     },
     create: (version: TAPIVersions) => {
       return `${version}/trips`;
@@ -151,11 +151,11 @@ export const endpoints = {
       return `${version}/trips/${tripId}/settlements`;
     },
     markSettlementPaid: (version: TAPIVersions, tripId: string, settlementId: string) => {
-      return `${version}/trips/${tripId}/settlements/${settlementId}/mark-paid`;
+      return `${version}/trips/${tripId}/settlements/${settlementId}/declare-paid`;
     },
-    sendSettlementReminders: (version: TAPIVersions, tripId: string) => {
-      return `${version}/trips/${tripId}/settlements/reminders`;
-    },
+    confirmSettlementPaid: (version: TAPIVersions, tripId: string, settlementId: string) =>
+      `${version}/trips/${tripId}/settlements/${settlementId}/confirm-paid`,
+    sendSettlementReminders: (version: TAPIVersions, tripId: string, settlementId: string) => `${version}/trips/${tripId}/settlements/${settlementId}/reminder`,
   },
   map: {
     locations: (version: TAPIVersions, tripId: string) => {

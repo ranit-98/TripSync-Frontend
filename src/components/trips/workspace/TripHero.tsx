@@ -13,10 +13,12 @@ import Button from '@mui/material/Button';
 import IconButton from '@mui/material/IconButton';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
+import Popover from '@mui/material/Popover';
 import Stack from '@mui/material/Stack';
+import type { SxProps, Theme } from '@mui/material/styles';
 import Typography from '@mui/material/Typography';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 const formatHeroDateRange = (startDate?: string, endDate?: string) => {
   if (!startDate || !endDate) {
@@ -66,6 +68,110 @@ const getHeroStatus = (trip?: ITrip | null) => {
   return 'Completed';
 };
 
+const getInitials = (name?: string, email?: string) => {
+  const source = name?.trim() || email?.trim() || '?';
+  const words = source.split(/\s+/).filter(Boolean);
+
+  if (words.length > 1) {
+    return `${words[0][0]}${words[1][0]}`.toUpperCase();
+  }
+
+  return source.slice(0, 2).toUpperCase();
+};
+
+const membersPopoverSx: SxProps<Theme> = {
+  zIndex: (theme) => theme.zIndex.modal,
+  '& .MuiPopover-paper': {
+    borderRadius: '8px',
+    boxShadow: '0 18px 36px rgba(23, 29, 28, 0.22)',
+    overflow: 'hidden',
+  },
+  '& .members_popover': {
+    width: 'min(300px, calc(100vw - 32px))',
+    maxHeight: 360,
+    overflowY: 'auto',
+    border: '1px solid rgba(188, 201, 198, 0.45)',
+    backgroundColor: '#ffffff',
+    padding: '12px',
+  },
+  '& .members_popover_header': {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: '12px',
+    padding: '2px 4px 10px',
+  },
+  '& .members_popover_header h3': {
+    color: 'text.primary',
+    fontSize: '15px',
+    fontWeight: 800,
+    lineHeight: '20px',
+  },
+  '& .members_popover_header span': {
+    display: 'grid',
+    minWidth: 28,
+    height: 28,
+    placeItems: 'center',
+    borderRadius: 999,
+    backgroundColor: '#eef5f2',
+    color: 'primary.main',
+    fontSize: '12px',
+    fontWeight: 800,
+  },
+  '& .members_popover_item': {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+    borderRadius: '8px',
+    padding: '8px 6px',
+    '&:hover': {
+      backgroundColor: '#f4f8f6',
+    },
+  },
+  '& .members_popover_item strong, & .members_popover_item small': {
+    display: 'block',
+  },
+  '& .members_popover_item strong': {
+    overflow: 'hidden',
+    maxWidth: 190,
+    color: 'text.primary',
+    fontSize: '14px',
+    fontWeight: 800,
+    lineHeight: '18px',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+  },
+  '& .members_popover_item small': {
+    color: '#6d7a77',
+    fontSize: '12px',
+    fontWeight: 700,
+    lineHeight: '16px',
+  },
+  '& .members_popover_avatar, & .members_popover_initial': {
+    width: 36,
+    height: 36,
+    flex: '0 0 36px',
+    borderRadius: '50%',
+  },
+  '& .members_popover_avatar': {
+    objectFit: 'cover',
+  },
+  '& .members_popover_initial': {
+    display: 'grid',
+    placeItems: 'center',
+    backgroundColor: '#dae2fd',
+    color: '#131b2e',
+    fontSize: '13px',
+    fontWeight: 800,
+  },
+  '& .members_popover_empty': {
+    color: '#6d7a77',
+    fontSize: '13px',
+    fontWeight: 700,
+    padding: '10px 4px 4px',
+  },
+};
+
 type TripHeroProps = {
   isLoading?: boolean;
   members: ITripMember[];
@@ -77,16 +183,25 @@ type TripHeroProps = {
 };
 
 export default function TripHero({ isLoading = false, members, onCollapse, onDelete, onEdit, onInvite, trip }: TripHeroProps) {
+  const [membersAnchor, setMembersAnchor] = useState<HTMLElement | null>(null);
   const [settingsAnchor, setSettingsAnchor] = useState<HTMLElement | null>(null);
+  const sortedMembers = useMemo(() => {
+    return [...members].sort((firstMember, secondMember) => {
+      if (firstMember.role === secondMember.role) {
+        return 0;
+      }
+
+      return firstMember.role === 'collaborator' ? -1 : 1;
+    });
+  }, [members]);
+
   if (isLoading) {
     return <TripHeroSkeleton />;
   }
 
-  const memberAvatars = members
-    .map((member) => member.user?.avatarUrl)
-    .filter((avatar): avatar is string => Boolean(avatar));
-  const visibleAvatars = memberAvatars.slice(0, 3);
-  const extraMembers = Math.max(members.length - visibleAvatars.length, 0);
+  const visibleMembers = sortedMembers.slice(0, 2);
+  const extraMembers = Math.max(members.length - visibleMembers.length, 0);
+  const hasMembers = sortedMembers.length > 0;
 
   return (
     <Box className="hero" component="header">
@@ -123,11 +238,67 @@ export default function TripHero({ isLoading = false, members, onCollapse, onDel
           </Typography>
           <Stack className="member_actions" direction="row">
             <Stack className="member_stack">
-              {(visibleAvatars.length ? visibleAvatars : tripItineraryAssets.members.slice(0, 1)).map((member) => (
-                <ImageComp alt="Trip member" className="member_avatar" isAvatar key={member} src={member} />
-              ))}
-              {extraMembers > 0 && <span className="member_more">+{extraMembers}</span>}
+              {(hasMembers ? visibleMembers : [{ id: 'placeholder', user: { avatarUrl: tripItineraryAssets.members[0], email: '', id: 'placeholder', name: 'Trip member' }, role: 'viewer' as const }]).map((member) => {
+                const user = member.user;
+
+                return user?.avatarUrl ? (
+                  <ImageComp alt={user.name || 'Trip member'} className="member_avatar" isAvatar key={member.id} src={user.avatarUrl} />
+                ) : (
+                  <span className="member_initial compact" key={member.id}>
+                    {getInitials(user?.name, user?.email)}
+                  </span>
+                );
+              })}
+              {extraMembers > 0 && (
+                <Box
+                  aria-label={`Show ${extraMembers} more trip ${extraMembers === 1 ? 'member' : 'members'}`}
+                  aria-haspopup="dialog"
+                  className="member_more member_more_button"
+                  component="button"
+                  onClick={(event) => setMembersAnchor(event.currentTarget)}
+                  type="button"
+                >
+                  +{extraMembers}
+                </Box>
+              )}
             </Stack>
+            <Popover
+              anchorEl={membersAnchor}
+              anchorOrigin={{ horizontal: 'left', vertical: 'bottom' }}
+              onClose={() => setMembersAnchor(null)}
+              open={Boolean(membersAnchor)}
+              sx={membersPopoverSx}
+              transformOrigin={{ horizontal: 'left', vertical: 'top' }}
+            >
+              <Box className="members_popover">
+                <Box className="members_popover_header">
+                  <Typography component="h3">Trip members</Typography>
+                  <span>{sortedMembers.length}</span>
+                </Box>
+                {hasMembers ? (
+                  sortedMembers.map((member) => {
+                    const user = member.user;
+                    const roleLabel = member.role === 'collaborator' ? 'Collaborator' : 'Viewer';
+
+                    return (
+                      <Box className="members_popover_item" key={member.id}>
+                        {user?.avatarUrl ? (
+                          <ImageComp alt={user.name || 'Trip member'} className="members_popover_avatar" isAvatar src={user.avatarUrl} />
+                        ) : (
+                          <span className="members_popover_initial">{getInitials(user?.name, user?.email)}</span>
+                        )}
+                        <Box>
+                          <strong>{user?.name || user?.email || 'Invited member'}</strong>
+                          <small>{roleLabel}</small>
+                        </Box>
+                      </Box>
+                    );
+                  })
+                ) : (
+                  <Typography className="members_popover_empty">No members have joined this trip yet.</Typography>
+                )}
+              </Box>
+            </Popover>
             <Button className="invite_btn" onClick={onInvite} startIcon={<PersonAddIcon />}>
               Invite
             </Button>

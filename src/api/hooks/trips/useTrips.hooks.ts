@@ -18,12 +18,17 @@ import {
 import type { IMutationHookOptions } from "@/api/hooks/types";
 import { isSuccessResponse } from "@/api/hooks/types";
 import { listOfQueryKeys } from "@/lib/functions/listOfQueryKeys";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export const useTripsList = () => {
-  return useQuery({
+  return useInfiniteQuery({
     queryKey: [listOfQueryKeys.trips.list],
-    queryFn: tripsListFn,
+    initialPageParam: 1,
+    queryFn: ({ pageParam }) => tripsListFn({ page: pageParam }),
+    getNextPageParam: (lastPage) => {
+      const pagination = lastPage.data.pagination;
+      return pagination?.hasNextPage ? pagination.page + 1 : undefined;
+    },
   });
 };
 

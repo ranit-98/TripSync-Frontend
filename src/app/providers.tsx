@@ -17,7 +17,7 @@ type ProvidersProps = Readonly<{
 
 export function Providers({ children }: ProvidersProps) {
   const [queryClient] = useState(
-    () => new QueryClient({ defaultOptions: { queries: { throwOnError: true } } })
+    () => new QueryClient({ defaultOptions: { queries: { throwOnError: false, retry: false } } })
   );
 
   return (

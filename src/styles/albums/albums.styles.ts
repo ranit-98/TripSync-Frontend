@@ -525,9 +525,7 @@ export const AlbumsPageWrapper = styled(Box)`
 
   @media (max-width: 899px) {
     .mobile_page_header {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
+      display: none;
     }
 
     .albums_topbar,

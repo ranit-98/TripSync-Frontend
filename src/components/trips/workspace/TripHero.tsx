@@ -1,13 +1,15 @@
 import ImageComp from '@/components/image/ImageComp';
 import { TripHeroSkeleton } from '@/components/skeleton';
+import { useAuthLogout } from '@/api/hooks/auth/useAuth.hooks';
 import { tripItineraryAssets } from '@/json/assets';
+import { useAuthStore } from '@/store/auth/auth.store';
 import type { ITrip, ITripMember } from '@/typescript/interface/api';
+import AddIcon from '@mui/icons-material/Add';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
-import NotificationsIcon from '@mui/icons-material/Notifications';
+import LogoutIcon from '@mui/icons-material/Logout';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import SettingsIcon from '@mui/icons-material/Settings';
-import ShareIcon from '@mui/icons-material/Share';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import IconButton from '@mui/material/IconButton';
@@ -18,6 +20,7 @@ import Stack from '@mui/material/Stack';
 import type { SxProps, Theme } from '@mui/material/styles';
 import Typography from '@mui/material/Typography';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 
 const formatHeroDateRange = (startDate?: string, endDate?: string) => {
@@ -183,7 +186,11 @@ type TripHeroProps = {
 };
 
 export default function TripHero({ isLoading = false, members, onCollapse, onDelete, onEdit, onInvite, trip }: TripHeroProps) {
+  const router = useRouter();
+  const currentUser = useAuthStore((state) => state.user);
+  const logout = useAuthLogout({ optionalCallback: () => router.replace('/login') });
   const [membersAnchor, setMembersAnchor] = useState<HTMLElement | null>(null);
+  const [profileAnchor, setProfileAnchor] = useState<HTMLElement | null>(null);
   const [settingsAnchor, setSettingsAnchor] = useState<HTMLElement | null>(null);
   const sortedMembers = useMemo(() => {
     return [...members].sort((firstMember, secondMember) => {
@@ -217,13 +224,32 @@ export default function TripHero({ isLoading = false, members, onCollapse, onDel
           <ArrowBackIcon />
         </IconButton>
         <Stack className="hero_actions" direction="row">
-          <IconButton className="glass_icon_btn" component={Link} href="/notifications" aria-label="Open notifications">
-            <NotificationsIcon />
-          </IconButton>
-          <IconButton className="glass_icon_btn" aria-label="Share trip">
-            <ShareIcon />
-          </IconButton>
-          <ImageComp alt="Avatar" className="profile_avatar" isAvatar src={tripItineraryAssets.profile} />
+          <Box
+            aria-label="Open account actions"
+            aria-haspopup="menu"
+            className="hero_user_island"
+            component="button"
+            onClick={(event) => setProfileAnchor(event.currentTarget)}
+            type="button"
+          >
+            <ImageComp
+              alt={currentUser?.name || currentUser?.email || 'User avatar'}
+              className="profile_avatar"
+              isAvatar
+              src={currentUser?.avatarUrl || tripItineraryAssets.profile}
+            />
+            <span>{currentUser?.name || currentUser?.email || 'Account'}</span>
+          </Box>
+          <Menu anchorEl={profileAnchor} anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }} onClose={() => setProfileAnchor(null)} open={Boolean(profileAnchor)} transformOrigin={{ horizontal: 'right', vertical: 'top' }}>
+            <MenuItem component={Link} href="/trips/create" onClick={() => setProfileAnchor(null)}>
+              <AddIcon fontSize="small" />
+              Create trip
+            </MenuItem>
+            <MenuItem disabled={logout.isPending} onClick={() => { setProfileAnchor(null); logout.mutate(); }}>
+              <LogoutIcon fontSize="small" />
+              {logout.isPending ? 'Logging out...' : 'Logout'}
+            </MenuItem>
+          </Menu>
         </Stack>
       </Box>
 

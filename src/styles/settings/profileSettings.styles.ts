@@ -194,14 +194,7 @@ export const ProfileSettingsWrapper = styled(Box)`
 
   @media (max-width: 899px) {
     .mobile_page_header {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      margin-bottom: 18px;
-    }
-
-    .mobile_page_header .page_title {
-      display: block;
+      display: none;
     }
   }
 

@@ -44,7 +44,7 @@ export default function AuthTopbar({ actions, subtitle, title }: AuthTopbarProps
   };
 
   return (
-    <AuthTopbarWrapper as="header">
+    <AuthTopbarWrapper as="header" className={title ? 'has_page_title' : undefined}>
       <Box className="auth_topbar_brand" component={Link} href="/dashboard">
         <FlightTakeoffIcon />
         <Typography component="span">TripSync</Typography>

@@ -205,6 +205,15 @@ export const AuthTopbarWrapper = styled(Box)`
     }
 
     .auth_topbar_page {
+      display: flex;
+      flex: 1;
+    }
+
+    .auth_topbar_page_subtitle {
+      display: none;
+    }
+
+    &.has_page_title .auth_topbar_brand {
       display: none;
     }
 
@@ -219,6 +228,11 @@ export const AuthTopbarWrapper = styled(Box)`
 
     .auth_topbar_brand span {
       font-size: 21px;
+    }
+
+    .auth_topbar_page_title {
+      font-size: 18px;
+      line-height: 23px;
     }
 
     .auth_topbar_profile_btn {

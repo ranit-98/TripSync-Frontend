@@ -206,6 +206,32 @@ export const TripItineraryWrapper = styled(Box)`
     gap: 16px;
   }
 
+  .hero_user_island {
+    display: inline-flex;
+    max-width: min(250px, 52vw);
+    min-width: 0;
+    align-items: center;
+    gap: 9px;
+    border: 1px solid rgba(255, 255, 255, 0.34);
+    border-radius: 999px;
+    background-color: rgba(17, 32, 29, 0.48);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.18);
+    color: #ffffff;
+    cursor: pointer;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 900;
+    padding: 5px 12px 5px 5px;
+    backdrop-filter: blur(16px);
+
+    span {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+
   .profile_avatar {
     width: 40px;
     height: 40px;
@@ -307,10 +333,6 @@ export const TripItineraryWrapper = styled(Box)`
       padding: 8px 64px 8px 12px;
     }
 
-    .hero_actions {
-      display: none;
-    }
-
     .collapsed_trip_copy h1 {
       font-size: 15px;
       line-height: 20px;
@@ -325,6 +347,32 @@ export const TripItineraryWrapper = styled(Box)`
         margin: 0;
         font-size: 18px;
       }
+    }
+  }
+
+  @media (max-width: 599px) {
+    .hero_topbar {
+      align-items: flex-start;
+      padding: 18px 12px;
+    }
+
+    .hero_actions {
+      display: flex;
+      min-width: 0;
+      flex: 0 1 auto;
+      justify-content: flex-end;
+    }
+
+    .hero_user_island {
+      max-width: calc(100vw - 82px);
+      gap: 7px;
+      font-size: 12px;
+      padding: 4px 10px 4px 4px;
+    }
+
+    .profile_avatar {
+      width: 34px;
+      height: 34px;
     }
   }
 
@@ -2322,6 +2370,7 @@ export const TripItineraryWrapper = styled(Box)`
 
     @media (max-width: 899px) {
       flex-direction: column;
+      margin-bottom: calc(76px + env(safe-area-inset-bottom));
       overflow-y: auto;
     }
   }
@@ -2982,10 +3031,18 @@ export const TripItineraryWrapper = styled(Box)`
   }
 
   .message_input {
+    flex: 0 0 auto;
     border-top: 1px solid rgba(188, 201, 198, 0.3);
     background-color: rgba(255, 255, 255, 0.82);
     padding: 18px 24px;
     backdrop-filter: blur(16px);
+
+    @media (max-width: 899px) {
+      position: sticky;
+      bottom: 0;
+      z-index: 12;
+      box-shadow: 0 -10px 24px rgba(23, 29, 28, 0.08);
+    }
 
     textarea {
       width: 100%;
@@ -3080,6 +3137,7 @@ export const TripItineraryWrapper = styled(Box)`
 
   .voice_recorder_composer {
     display: flex;
+    min-width: 0;
     align-items: center;
     justify-content: space-between;
     gap: 14px;
@@ -3097,6 +3155,8 @@ export const TripItineraryWrapper = styled(Box)`
     }
 
     .voice_recorder_composer {
+      align-items: stretch;
+      flex-direction: column;
       gap: 8px;
       border-radius: 14px;
       padding: 8px;
@@ -3104,6 +3164,7 @@ export const TripItineraryWrapper = styled(Box)`
 
     .voice_recording_status {
       gap: 8px;
+      width: 100%;
 
       strong {
         font-size: 12px;
@@ -3127,6 +3188,7 @@ export const TripItineraryWrapper = styled(Box)`
     }
 
     .voice_recording_actions {
+      justify-content: flex-end;
       gap: 6px;
 
       .MuiIconButton-root {
@@ -3139,7 +3201,7 @@ export const TripItineraryWrapper = styled(Box)`
         min-width: 0;
         min-height: 34px;
         font-size: 0;
-        padding: 6px 10px;
+        padding: 6px 9px;
 
         .MuiButton-endIcon {
           margin: 0;
@@ -3326,6 +3388,25 @@ export const TripItineraryWrapper = styled(Box)`
     }
   }
 
+  @media (max-width: 599px) {
+    .input_actions {
+      gap: 8px;
+    }
+
+    .input_actions > .MuiStack-root {
+      min-width: 0;
+      flex: 1;
+      flex-wrap: wrap;
+      gap: 2px;
+    }
+
+    .input_actions .MuiIconButton-root {
+      width: 36px;
+      height: 36px;
+      padding: 6px;
+    }
+  }
+
   .composer_tool {
     position: relative;
   }
@@ -3403,12 +3484,27 @@ export const TripItineraryWrapper = styled(Box)`
   }
 
   .send_btn {
+    flex: 0 0 auto;
     border-radius: 12px;
     background-color: ${({ theme }) => theme.palette.primary.main};
     color: #ffffff;
     font-weight: 800;
     padding: 8px 24px;
     text-transform: none;
+  }
+
+  @media (max-width: 599px) {
+    .send_btn {
+      min-width: 42px;
+      min-height: 38px;
+      padding: 8px 10px;
+      font-size: 0;
+
+      .MuiButton-endIcon {
+        margin: 0;
+        font-size: 20px;
+      }
+    }
   }
 
   .files_header {

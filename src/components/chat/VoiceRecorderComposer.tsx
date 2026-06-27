@@ -23,17 +23,24 @@ const formatRecordingTime = (seconds: number) => {
 export default function VoiceRecorderComposer({ onCancel, onSend }: VoiceRecorderComposerProps) {
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [recordingState, setRecordingState] = useState<'starting' | 'recording' | 'stopping'>('starting');
+  const onCancelRef = useRef(onCancel);
+  const onSendRef = useRef(onSend);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const recordedChunksRef = useRef<BlobPart[]>([]);
   const streamRef = useRef<MediaStream | null>(null);
   const shouldSendRef = useRef(false);
 
   useEffect(() => {
+    onCancelRef.current = onCancel;
+    onSendRef.current = onSend;
+  }, [onCancel, onSend]);
+
+  useEffect(() => {
     let cancelled = false;
 
     const startRecording = async () => {
       if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
-        onCancel();
+        onCancelRef.current();
         return;
       }
 
@@ -59,16 +66,16 @@ export default function VoiceRecorderComposer({ onCancel, onSend }: VoiceRecorde
           if (shouldSendRef.current && recordedChunksRef.current.length) {
             const blob = new Blob(recordedChunksRef.current, { type: recorder.mimeType || 'audio/webm' });
             const file = new File([blob], `voice-note-${Date.now()}.webm`, { type: blob.type });
-            onSend(file);
+            onSendRef.current(file);
           } else {
-            onCancel();
+            onCancelRef.current();
           }
         };
 
         recorder.start();
         setRecordingState('recording');
       } catch {
-        onCancel();
+        onCancelRef.current();
       }
     };
 
@@ -78,7 +85,7 @@ export default function VoiceRecorderComposer({ onCancel, onSend }: VoiceRecorde
       cancelled = true;
       streamRef.current?.getTracks().forEach((track) => track.stop());
     };
-  }, [onCancel, onSend]);
+  }, []);
 
   useEffect(() => {
     if (recordingState !== 'recording') return undefined;
@@ -98,7 +105,7 @@ export default function VoiceRecorderComposer({ onCancel, onSend }: VoiceRecorde
     if (recorder?.state === 'recording') {
       recorder.stop();
     } else if (!shouldSend) {
-      onCancel();
+      onCancelRef.current();
     }
   };
 

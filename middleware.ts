@@ -3,6 +3,10 @@ import { NextRequest, NextResponse } from 'next/server';
 const PUBLIC_PATHS = ['/', '/login', '/auth/register', '/cms'];
 const ACCESS_COOKIE = 'trip_sync_access';
 
+const isSafeInternalPath = (path: string | null): path is string => {
+  return Boolean(path?.startsWith('/') && !path.startsWith('//'));
+};
+
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const isPublic = PUBLIC_PATHS.includes(pathname);
@@ -15,6 +19,12 @@ export function middleware(request: NextRequest) {
   }
 
   if (hasAccessToken && (pathname === '/login' || pathname === '/auth/register')) {
+    const nextPath = request.nextUrl.searchParams.get('next');
+
+    if (isSafeInternalPath(nextPath)) {
+      return NextResponse.redirect(new URL(nextPath, request.url));
+    }
+
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 

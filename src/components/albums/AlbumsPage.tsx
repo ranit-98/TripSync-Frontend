@@ -2,7 +2,7 @@
 
 import { useGalleryAlbums } from '@/api/hooks/gallery/useGallery.hooks';
 import AppSidebar from '@/components/layout/AppSidebar';
-import { PageLoader } from '@/components/skeleton';
+import { AlbumsPageSkeleton } from '@/components/skeleton';
 import type { IAlbum } from '@/typescript/interface/api';
 import { AlbumsPageWrapper } from '@/styles/albums/albums.styles';
 import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate';
@@ -38,13 +38,15 @@ export default function AlbumsPage() {
   const albums = useMemo(() => albumsResponse?.pages.flatMap((page) => toAlbums(page.data.data)) ?? [], [albumsResponse?.pages]);
   const featuredAlbum = albums[0];
 
-  if (isLoading) return <PageLoader wrapperCls="page-loader" />;
-
   return (
     <AlbumsPageWrapper>
       <AppSidebar active="albums" showNewTrip />
 
       <Box className="albums_main" component="main">
+        {isLoading ? (
+          <AlbumsPageSkeleton />
+        ) : (
+          <>
         <Box className="albums_topbar" component="header">
           <Box>
             <Typography className="page_title" component="h1">Album</Typography>
@@ -103,6 +105,8 @@ export default function AlbumsPage() {
             ))}
           </Box>
         </Box>
+          </>
+        )}
       </Box>
     </AlbumsPageWrapper>
   );

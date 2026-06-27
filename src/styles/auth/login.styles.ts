@@ -4,64 +4,22 @@ import { Box, Paper, styled } from '@mui/material';
 
 export const LoginPageWrapper = styled(Box)`
   min-height: 100svh;
-  overflow: hidden;
+  overflow-x: hidden;
   position: relative;
   background-color: ${({ theme }) => theme.palette.background.default};
   color: ${({ theme }) => theme.palette.text.primary};
 
-  .auth_header {
-    position: fixed;
-    inset: 0 0 auto;
-    z-index: 10;
-    border-bottom: 1px solid rgba(188, 201, 198, 0.34);
-    background-color: rgba(245, 250, 248, 0.82);
-    box-shadow: 0 10px 30px rgba(23, 29, 28, 0.08);
-    backdrop-filter: blur(20px);
-  }
-
-  .auth_header_inner {
+  .public_nav_inner {
     min-height: 56px;
-    align-items: center;
-    justify-content: space-between;
-  }
-
-  .auth_brand {
-    color: ${({ theme }) => theme.palette.primary.main};
-    font-size: 20px;
-    font-weight: 800;
-    letter-spacing: 0;
-  }
-
-  .auth_actions {
-    align-items: center;
-    gap: 12px;
-  }
-
-  .auth_login_btn {
-    min-height: 32px;
-    font-weight: 800;
-
-    @media (max-width: 899px) {
-      display: none;
-    }
-  }
-
-  .auth_started_btn {
-    min-height: 36px;
-    height: 36px;
-    padding-right: 20px;
-    padding-left: 20px;
-    border-radius: 12px;
-    box-shadow: 0 8px 18px rgba(0, 104, 95, 0.26);
   }
 
   .auth_main {
     position: relative;
     display: flex;
-    min-height: 100svh;
+    min-height: calc(100svh - 93px);
     align-items: center;
     justify-content: center;
-    padding: 56px 16px 0;
+    padding: 28px 16px;
   }
 
   .auth_hero_bg {

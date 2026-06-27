@@ -39,7 +39,7 @@ export const galleryPhotosFn = async ({ tripId, page = 1, limit = 20 }: IWithTri
 export const galleryCreatePhotoFn = async ({
   body,
   tripId,
-}: IBodyPayload<ICreatePhotoPayload> & IWithTripId): ApiMutationResponse<IPhoto> => {
+}: IBodyPayload<ICreatePhotoPayload | FormData> & IWithTripId): ApiMutationResponse<IPhoto> => {
   const res = await axiosInstance.post(endpoints.gallery.createPhoto("v1", tripId), body);
 
   return res;

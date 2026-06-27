@@ -2,7 +2,7 @@
 
 import { useGalleryAlbum, useGalleryPhotos } from '@/api/hooks/gallery/useGallery.hooks';
 import AddPhotoModal from '@/components/albums/AddPhotoModal';
-import { PageLoader } from '@/components/skeleton';
+import { TripGalleryTabSkeleton } from '@/components/skeleton';
 import type { IPhoto } from '@/typescript/interface/api';
 import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
@@ -35,7 +35,7 @@ export default function GalleryTab({ tripId }: { tripId: string }) {
   const photoCount = album?.photoCount ?? photos.length;
 
   if (isAlbumLoading || isPhotosLoading) {
-    return <PageLoader wrapperCls="page-loader" />;
+    return <TripGalleryTabSkeleton />;
   }
 
   return (

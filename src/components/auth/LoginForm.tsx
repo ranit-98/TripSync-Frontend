@@ -2,6 +2,7 @@
 
 import { useAuthLogin } from '@/api/hooks';
 import FormTextField from '@/components/Forms/FormTextField';
+import { consumeAuthRedirectPath, isSafeInternalPath } from '@/lib/authRedirect';
 import { LoginFormWrapper } from '@/styles/auth/login.styles';
 import GoogleIcon from '@mui/icons-material/Google';
 import Box from '@mui/material/Box';
@@ -17,6 +18,22 @@ type LoginFormValues = {
   password: string;
 };
 
+const getLoginRedirectPath = () => {
+  const savedPath = consumeAuthRedirectPath();
+
+  if (savedPath) {
+    return savedPath;
+  }
+
+  const nextPath = new URLSearchParams(window.location.search).get('next');
+
+  if (isSafeInternalPath(nextPath)) {
+    return nextPath;
+  }
+
+  return '/dashboard';
+};
+
 export default function LoginForm() {
   const router = useRouter();
   const { control, handleSubmit } = useForm<LoginFormValues>({
@@ -28,7 +45,7 @@ export default function LoginForm() {
 
   const { mutate: loginMutation, isPending } = useAuthLogin({
     optionalCallback: () => {
-      router.push("/settings");
+      router.push(getLoginRedirectPath());
     },
   });
   const onSubmit = handleSubmit((formData) => {

@@ -1,8 +1,6 @@
 'use client';
 
 import { useGalleryCreatePhoto } from '@/api/hooks/gallery/useGallery.hooks';
-import { useUploadsSign } from '@/api/hooks/uploads/useUploads.hooks';
-import type { ICloudinaryUploadResponse, ISignedUpload } from '@/typescript/interface/api';
 import { yupResolver } from '@hookform/resolvers/yup';
 import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate';
 import CloseIcon from '@mui/icons-material/Close';
@@ -22,35 +20,6 @@ const addPhotoSchema: yup.ObjectSchema<AddPhotoFormValues> = yup.object({
   caption: yup.string().trim().max(160, 'Caption must be 160 characters or less').defined(),
 });
 
-const uploadPhotoFile = async (file: File, signedUpload: ISignedUpload) => {
-  if (!signedUpload.uploadUrl) throw new Error('Upload URL missing.');
-
-  if (signedUpload.signature || signedUpload.apiKey) {
-    const formData = new FormData();
-    formData.append('file', file);
-    if (signedUpload.apiKey) formData.append('api_key', signedUpload.apiKey);
-    if (signedUpload.signature) formData.append('signature', signedUpload.signature);
-    if (signedUpload.timestamp) formData.append('timestamp', String(signedUpload.timestamp));
-    if (signedUpload.folder) formData.append('folder', signedUpload.folder);
-    if (signedUpload.publicId) formData.append('public_id', signedUpload.publicId);
-
-    const response = await fetch(signedUpload.uploadUrl, { body: formData, method: 'POST' });
-    if (!response.ok) throw new Error('Upload failed.');
-
-    const uploaded = (await response.json()) as ICloudinaryUploadResponse;
-    return uploaded.secure_url || uploaded.url || '';
-  }
-
-  const response = await fetch(signedUpload.uploadUrl, {
-    body: file,
-    headers: { 'Content-Type': file.type || 'application/octet-stream' },
-    method: 'PUT',
-  });
-  if (!response.ok) throw new Error('Upload failed.');
-
-  return signedUpload.uploadUrl.split('?')[0];
-};
-
 type AddPhotoModalProps = {
   albumTitle: string;
   onClose: () => void;
@@ -63,7 +32,6 @@ export default function AddPhotoModal({ albumTitle, onClose, tripId }: AddPhotoM
   const fileInputRef = useRef<HTMLInputElement>(null);
   const previewUrlsRef = useRef<string[]>([]);
   const createPhoto = useGalleryCreatePhoto({ optionalCallback: () => undefined });
-  const signUpload = useUploadsSign({ optionalCallback: () => undefined });
   const {
     formState: { errors },
     handleSubmit,
@@ -73,7 +41,7 @@ export default function AddPhotoModal({ albumTitle, onClose, tripId }: AddPhotoM
     mode: 'onBlur',
     resolver: yupResolver(addPhotoSchema),
   });
-  const isSubmitting = signUpload.isPending || createPhoto.isPending;
+  const isSubmitting = createPhoto.isPending;
 
   useEffect(() => () => previewUrlsRef.current.forEach((url) => URL.revokeObjectURL(url)), []);
 
@@ -123,27 +91,13 @@ export default function AddPhotoModal({ albumTitle, onClose, tripId }: AddPhotoM
     try {
       await Promise.all(
         photos.map(async ({ file }) => {
-          const signedResponse = await signUpload.mutateAsync({
-            body: { fileName: file.name, mimeType: file.type || 'image/*', target: 'photo' },
-            tripId,
-          });
-          const signedUpload = signedResponse.data.data;
-          if (!signedUpload) throw new Error('Upload signature missing.');
+          const formData = new FormData();
+          formData.append('image', file);
 
-          const url = await uploadPhotoFile(file, signedUpload);
-          if (!url) throw new Error('Uploaded photo URL missing.');
+          const caption = values.caption.trim();
+          if (caption) formData.append('caption', caption);
 
-          await createPhoto.mutateAsync({
-            body: {
-              caption: values.caption.trim() || undefined,
-              mimeType: file.type || 'image/*',
-              objectKey: signedUpload.objectKey || signedUpload.publicId || file.name,
-              originalFileName: file.name,
-              size: file.size,
-              url,
-            },
-            tripId,
-          });
+          await createPhoto.mutateAsync({ body: formData, tripId });
         }),
       );
       toast.success(`${photos.length} photo${photos.length === 1 ? '' : 's'} added to ${albumTitle}.`);

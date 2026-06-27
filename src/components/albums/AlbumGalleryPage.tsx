@@ -3,7 +3,7 @@
 import { useGalleryAlbum, useGalleryPhotos } from '@/api/hooks/gallery/useGallery.hooks';
 import AddPhotoModal from '@/components/albums/AddPhotoModal';
 import AppSidebar from '@/components/layout/AppSidebar';
-import { PageLoader } from '@/components/skeleton';
+import { AlbumGalleryPageSkeleton } from '@/components/skeleton';
 import type { IPhoto } from '@/typescript/interface/api';
 import { AlbumsPageWrapper } from '@/styles/albums/albums.styles';
 import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate';
@@ -38,13 +38,15 @@ export default function AlbumGalleryPage({ tripId }: AlbumGalleryPageProps) {
   const coverUrl = album?.coverUrl || photos[0]?.url;
   const photoCount = album?.photoCount ?? photos.length;
 
-  if (isAlbumLoading || isPhotosLoading) return <PageLoader wrapperCls="page-loader" />;
-
   return (
     <AlbumsPageWrapper>
       <AppSidebar active="albums" showNewTrip />
 
       <Box className="albums_main" component="main">
+        {isAlbumLoading || isPhotosLoading ? (
+          <AlbumGalleryPageSkeleton />
+        ) : (
+          <>
         <Box className="albums_topbar" component="header">
           <Box>
             <Typography className="page_title" component="h1">{albumTitle}</Typography>
@@ -109,8 +111,10 @@ export default function AlbumGalleryPage({ tripId }: AlbumGalleryPageProps) {
             </Box>
           )}
         </Box>
+          </>
+        )}
       </Box>
-      {showAddPhotoModal && <AddPhotoModal albumTitle={albumTitle} onClose={() => setShowAddPhotoModal(false)} tripId={tripId} />}
+      {showAddPhotoModal && !isAlbumLoading && !isPhotosLoading && <AddPhotoModal albumTitle={albumTitle} onClose={() => setShowAddPhotoModal(false)} tripId={tripId} />}
     </AlbumsPageWrapper>
   );
 }

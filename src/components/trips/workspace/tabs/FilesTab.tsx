@@ -78,7 +78,7 @@ function FolderModal({ parent, onClose, onCreate }: { parent?: IFolder; onClose:
   const { formState: { errors }, handleSubmit, register } = useForm<FolderFormValues>({ defaultValues: { name: '' }, mode: 'onBlur', resolver: yupResolver(folderSchema) });
   return <Box className="document_modal_overlay"><Box className="document_modal folder_modal" component="form" noValidate onSubmit={handleSubmit((values) => onCreate(values.name.trim()))}>
     <Box className="document_modal_header"><Box><Typography component="h3">New Folder</Typography><Typography>{parent ? `Create a folder inside ${parent.name}.` : 'Create a top-level folder.'}</Typography></Box><IconButton onClick={onClose}><CloseIcon /></IconButton></Box>
-    <Box className="document_modal_body"><TextField {...register('name')} autoFocus error={!!errors.name} fullWidth helperText={errors.name?.message || 'Use a clear name to organize this trip.'} label="Folder name" placeholder="e.g. Hotel bookings" slotProps={{ inputLabel: { shrink: true } }} /></Box>
+    <Box className="document_modal_body"><TextField {...register('name')} autoFocus className="folder_name_field" error={!!errors.name} fullWidth helperText={errors.name?.message || 'Use a clear name to organize this trip.'} label="Folder name" placeholder="e.g. Hotel bookings" slotProps={{ inputLabel: { shrink: true } }} /></Box>
     <Box className="document_modal_footer"><Button onClick={onClose}>Cancel</Button><Button type="submit" variant="contained">Create Folder</Button></Box>
   </Box></Box>;
 }

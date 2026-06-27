@@ -4536,6 +4536,24 @@ export const TripItineraryWrapper = styled(Box)`
     .document_modal_body {
       padding: 28px 32px;
     }
+
+    .folder_name_field {
+      .MuiInputBase-root {
+        min-height: 58px;
+        border-radius: 10px;
+      }
+
+      .MuiInputBase-input {
+        padding-top: 17px;
+        padding-bottom: 17px;
+        font-size: 15px;
+        font-weight: 700;
+      }
+
+      .MuiFormHelperText-root {
+        margin-top: 8px;
+      }
+    }
   }
 
   .document_modal_header,

@@ -4,6 +4,7 @@ import {
   usersChangePasswordFn,
   usersMeFn,
   usersSearchFn,
+  usersTravelStatsFn,
   usersUploadAvatarFn,
   usersUpdateMeFn,
 } from "@/api/functions/users";
@@ -17,6 +18,13 @@ export const useUsersMe = () => {
   return useQuery({
     queryKey: [listOfQueryKeys.users.me],
     queryFn: usersMeFn,
+  });
+};
+
+export const useUsersTravelStats = () => {
+  return useQuery({
+    queryKey: [listOfQueryKeys.users.travelStats],
+    queryFn: usersTravelStatsFn,
   });
 };
 

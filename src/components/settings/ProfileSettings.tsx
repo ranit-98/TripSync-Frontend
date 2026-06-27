@@ -2,7 +2,7 @@
 
 import { useUsersMe, useUsersUploadAvatar } from "@/api/hooks/users/useUsers.hooks";
 import AppSidebar from "@/components/layout/AppSidebar";
-import ImageComp from "@/components/image/ImageComp";
+import AuthTopbar from "@/components/layout/AuthTopbar";
 import { ProfileSettingsSkeleton } from "@/components/skeleton";
 import ChangePasswordCard from "@/components/settings/profile/ChangePasswordCard";
 import DeleteAccountCard from "@/components/settings/profile/DeleteAccountCard";
@@ -14,15 +14,8 @@ import { dashboardAssets } from "@/json/assets";
 import { useAuthStore } from "@/store";
 import { useSettingsUiStore } from "@/store/ui";
 import { ProfileSettingsWrapper } from "@/styles/settings/profileSettings.styles";
-import DashboardIcon from "@mui/icons-material/Dashboard";
-import ExploreIcon from "@mui/icons-material/Explore";
-import NotificationsIcon from "@mui/icons-material/Notifications";
-import SettingsIcon from "@mui/icons-material/Settings";
 import Box from "@mui/material/Box";
-import IconButton from "@mui/material/IconButton";
 import Stack from "@mui/material/Stack";
-import Typography from "@mui/material/Typography";
-import Link from "next/link";
 import { useCallback, useMemo } from "react";
 
 // ─── Component ───────────────────────────────────────────────────────────────
@@ -74,20 +67,13 @@ export default function ProfileSettings() {
       <AppSidebar active="settings" />
 
       <Box className="settings_main" component="main">
-        <Box className="topbar" component="header">
-          <Typography className="mobile_brand">TripSync</Typography>
-          <Typography className="page_title" component="h1">
-            Profile Settings
-          </Typography>
-          <Stack className="topbar_actions" direction="row">
-            <IconButton aria-label="Open notifications">
-              <NotificationsIcon />
-            </IconButton>
-            <ImageComp alt="User profile avatar" className="topbar_avatar" isAvatar src={avatarSrc} />
-          </Stack>
-        </Box>
+        <AuthTopbar subtitle="Manage your profile, security, and account preferences." title="Profile Settings" />
 
         <Box className="content_area">
+          <Box className="mobile_page_header">
+            <Box className="page_title" component="h1">Profile Settings</Box>
+            <Box className="page_subtitle">Manage your profile, security, and account preferences.</Box>
+          </Box>
           {isLoading ? <ProfileSettingsSkeleton /> : <Box className="settings_grid">
             <Stack className="identity_col">
               <ProfileImageCard
@@ -118,20 +104,6 @@ export default function ProfileSettings() {
         </Box>
       </Box>
 
-      <Box className="mobile_nav" component="nav">
-        <Box className="mobile_nav_link" component={Link} href="/dashboard">
-          <DashboardIcon />
-          <span>Home</span>
-        </Box>
-        <Box className="mobile_nav_link" component="a" href="#">
-          <ExploreIcon />
-          <span>Explore</span>
-        </Box>
-        <Box className="mobile_nav_link active" component={Link} href="/settings">
-          <SettingsIcon />
-          <span>Profile</span>
-        </Box>
-      </Box>
     </ProfileSettingsWrapper>
   );
 }

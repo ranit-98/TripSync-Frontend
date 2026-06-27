@@ -48,7 +48,7 @@ export const LoginPageWrapper = styled(Box)`
   }
 
   .auth_card_body {
-    gap: 28px;
+    gap: 22px;
   }
 
   .auth_heading {
@@ -106,6 +106,41 @@ export const LoginCardWrapper = styled(Paper)`
   @media (max-width: 599px) {
     min-height: 0;
     padding: 24px;
+  }
+
+  .auth_quick_panel {
+    display: grid;
+    gap: 10px;
+    margin-top: 4px;
+    border: 1px solid rgba(0, 104, 95, 0.12);
+    border-radius: 12px;
+    background: rgba(0, 104, 95, 0.055);
+    padding: 16px;
+  }
+
+  .auth_quick_panel h2 {
+    margin: 0 0 2px;
+    color: ${({ theme }) => theme.palette.text.primary};
+    font-size: 14px;
+    font-weight: 900;
+    line-height: 20px;
+  }
+
+  .auth_quick_item {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    color: ${({ theme }) => theme.palette.text.secondary};
+    font-size: 12px;
+    font-weight: 800;
+    line-height: 18px;
+  }
+
+  .auth_quick_item svg {
+    width: 17px;
+    height: 17px;
+    flex: 0 0 auto;
+    color: ${({ theme }) => theme.palette.primary.main};
   }
 `;
 

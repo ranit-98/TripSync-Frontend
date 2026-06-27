@@ -3,6 +3,7 @@
 import { useNotificationsDelete, useNotificationsList, useNotificationsRead, useNotificationsReadAll } from '@/api/hooks/notifications/useNotifications.hooks';
 import { useTripsPendingInvites } from '@/api/hooks/trips/useTrips.hooks';
 import AppSidebar from '@/components/layout/AppSidebar';
+import AuthTopbar from '@/components/layout/AuthTopbar';
 import { mergeNotifications, notificationList, pendingInviteNotifications } from '@/lib/functions/notifications.lib';
 import { NotificationsPageWrapper } from '@/styles/notifications/notifications.styles';
 import type { INotification } from '@/typescript/interface/api';
@@ -134,9 +135,14 @@ export default function NotificationsPage() {
     <NotificationsPageWrapper>
       <AppSidebar active="notifications" showNewTrip />
       <Box className="notifications_main" component="main">
+        <AuthTopbar
+          actions={<Box className="search_wrap"><SearchIcon className="search_icon" /><TextField className="search_input" hiddenLabel placeholder="Search notifications..." size="small" fullWidth value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} /></Box>}
+          subtitle="Track trip invites, itinerary updates, and budget changes."
+          title="Notifications"
+        />
         <Box className="notifications_topbar" component="header">
-          <Box><Typography className="page_title" component="h1">Notifications</Typography><Typography className="page_subtitle">Track trip invites, itinerary updates, and budget changes.</Typography></Box>
-          <Box className="search_wrap"><SearchIcon className="search_icon" /><TextField className="search_input" hiddenLabel placeholder="Search notifications..." size="small" fullWidth value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} /></Box>
+          <Box className="mobile_page_header"><Typography className="page_title" component="h1">Notifications</Typography><Typography className="page_subtitle">Track trip invites, itinerary updates, and budget changes.</Typography></Box>
+          <Box className="topbar_actions"><Box className="search_wrap"><SearchIcon className="search_icon" /><TextField className="search_input" hiddenLabel placeholder="Search notifications..." size="small" fullWidth value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} /></Box></Box>
         </Box>
         <Box className="notifications_content">
           <Box className="panel">

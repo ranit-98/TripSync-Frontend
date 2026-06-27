@@ -180,8 +180,25 @@ export const DashboardPageWrapper = styled(Box)`
   }
 
   .topbar_actions {
+    display: flex;
     align-items: center;
     gap: 16px;
+  }
+
+  .topbar_avatar {
+    display: block;
+    width: 40px;
+    height: 40px;
+    flex: 0 0 auto;
+    overflow: hidden;
+    border: 2px solid rgba(0, 104, 95, 0.22);
+    border-radius: 50%;
+    text-decoration: none;
+  }
+
+  .topbar_avatar img {
+    width: 100%;
+    height: 100%;
   }
 
   .search_wrap {
@@ -239,6 +256,17 @@ export const DashboardPageWrapper = styled(Box)`
     }
   }
 
+  .mobile_page_header {
+    display: none;
+  }
+
+  .page_title {
+    color: #172124;
+    font-size: 28px;
+    font-weight: 900;
+    line-height: 34px;
+  }
+
   @media (min-width: 900px) {
     .dashboard_content { padding-top: 10px; padding-bottom: 10px; }
     .analytics_head { margin-bottom: 8px; }
@@ -260,6 +288,15 @@ export const DashboardPageWrapper = styled(Box)`
     .category_legend { gap: 3px; }
     .category_legend span { font-size: 11px; }
     .category_legend { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+
+  @media (max-width: 899px) {
+    .mobile_page_header {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-bottom: 18px;
+    }
   }
 
   .stats_grid {
@@ -295,24 +332,49 @@ export const DashboardPageWrapper = styled(Box)`
   }
 
   .analytics_head {
-    display: flex;
+    display: none;
     align-items: flex-end;
     justify-content: space-between;
     gap: 16px;
     margin-bottom: 20px;
   }
 
-  .analytics_head .MuiToggleButton-root {
-    border-color: rgba(188, 201, 198, 0.7);
-    color: #3d4947;
+  @media (max-width: 899px) {
+    .analytics_head {
+      display: flex;
+    }
+  }
+
+  .period_filter {
+    flex: 0 0 auto;
+    gap: 4px;
+    overflow: hidden;
+    border: 1px solid rgba(188, 201, 198, 0.58);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.72);
+    padding: 4px;
+    box-shadow: 0 8px 22px rgba(23, 29, 28, 0.06);
+  }
+
+  .period_filter .MuiToggleButton-root {
+    min-width: 88px;
+    border: 0;
+    border-radius: 999px !important;
+    color: #48615d;
     font-size: 12px;
-    font-weight: 800;
+    font-weight: 900;
+    line-height: 18px;
     text-transform: none;
   }
 
-  .analytics_head .Mui-selected {
+  .period_filter .MuiToggleButton-root:hover {
+    background-color: rgba(0, 131, 120, 0.08);
+  }
+
+  .period_filter .Mui-selected {
     background-color: #008378 !important;
     color: #ffffff !important;
+    box-shadow: 0 8px 18px rgba(0, 104, 95, 0.22);
   }
 
   .analytics_stats { grid-template-columns: repeat(4, minmax(0, 1fr)); }
@@ -447,7 +509,17 @@ export const DashboardPageWrapper = styled(Box)`
 
   @media (max-width: 599px) {
     .analytics_stats { grid-template-columns: 1fr; }
-    .analytics_head .MuiToggleButton-root { padding: 7px 8px; font-size: 10px; }
+    .period_filter {
+      width: 100%;
+      overflow-x: auto;
+      justify-content: flex-start;
+    }
+
+    .period_filter .MuiToggleButton-root {
+      min-width: max-content;
+      padding: 7px 12px;
+      font-size: 11px;
+    }
   }
 
   .stat_icon {

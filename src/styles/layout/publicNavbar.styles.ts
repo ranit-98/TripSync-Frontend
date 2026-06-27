@@ -50,12 +50,45 @@ export const PublicNavbarWrapper = styled(Box)`
   }
 
   @media (max-width: 800px) {
+    padding: 12px 0;
+
+    .public_nav_inner {
+      gap: 12px;
+    }
+
+    .public_brand {
+      min-width: 0;
+      font-size: 21px;
+      white-space: nowrap;
+    }
+
     .public_links {
       display: none;
     }
 
     .MuiButton-root {
       padding: 8px 14px;
+      font-size: 13px;
+    }
+  }
+
+  @media (max-width: 420px) {
+    .public_brand {
+      font-size: 19px;
+    }
+
+    .public_brand svg {
+      width: 19px;
+      height: 19px;
+    }
+
+    .public_actions {
+      gap: 6px;
+    }
+
+    .MuiButton-root {
+      min-width: 0;
+      padding: 7px 11px;
     }
   }
 `;

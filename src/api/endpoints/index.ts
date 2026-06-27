@@ -57,6 +57,9 @@ export const endpoints = {
     me: (version: TAPIVersions) => {
       return `${version}/users/me`;
     },
+    travelStats: (version: TAPIVersions) => {
+      return `${version}/users/me/travel-stats`;
+    },
     avatarUpload: (version: TAPIVersions) => {
       return `${version}/users/me/avatar`;
     },

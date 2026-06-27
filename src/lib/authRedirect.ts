@@ -10,6 +10,10 @@ export const saveAuthRedirectPath = (path: string) => {
   localStorage.setItem(AUTH_REDIRECT_STORAGE_KEY, path);
 };
 
+export const clearAuthRedirectPath = () => {
+  localStorage.removeItem(AUTH_REDIRECT_STORAGE_KEY);
+};
+
 export const consumeAuthRedirectPath = () => {
   const savedPath = localStorage.getItem(AUTH_REDIRECT_STORAGE_KEY);
   localStorage.removeItem(AUTH_REDIRECT_STORAGE_KEY);

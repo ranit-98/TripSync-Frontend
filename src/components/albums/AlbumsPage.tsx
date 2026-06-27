@@ -2,6 +2,7 @@
 
 import { useGalleryAlbums } from '@/api/hooks/gallery/useGallery.hooks';
 import AppSidebar from '@/components/layout/AppSidebar';
+import AuthTopbar from '@/components/layout/AuthTopbar';
 import { AlbumsPageSkeleton } from '@/components/skeleton';
 import type { IAlbum } from '@/typescript/interface/api';
 import { AlbumsPageWrapper } from '@/styles/albums/albums.styles';
@@ -43,20 +44,31 @@ export default function AlbumsPage() {
       <AppSidebar active="albums" showNewTrip />
 
       <Box className="albums_main" component="main">
+        <AuthTopbar
+          actions={featuredAlbum && (
+            <Button component={Link} href={`/albums/${featuredAlbum.id}`} startIcon={<AddPhotoAlternateIcon />} variant="contained">
+              Upload Photos
+            </Button>
+          )}
+          subtitle="Pick a trip to view and upload its shared travel photos."
+          title="Album"
+        />
         {isLoading ? (
           <AlbumsPageSkeleton />
         ) : (
           <>
         <Box className="albums_topbar" component="header">
-          <Box>
+          <Box className="mobile_page_header">
             <Typography className="page_title" component="h1">Album</Typography>
             <Typography className="page_subtitle">Pick a trip to view and upload its shared travel photos.</Typography>
           </Box>
-          {featuredAlbum && (
-            <Button component={Link} href={`/albums/${featuredAlbum.id}`} startIcon={<AddPhotoAlternateIcon />} variant="contained">
-              Upload Photos
-            </Button>
-          )}
+          <Box className="topbar_actions">
+            {featuredAlbum && (
+              <Button component={Link} href={`/albums/${featuredAlbum.id}`} startIcon={<AddPhotoAlternateIcon />} variant="contained">
+                Upload Photos
+              </Button>
+            )}
+          </Box>
         </Box>
 
         <Box className="albums_content">

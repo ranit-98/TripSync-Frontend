@@ -158,11 +158,18 @@ export const ProfileSettingsWrapper = styled(Box)`
   }
 
   .topbar_avatar {
+    display: block;
     width: 40px;
     height: 40px;
     border: 2px solid rgba(0, 104, 95, 0.22);
     border-radius: 50%;
+    overflow: hidden;
     object-fit: cover;
+  }
+
+  .topbar_avatar img {
+    width: 100%;
+    height: 100%;
   }
 
   .content_area {
@@ -172,6 +179,29 @@ export const ProfileSettingsWrapper = styled(Box)`
 
     @media (max-width: 599px) {
       padding: 20px 16px;
+    }
+  }
+
+  .mobile_page_header {
+    display: none;
+  }
+
+  .page_subtitle {
+    color: #5f6f74;
+    font-size: 14px;
+    line-height: 20px;
+  }
+
+  @media (max-width: 899px) {
+    .mobile_page_header {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-bottom: 18px;
+    }
+
+    .mobile_page_header .page_title {
+      display: block;
     }
   }
 

@@ -13,6 +13,7 @@ export const listOfQueryKeys = {
   users: {
     search: "users-search",
     me: "users-me",
+    travelStats: "users-travel-stats",
     updateMe: "users-update-me",
     avatarUpload: "users-avatar-upload",
     changePassword: "users-change-password",

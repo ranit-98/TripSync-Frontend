@@ -7,12 +7,19 @@ import { endpoints } from "@/api/endpoints";
 import type {
   ApiMutationResponse,
   IChangePasswordPayload,
+  ITravelStats,
   IUser,
   IUpdateUserPayload,
 } from "@/typescript/interface/api";
 
 export const usersMeFn = async (): ApiMutationResponse<IUser> => {
   const res = await axiosInstance.get(endpoints.users.me("v1"));
+
+  return res;
+};
+
+export const usersTravelStatsFn = async (): ApiMutationResponse<ITravelStats> => {
+  const res = await axiosInstance.get(endpoints.users.travelStats("v1"));
 
   return res;
 };

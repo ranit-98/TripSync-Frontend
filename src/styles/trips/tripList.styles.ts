@@ -18,7 +18,7 @@ export const TripListPageWrapper = styled(Box)`
     position: sticky;
     top: 0;
     z-index: 40;
-    display: flex;
+    display: none;
     align-items: center;
     justify-content: space-between;
     gap: 24px;
@@ -33,6 +33,10 @@ export const TripListPageWrapper = styled(Box)`
     font-size: 32px;
     font-weight: 800;
     line-height: 40px;
+  }
+
+  .mobile_page_header {
+    display: none;
   }
 
   .page_subtitle,
@@ -435,7 +439,14 @@ export const TripListPageWrapper = styled(Box)`
   }
 
   @media (max-width: 899px) {
+    .mobile_page_header {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
     .trips_topbar {
+      display: flex;
       align-items: flex-start;
       flex-direction: column;
       padding: 16px;

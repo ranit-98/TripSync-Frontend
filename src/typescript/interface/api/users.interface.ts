@@ -19,3 +19,9 @@ export interface IChangePasswordPayload {
   currentPassword: string;
   newPassword: string;
 }
+
+export interface ITravelStats {
+  destinationsSaved: number;
+  tripsPlanned: number;
+  upcomingTrips: number;
+}

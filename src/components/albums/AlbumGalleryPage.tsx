@@ -3,6 +3,7 @@
 import { useGalleryAlbum, useGalleryPhotos } from '@/api/hooks/gallery/useGallery.hooks';
 import AddPhotoModal from '@/components/albums/AddPhotoModal';
 import AppSidebar from '@/components/layout/AppSidebar';
+import AuthTopbar from '@/components/layout/AuthTopbar';
 import { AlbumGalleryPageSkeleton } from '@/components/skeleton';
 import type { IPhoto } from '@/typescript/interface/api';
 import { AlbumsPageWrapper } from '@/styles/albums/albums.styles';
@@ -43,16 +44,21 @@ export default function AlbumGalleryPage({ tripId }: AlbumGalleryPageProps) {
       <AppSidebar active="albums" showNewTrip />
 
       <Box className="albums_main" component="main">
+        <AuthTopbar
+          actions={<Button component={Link} href="/albums" startIcon={<ArrowBackIcon />} variant="outlined">Back to Albums</Button>}
+          subtitle={`${album?.destination || 'Trip'} photo gallery`}
+          title={albumTitle}
+        />
         {isAlbumLoading || isPhotosLoading ? (
           <AlbumGalleryPageSkeleton />
         ) : (
           <>
         <Box className="albums_topbar" component="header">
-          <Box>
+          <Box className="mobile_page_header">
             <Typography className="page_title" component="h1">{albumTitle}</Typography>
             <Typography className="page_subtitle">{album?.destination || 'Trip'} photo gallery</Typography>
           </Box>
-          <Button component={Link} href="/albums" startIcon={<ArrowBackIcon />} variant="outlined">Back to Albums</Button>
+          <Box className="topbar_actions"><Button component={Link} href="/albums" startIcon={<ArrowBackIcon />} variant="outlined">Back to Albums</Button></Box>
         </Box>
 
         <Box className="albums_content">

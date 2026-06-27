@@ -8,6 +8,7 @@ import {
   useTripsPendingInvites,
 } from '@/api/hooks/trips/useTrips.hooks';
 import AppSidebar from '@/components/layout/AppSidebar';
+import AuthTopbar from '@/components/layout/AuthTopbar';
 import ImageComp from '@/components/image/ImageComp';
 import { TripListSkeleton } from '@/components/skeleton';
 import { dashboardAssets } from '@/json/assets';
@@ -226,25 +227,45 @@ export default function TripListPage() {
       <AppSidebar active="trips" showNewTrip />
 
       <Box className="trips_main" component="main">
+        <AuthTopbar
+          actions={(
+            <Box className="search_wrap">
+              <SearchIcon className="search_icon" />
+              <TextField
+                className="search_input"
+                fullWidth
+                hiddenLabel
+                onChange={(event) => setSearchTerm(event.target.value)}
+                placeholder="Search trips..."
+                size="small"
+                value={searchTerm}
+              />
+            </Box>
+          )}
+          subtitle="Choose a trip to open its itinerary, map, chat, and expenses."
+          title="My Trips"
+        />
         <Box className="trips_topbar" component="header">
-          <Box>
+          <Box className="mobile_page_header">
             <Typography className="page_title" component="h1">
               My Trips
             </Typography>
             <Typography className="page_subtitle">Choose a trip to open its itinerary, map, chat, and expenses.</Typography>
           </Box>
 
-          <Box className="search_wrap">
-            <SearchIcon className="search_icon" />
-            <TextField
-              className="search_input"
-              fullWidth
-              hiddenLabel
-              onChange={(event) => setSearchTerm(event.target.value)}
-              placeholder="Search trips..."
-              size="small"
-              value={searchTerm}
-            />
+          <Box className="topbar_actions">
+            <Box className="search_wrap">
+              <SearchIcon className="search_icon" />
+              <TextField
+                className="search_input"
+                fullWidth
+                hiddenLabel
+                onChange={(event) => setSearchTerm(event.target.value)}
+                placeholder="Search trips..."
+                size="small"
+                value={searchTerm}
+              />
+            </Box>
           </Box>
         </Box>
 

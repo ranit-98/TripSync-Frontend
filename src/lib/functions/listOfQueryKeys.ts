@@ -40,6 +40,7 @@ export const listOfQueryKeys = {
     list: "expenses-list",
     details: "expenses-details",
     settlements: "expenses-settlements",
+    razorpay: "expenses-razorpay",
     reminders: "expenses-reminders",
   },
   map: {

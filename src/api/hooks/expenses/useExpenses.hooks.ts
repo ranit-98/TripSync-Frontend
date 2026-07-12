@@ -2,12 +2,14 @@
 
 import {
   expensesCreateFn,
+  expensesCreateRazorpayOrderFn,
   expensesConfirmSettlementPaidFn,
   expensesDeleteFn,
   expensesDetailsFn,
   expensesListFn,
   expensesMarkSettlementPaidFn,
   expensesSendSettlementRemindersFn,
+  expensesVerifyRazorpayPaymentFn,
   expensesSettlementsFn,
   expensesUpdateFn,
 } from "@/api/functions/expenses";
@@ -124,6 +126,28 @@ export const useExpensesSendSettlementReminders = ({ optionalCallback }: IMutati
     mutationFn: expensesSendSettlementRemindersFn,
     onSuccess: (res) => {
       if (isSuccessResponse(res?.data.statusCode)) {
+        optionalCallback();
+      }
+    },
+  });
+};
+
+export const useExpensesCreateRazorpayOrder = () => {
+  return useMutation({
+    mutationKey: [listOfQueryKeys.expenses.razorpay, "order"],
+    mutationFn: expensesCreateRazorpayOrderFn,
+  });
+};
+
+export const useExpensesVerifyRazorpayPayment = ({ optionalCallback }: IMutationHookOptions) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationKey: [listOfQueryKeys.expenses.razorpay, "verify"],
+    mutationFn: expensesVerifyRazorpayPaymentFn,
+    onSuccess: (res, variables) => {
+      if (isSuccessResponse(res?.data.statusCode)) {
+        queryClient.invalidateQueries({ queryKey: [listOfQueryKeys.expenses.settlements, variables.tripId] });
         optionalCallback();
       }
     },

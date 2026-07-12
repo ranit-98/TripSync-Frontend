@@ -41,4 +41,21 @@ export interface ISettlement {
   currency?: string;
   isPaid?: boolean;
   status?: "pending" | "payment_declared" | "paid";
+  razorpayOrderId?: string | null;
+  razorpayPaymentId?: string | null;
+  paidAt?: string | null;
+}
+
+export interface IRazorpaySettlementOrder {
+  amount: number;
+  currency: string;
+  keyId: string;
+  orderId: string;
+  settlementId: ApiId;
+}
+
+export interface IVerifyRazorpaySettlementPayload {
+  razorpayOrderId: string;
+  razorpayPaymentId: string;
+  razorpaySignature: string;
 }

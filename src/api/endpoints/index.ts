@@ -159,6 +159,10 @@ export const endpoints = {
     confirmSettlementPaid: (version: TAPIVersions, tripId: string, settlementId: string) =>
       `${version}/trips/${tripId}/settlements/${settlementId}/confirm-paid`,
     sendSettlementReminders: (version: TAPIVersions, tripId: string, settlementId: string) => `${version}/trips/${tripId}/settlements/${settlementId}/reminder`,
+    createRazorpayOrder: (version: TAPIVersions, tripId: string, settlementId: string) =>
+      `${version}/trips/${tripId}/settlements/${settlementId}/razorpay/order`,
+    verifyRazorpayPayment: (version: TAPIVersions, tripId: string, settlementId: string) =>
+      `${version}/trips/${tripId}/settlements/${settlementId}/razorpay/verify`,
   },
   map: {
     locations: (version: TAPIVersions, tripId: string) => {

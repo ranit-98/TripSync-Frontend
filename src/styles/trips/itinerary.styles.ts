@@ -353,7 +353,7 @@ export const TripItineraryWrapper = styled(Box)`
   @media (max-width: 599px) {
     .hero_topbar {
       align-items: flex-start;
-      padding: 18px 12px;
+      padding: 18px 64px 18px 12px;
     }
 
     .hero_actions {
@@ -364,10 +364,19 @@ export const TripItineraryWrapper = styled(Box)`
     }
 
     .hero_user_island {
-      max-width: calc(100vw - 82px);
+      max-width: calc(100vw - 134px);
       gap: 7px;
       font-size: 12px;
       padding: 4px 10px 4px 4px;
+    }
+
+    .hero_toggle {
+      top: 18px;
+      right: 12px;
+      bottom: auto;
+      width: 42px;
+      height: 42px;
+      background-color: rgba(255, 255, 255, 0.92);
     }
 
     .profile_avatar {

@@ -11,6 +11,7 @@ import Button from "@mui/material/Button";
 import Link from "@mui/material/Link";
 import Typography from "@mui/material/Typography";
 import { useRouter } from "next/navigation";
+import type { FormEvent } from "react";
 import { useForm } from "react-hook-form";
 
 type LoginFormValues = {
@@ -48,12 +49,16 @@ export default function LoginForm() {
       router.push(getLoginRedirectPath());
     },
   });
-  const onSubmit = handleSubmit((formData) => {
+  const onValidSubmit = handleSubmit((formData) => {
     loginMutation(formData);
   });
+  const onSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    void onValidSubmit(event);
+  };
 
   return (
-    <LoginFormWrapper noValidate onSubmit={onSubmit}>
+    <LoginFormWrapper method="post" noValidate onSubmit={onSubmit}>
       <FormTextField
         className="form_field"
         control={control}

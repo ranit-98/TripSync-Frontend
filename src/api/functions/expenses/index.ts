@@ -10,8 +10,10 @@ import type {
   ICreateExpensePayload,
   IExpense,
   IPageParams,
+  IRazorpaySettlementOrder,
   ISettlement,
   IUpdateExpensePayload,
+  IVerifyRazorpaySettlementPayload,
   IWithExpenseId,
   IWithSettlementId,
   IWithTripId,
@@ -76,6 +78,25 @@ export const expensesConfirmSettlementPaidFn = async ({ settlementId, tripId }: 
 
 export const expensesSendSettlementRemindersFn = async ({ tripId, settlementId }: IWithSettlementId): ApiMutationResponse => {
   const res = await axiosInstance.post(endpoints.expenses.sendSettlementReminders("v1", tripId, settlementId));
+
+  return res;
+};
+
+export const expensesCreateRazorpayOrderFn = async ({
+  settlementId,
+  tripId,
+}: IWithSettlementId): ApiMutationResponse<IRazorpaySettlementOrder> => {
+  const res = await axiosInstance.post(endpoints.expenses.createRazorpayOrder("v1", tripId, settlementId));
+
+  return res;
+};
+
+export const expensesVerifyRazorpayPaymentFn = async ({
+  body,
+  settlementId,
+  tripId,
+}: IBodyPayload<IVerifyRazorpaySettlementPayload> & IWithSettlementId): ApiMutationResponse<ISettlement> => {
+  const res = await axiosInstance.post(endpoints.expenses.verifyRazorpayPayment("v1", tripId, settlementId), body);
 
   return res;
 };

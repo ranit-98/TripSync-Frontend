@@ -4,11 +4,13 @@ import {
   useExpensesCreate,
   useExpensesConfirmSettlementPaid,
   useExpensesDelete,
+  useExpensesCreateRazorpayOrder,
   useExpensesList,
   useExpensesMarkSettlementPaid,
   useExpensesSendSettlementReminders,
   useExpensesSettlements,
   useExpensesUpdate,
+  useExpensesVerifyRazorpayPayment,
 } from '@/api/hooks/expenses/useExpenses.hooks';
 import { useTripDetails, useTripMembers } from '@/api/hooks/trips/useTrips.hooks';
 import { ExpensesSkeleton } from '@/components/skeleton';
@@ -52,6 +54,7 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { useEffect, useMemo, useState } from 'react';
 import { Controller, type SubmitHandler, useForm, useWatch } from 'react-hook-form';
+import toast from 'react-hot-toast';
 import {
   addExpenseSchema,
   expenseCategories,
@@ -65,6 +68,62 @@ type MemberOption = {
 };
 
 const fallbackAvatar = tripItineraryAssets.profile;
+type RazorpayPaymentResponse = {
+  razorpay_order_id: string;
+  razorpay_payment_id: string;
+  razorpay_signature: string;
+};
+
+type RazorpayCheckoutOptions = {
+  amount: number;
+  currency: string;
+  description: string;
+  handler: (response: RazorpayPaymentResponse) => void;
+  key: string;
+  modal?: { ondismiss?: () => void };
+  name: string;
+  order_id: string;
+  prefill?: { email?: string; name?: string };
+};
+
+type RazorpayCheckoutInstance = {
+  on: (event: 'payment.failed', handler: (response: { error?: { description?: string } }) => void) => void;
+  open: () => void;
+};
+
+declare global {
+  interface Window {
+    Razorpay?: new (options: RazorpayCheckoutOptions) => RazorpayCheckoutInstance;
+  }
+}
+
+const loadRazorpayCheckout = () =>
+  new Promise<void>((resolve, reject) => {
+    if (typeof window === 'undefined') {
+      reject(new Error('Razorpay Checkout is only available in the browser.'));
+      return;
+    }
+
+    if (window.Razorpay) {
+      resolve();
+      return;
+    }
+
+    const existingScript = document.querySelector<HTMLScriptElement>('script[src="https://checkout.razorpay.com/v1/checkout.js"]');
+    if (existingScript) {
+      existingScript.addEventListener('load', () => resolve(), { once: true });
+      existingScript.addEventListener('error', () => reject(new Error('Unable to load Razorpay Checkout.')), { once: true });
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.async = true;
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error('Unable to load Razorpay Checkout.'));
+    document.body.appendChild(script);
+  });
+
 const categoryConfig = {
   activity: { icon: PaymentsIcon, label: 'Activities', tone: 'primary' },
   flight: { icon: FlightIcon, label: 'Flights', tone: 'secondary' },
@@ -598,6 +657,8 @@ export default function ExpensesTab({ tripId }: { tripId: string }) {
   const markSettlementPaid = useExpensesMarkSettlementPaid({ optionalCallback: () => undefined });
   const confirmSettlementPaid = useExpensesConfirmSettlementPaid({ optionalCallback: () => undefined });
   const sendReminders = useExpensesSendSettlementReminders({ optionalCallback: () => undefined });
+  const createRazorpayOrder = useExpensesCreateRazorpayOrder();
+  const verifyRazorpayPayment = useExpensesVerifyRazorpayPayment({ optionalCallback: () => undefined });
   const trip = tripResponse?.data.data ?? null;
   const currency = trip?.currency || 'USD';
   const members = useMemo(
@@ -688,6 +749,60 @@ export default function ExpensesTab({ tripId }: { tripId: string }) {
     if (!deleteExpenseCandidate?.id) return;
 
     deleteExpense.mutate({ expenseId: deleteExpenseCandidate.id, tripId });
+  };
+
+  const handlePaySettlement = async (settlement: ISettlement) => {
+    if (!settlement.id) return;
+
+    try {
+      await loadRazorpayCheckout();
+      const orderResponse = await createRazorpayOrder.mutateAsync({ settlementId: settlement.id, tripId });
+      const order = orderResponse.data.data;
+      const Razorpay = window.Razorpay;
+      if (!order || !Razorpay) throw new Error('Razorpay Checkout is unavailable.');
+
+      await new Promise<void>((resolve, reject) => {
+        const checkout = new Razorpay({
+          amount: order.amount,
+          currency: order.currency,
+          description: 'Trip settlement payment',
+          handler: async (response) => {
+            try {
+              await verifyRazorpayPayment.mutateAsync({
+                body: {
+                  razorpayOrderId: response.razorpay_order_id,
+                  razorpayPaymentId: response.razorpay_payment_id,
+                  razorpaySignature: response.razorpay_signature,
+                },
+                settlementId: settlement.id,
+                tripId,
+              });
+              toast.success('Payment verified successfully.');
+              resolve();
+            } catch (error) {
+              reject(error instanceof Error ? error : new Error('Payment verification failed.'));
+            }
+          },
+          key: order.keyId,
+          modal: {
+            ondismiss: () => reject(new Error('Payment cancelled.')),
+          },
+          name: 'TripSync',
+          order_id: order.orderId,
+          prefill: {
+            email: currentUser?.email,
+            name: currentUser?.name || currentUser?.email,
+          },
+        });
+
+        checkout.on('payment.failed', (response) => {
+          reject(new Error(response.error?.description || 'Payment failed.'));
+        });
+        checkout.open();
+      });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Unable to start Razorpay payment.');
+    }
   };
 
   return (
@@ -867,7 +982,12 @@ export default function ExpensesTab({ tripId }: { tripId: string }) {
                       <strong>{formatMoney(settlement.amount || 0, settlement.currency || currency)}</strong>
                       <span>{isPaid ? 'Paid' : isOutstanding ? 'Due' : 'Clear'}</span>
                     </Box>
-                    {settlement.status === 'pending' && settlement.fromUserId === currentUser?.id && <Button className="settlement_card_action" onClick={() => markSettlementPaid.mutate({ tripId, settlementId: settlement.id })} startIcon={<CheckCircleIcon />} variant="contained">Declare payment sent</Button>}
+                    {settlement.status === 'pending' && settlement.fromUserId === currentUser?.id && (
+                      <>
+                        <Button className="settlement_card_action" disabled={markSettlementPaid.isPending} onClick={() => markSettlementPaid.mutate({ tripId, settlementId: settlement.id })} startIcon={<CheckCircleIcon />} variant="outlined">{markSettlementPaid.isPending ? 'Declaring...' : 'Settle manually'}</Button>
+                        <Button className="settlement_card_action" disabled={createRazorpayOrder.isPending || verifyRazorpayPayment.isPending} onClick={() => handlePaySettlement(settlement)} startIcon={<PaymentsIcon />} variant="contained">{createRazorpayOrder.isPending || verifyRazorpayPayment.isPending ? 'Processing...' : 'Pay with Razorpay'}</Button>
+                      </>
+                    )}
                     {settlement.status === 'payment_declared' && settlement.toUserId === currentUser?.id && <Button className="settlement_card_action" onClick={() => confirmSettlementPaid.mutate({ tripId, settlementId: settlement.id })} startIcon={<CheckCircleIcon />} variant="contained">Confirm you received it</Button>}
                     {settlement.status === 'pending' && settlement.toUserId === currentUser?.id && <Button className="settlement_card_action reminder" onClick={() => sendReminders.mutate({ tripId, settlementId: settlement.id })} variant="outlined">Send payment reminder</Button>}
                   </Box>

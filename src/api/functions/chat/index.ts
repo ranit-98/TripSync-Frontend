@@ -10,13 +10,14 @@ import type {
   IBodyPayload,
   ICreateAttachmentPayload,
   ICreateMessagePayload,
+  IPageParams,
   IMessage,
   IWithMessageId,
   IWithTripId,
 } from "@/typescript/interface/api";
 
-export const chatHistoryFn = async ({ tripId }: IWithTripId): ApiMutationResponse<IMessage[]> => {
-  const res = await axiosInstance.get(endpoints.chat.history("v1", tripId));
+export const chatHistoryFn = async ({ tripId, page = 1, limit = 30 }: IWithTripId & IPageParams): ApiMutationResponse<IMessage[]> => {
+  const res = await axiosInstance.get(endpoints.chat.history("v1", tripId), { params: { page, limit } });
 
   return res;
 };

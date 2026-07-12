@@ -17,8 +17,8 @@ import type {
   IWithTripId,
 } from "@/typescript/interface/api";
 
-export const expensesListFn = async ({ tripId, page = 1, limit = 10 }: IWithTripId & IPageParams): ApiMutationResponse<IExpense[]> => {
-  const res = await axiosInstance.get(endpoints.expenses.list("v1", tripId), { params: { page, limit } });
+export const expensesListFn = async ({ tripId, page = 1, limit = 10, category }: IWithTripId & IPageParams & { category?: string }): ApiMutationResponse<IExpense[]> => {
+  const res = await axiosInstance.get(endpoints.expenses.list("v1", tripId), { params: { page, limit, category } });
 
   return res;
 };

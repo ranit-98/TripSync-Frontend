@@ -4,12 +4,17 @@ import { chatAttachFn, chatDeleteFn, chatHistoryFn, chatSendFn } from "@/api/fun
 import type { IMutationHookOptions } from "@/api/hooks/types";
 import { isSuccessResponse } from "@/api/hooks/types";
 import { listOfQueryKeys } from "@/lib/functions/listOfQueryKeys";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 export const useChatHistory = (tripId?: string) => {
-  return useQuery({
+  return useInfiniteQuery({
     queryKey: [listOfQueryKeys.chat.messages, tripId],
-    queryFn: () => chatHistoryFn({ tripId: tripId ?? "" }),
+    initialPageParam: 1,
+    queryFn: ({ pageParam }) => chatHistoryFn({ tripId: tripId ?? "", page: pageParam }),
+    getNextPageParam: (lastPage) => {
+      const pagination = lastPage.data.pagination;
+      return pagination?.hasNextPage ? pagination.page + 1 : undefined;
+    },
     enabled: Boolean(tripId),
   });
 };

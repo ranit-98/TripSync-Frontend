@@ -21,9 +21,12 @@ import Button from '@mui/material/Button';
 import IconButton from '@mui/material/IconButton';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
+import dynamic from 'next/dynamic';
 import { useState } from 'react';
-import AddItineraryItemModal, { type AddItineraryMode } from '../AddItineraryItemModal';
+import type { AddItineraryMode } from '../AddItineraryItemModal';
 import { TripIcon } from '../shared';
+
+const AddItineraryItemModal = dynamic(() => import('../AddItineraryItemModal'), { ssr: false });
 
 const getArrayFromRecord = (value: unknown, key: string) => {
   if (!value || typeof value !== 'object') {

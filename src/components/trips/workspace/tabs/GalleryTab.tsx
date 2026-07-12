@@ -1,7 +1,6 @@
 'use client';
 
 import { useGalleryAlbum, useGalleryPhotos } from '@/api/hooks/gallery/useGallery.hooks';
-import AddPhotoModal from '@/components/albums/AddPhotoModal';
 import { TripGalleryTabSkeleton } from '@/components/skeleton';
 import type { IPhoto } from '@/typescript/interface/api';
 import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate';
@@ -9,7 +8,10 @@ import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
+import dynamic from 'next/dynamic';
 import { useMemo, useState } from 'react';
+
+const AddPhotoModal = dynamic(() => import('@/components/albums/AddPhotoModal'), { ssr: false });
 
 const toPhotos = (value: unknown): IPhoto[] => {
   if (Array.isArray(value)) return value as IPhoto[];

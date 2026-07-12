@@ -16,10 +16,10 @@ import { isSuccessResponse } from "@/api/hooks/types";
 import { listOfQueryKeys } from "@/lib/functions/listOfQueryKeys";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-export const useExpensesList = (tripId?: string, page = 1) => {
+export const useExpensesList = (tripId?: string, page = 1, category = "all") => {
   return useQuery({
-    queryKey: [listOfQueryKeys.expenses.list, tripId, page],
-    queryFn: () => expensesListFn({ tripId: tripId ?? "", page }),
+    queryKey: [listOfQueryKeys.expenses.list, tripId, page, category],
+    queryFn: () => expensesListFn({ tripId: tripId ?? "", page, category: category === "all" ? undefined : category }),
     enabled: Boolean(tripId),
   });
 };

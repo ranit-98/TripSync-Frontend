@@ -10,7 +10,6 @@ import CircularProgress from '@mui/material/CircularProgress';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 import { useEffect, useRef, useState } from 'react';
-import * as XLSX from 'xlsx';
 import DocumentPreviewFallback from './DocumentPreviewFallback';
 
 export type PreviewDocument = {
@@ -316,6 +315,7 @@ function SpreadsheetPreview({ document }: { document: PreviewDocument }) {
         }
 
         const buffer = await response.arrayBuffer();
+        const XLSX = await import('xlsx');
         const workbook = XLSX.read(buffer, { type: 'array' });
         const parsedSheets = workbook.SheetNames.reduce<Record<string, string[][]>>((result, sheetName) => {
           const sheet = workbook.Sheets[sheetName];

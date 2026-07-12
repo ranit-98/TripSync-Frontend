@@ -20,11 +20,12 @@ import { isSuccessResponse } from "@/api/hooks/types";
 import { listOfQueryKeys } from "@/lib/functions/listOfQueryKeys";
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-export const useTripsList = () => {
+export const useTripsList = (search = "") => {
+  const normalizedSearch = search.trim();
   return useInfiniteQuery({
-    queryKey: [listOfQueryKeys.trips.list],
+    queryKey: [listOfQueryKeys.trips.list, normalizedSearch],
     initialPageParam: 1,
-    queryFn: ({ pageParam }) => tripsListFn({ page: pageParam }),
+    queryFn: ({ pageParam }) => tripsListFn({ page: pageParam, search: normalizedSearch }),
     getNextPageParam: (lastPage) => {
       const pagination = lastPage.data.pagination;
       return pagination?.hasNextPage ? pagination.page + 1 : undefined;

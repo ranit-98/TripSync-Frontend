@@ -166,8 +166,9 @@ const getPendingInvite = (notification: INotification): PendingInvite | null => 
 
 export default function TripListPage() {
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [dismissedInviteIds, setDismissedInviteIds] = useState<string[]>([]);
-  const { data: tripsResponse, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } = useTripsList();
+  const { data: tripsResponse, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } = useTripsList(debouncedSearch);
   const { data: notificationsResponse } = useNotificationsList();
   const { data: pendingInvitesResponse } = useTripsPendingInvites();
   const acceptInvite = useTripsAcceptInvite({ optionalCallback: () => undefined });
@@ -177,6 +178,10 @@ export default function TripListPage() {
     () => tripsResponse?.pages.flatMap((page) => page.data.data ?? []) ?? [],
     [tripsResponse?.pages]
   );
+  useEffect(() => {
+    const timeout = window.setTimeout(() => setDebouncedSearch(searchTerm), 300);
+    return () => window.clearTimeout(timeout);
+  }, [searchTerm]);
   useEffect(() => {
     const target = loadMoreRef.current;
     if (!target || !hasNextPage) return;
@@ -209,18 +214,7 @@ export default function TripListPage() {
     },
     [dismissedInviteIds, notificationsResponse?.data.data, pendingInvitesResponse?.data.data]
   );
-  const filteredTrips = useMemo(() => {
-    const normalizedSearch = searchTerm.trim().toLowerCase();
-
-    if (!normalizedSearch) {
-      return trips;
-    }
-
-    return trips.filter((trip) => {
-      return `${trip.title} ${trip.destination}`.toLowerCase().includes(normalizedSearch);
-    });
-  }, [searchTerm, trips]);
-  const featuredTrip = filteredTrips[0];
+  const featuredTrip = trips[0];
 
   return (
     <TripListPageWrapper>
@@ -371,9 +365,9 @@ export default function TripListPage() {
 
           {isLoading ? (
             <TripListSkeleton />
-          ) : filteredTrips.length ? (
+          ) : trips.length ? (
             <Box className="trip_grid">
-              {filteredTrips.map((trip) => {
+              {trips.map((trip) => {
                 const status = getTripStatus(trip);
 
                 return (

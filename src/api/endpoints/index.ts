@@ -68,8 +68,8 @@ export const endpoints = {
     },
   },
   trips: {
-    list: (version: TAPIVersions, { page = 1, limit = 20 }: { page?: number; limit?: number } = {}) => {
-      return `${version}/trips?page=${page}&limit=${limit}`;
+    list: (version: TAPIVersions) => {
+      return `${version}/trips`;
     },
     create: (version: TAPIVersions) => {
       return `${version}/trips`;

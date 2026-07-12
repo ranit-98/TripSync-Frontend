@@ -4,10 +4,12 @@
 
 import axiosInstance from "@/api/axiosInstance";
 import { endpoints } from "@/api/endpoints";
-import type { ApiMutationResponse, INotification, IWithNotificationId } from "@/typescript/interface/api";
+import type { ApiMutationResponse, INotification, IPageParams, IWithNotificationId } from "@/typescript/interface/api";
 
-export const notificationsListFn = async (): ApiMutationResponse<INotification[]> => {
-  const res = await axiosInstance.get(endpoints.notifications.list("v1"));
+export const notificationsListFn = async ({ page = 1, limit = 20, search = "", category = "all" }: IPageParams & { search?: string; category?: string } = {}): ApiMutationResponse<INotification[]> => {
+  const res = await axiosInstance.get(endpoints.notifications.list("v1"), {
+    params: { page, limit, search: search || undefined, category },
+  });
 
   return res;
 };

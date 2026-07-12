@@ -76,14 +76,14 @@ export default function ChatTab({
 }) {
   const currentUser = useAuthStore((state) => state.user);
   const { data: membersResponse } = useTripMembers(tripId);
-  const { data: messagesResponse, isLoading } = useChatHistory(tripId);
+  const { data: messagesResponse, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } = useChatHistory(tripId);
   const sendMessage = useChatSend({ optionalCallback: () => undefined });
   const attachMessage = useChatAttach({ optionalCallback: () => undefined });
   const deleteMessage = useChatDelete({ optionalCallback: () => undefined });
   const signUpload = useUploadsSign({ optionalCallback: () => undefined });
   const apiMessages = useMemo(
-    () => toArray<IMessage>(messagesResponse?.data.data),
-    [messagesResponse?.data.data]
+    () => [...(messagesResponse?.pages ?? [])].reverse().flatMap((page) => toArray<IMessage>(page.data.data)),
+    [messagesResponse?.pages]
   );
   const members = useMemo<ReusableChatUser[]>(
     () =>
@@ -161,10 +161,13 @@ export default function ChatTab({
       fallbackAvatar={tripItineraryAssets.profile}
       isLoading={false}
       isSending={sendMessage.isPending}
+      hasOlderMessages={hasNextPage}
+      isLoadingOlderMessages={isFetchingNextPage}
       members={members}
       messages={realtimeMessages.length ? realtimeMessages : messages}
       onDeleteMessage={(message) => deleteMessage.mutate({ messageId: message.id, tripId })}
       onInviteMember={onInvite}
+      onLoadOlderMessages={() => fetchNextPage()}
       onReactMessage={realtime.reactToMessage}
       onSendMessage={async (body, files = []) => {
         realtime.stopTyping();

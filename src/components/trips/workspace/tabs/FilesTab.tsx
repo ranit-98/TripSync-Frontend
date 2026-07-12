@@ -2,7 +2,6 @@
 
 import { useFilesCreateDocument, useFilesCreateFolder, useFilesDeleteFolder, useFilesDocuments, useFilesFolders } from '@/api/hooks/files/useFiles.hooks';
 import { useUploadsSign } from '@/api/hooks/uploads/useUploads.hooks';
-import DocumentPreviewModal from '@/components/trips/workspace/DocumentPreviewModal';
 import type { ICloudinaryUploadResponse, IDocument, IFolder, ISignedUpload } from '@/typescript/interface/api';
 import { yupResolver } from '@hookform/resolvers/yup';
 import CloseIcon from '@mui/icons-material/Close';
@@ -25,7 +24,10 @@ import Typography from '@mui/material/Typography';
 import { ChangeEvent, DragEvent, type ReactNode, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
+import dynamic from 'next/dynamic';
 import * as yup from 'yup';
+
+const DocumentPreviewModal = dynamic(() => import('@/components/trips/workspace/DocumentPreviewModal'), { ssr: false });
 
 const toArray = <T,>(value: unknown): T[] => Array.isArray(value) ? value as T[] : [];
 

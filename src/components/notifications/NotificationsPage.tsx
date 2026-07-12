@@ -18,10 +18,11 @@ import SearchIcon from '@mui/icons-material/Search';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import IconButton from '@mui/material/IconButton';
+import Pagination from '@mui/material/Pagination';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { useRouter } from 'next/navigation';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 type FilterKey = 'all' | 'invite' | 'expense' | 'itinerary';
 
@@ -98,32 +99,38 @@ const notificationIcon = (notification: INotification) => {
 export default function NotificationsPage() {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [filter, setFilter] = useState<FilterKey>('all');
-  const { data: notificationsResponse, isLoading } = useNotificationsList();
+  const [page, setPage] = useState(1);
+  const { data: notificationsResponse, isLoading } = useNotificationsList(debouncedSearch, filter, page);
   const { data: pendingInvitesResponse, isLoading: arePendingInvitesLoading } = useTripsPendingInvites();
   const readNotification = useNotificationsRead({ optionalCallback: () => undefined });
   const readAll = useNotificationsReadAll({ optionalCallback: () => undefined });
   const deleteNotification = useNotificationsDelete({ optionalCallback: () => undefined });
+  useEffect(() => {
+    const timeout = window.setTimeout(() => {
+      setDebouncedSearch(searchTerm);
+      setPage(1);
+    }, 300);
+    return () => window.clearTimeout(timeout);
+  }, [searchTerm]);
   const notifications = useMemo(() => mergeNotifications(
     notificationList(notificationsResponse?.data.data),
-    pendingInviteNotifications(pendingInvitesResponse?.data.data),
-  ), [notificationsResponse?.data.data, pendingInvitesResponse?.data.data]);
-  const unreadCount = notifications.filter(isUnread).length;
-  const todayCount = notifications.filter((notification) => sectionLabel(notification) === 'Today').length;
-  const counts = useMemo(() => ({
+    filter === 'all' && !debouncedSearch ? pendingInviteNotifications(pendingInvitesResponse?.data.data) : [],
+  ), [debouncedSearch, filter, notificationsResponse?.data.data, pendingInvitesResponse?.data.data]);
+  const notificationPagination = notificationsResponse?.data.pagination;
+  const apiCounts = notificationsResponse?.data.notificationCounts;
+  const unreadCount = apiCounts?.unread ?? notifications.filter(isUnread).length;
+  const todayCount = apiCounts?.today ?? notifications.filter((notification) => sectionLabel(notification) === 'Today').length;
+  const counts = apiCounts ?? {
     all: notifications.length,
     invite: notifications.filter((notification) => categoryFor(notification) === 'invite').length,
     expense: notifications.filter((notification) => categoryFor(notification) === 'expense').length,
     itinerary: notifications.filter((notification) => categoryFor(notification) === 'itinerary').length,
-  }), [notifications]);
-  const displayedNotifications = useMemo(() => {
-    const term = searchTerm.trim().toLowerCase();
-    return notifications.filter((notification) => {
-      const matchesFilter = filter === 'all' || categoryFor(notification) === filter;
-      return matchesFilter && (!term || `${notification.title || ''} ${notification.message || notification.body || ''} ${getTripName(notification) || ''}`.toLowerCase().includes(term));
-    });
-  }, [filter, notifications, searchTerm]);
-  const sections = useMemo(() => ['Today', 'Yesterday', 'Earlier'].map((label) => ({ label, items: displayedNotifications.filter((notification) => sectionLabel(notification) === label) })).filter((section) => section.items.length), [displayedNotifications]);
+    unread: unreadCount,
+    today: todayCount,
+  };
+  const sections = useMemo(() => ['Today', 'Yesterday', 'Earlier'].map((label) => ({ label, items: notifications.filter((notification) => sectionLabel(notification) === label) })).filter((section) => section.items.length), [notifications]);
 
   const handleOpen = async (notification: INotification) => {
     if (isUnread(notification) && !isPendingInviteNotification(notification)) await readNotification.mutateAsync({ notificationId: notification.id });
@@ -158,9 +165,10 @@ export default function NotificationsPage() {
                   <Box className="notification_actions">{unread && <span className="unread_dot" />}{!unread && <IconButton aria-label="Delete notification" size="small" onClick={(event) => { event.stopPropagation(); deleteNotification.mutate({ notificationId: notification.id }); }}><DeleteOutlineIcon fontSize="small" /></IconButton>}</Box>
                 </Box>;
               })}</Box></Box>)}
+              {notificationPagination && notificationPagination.totalPages > 1 && <Box sx={{ display: 'flex', justifyContent: 'center', pt: 2 }}><Pagination count={notificationPagination.totalPages} page={page} onChange={(_, nextPage) => setPage(nextPage)} /></Box>}
             </Box>
           </Box>
-          <Box className="summary_stack"><Box className="summary_card"><Typography className="summary_title" component="h2">Activity Summary</Typography><Box className="metric_grid"><Box className="metric_tile"><span className="metric_value">{unreadCount}</span><span className="metric_label">Unread</span></Box><Box className="metric_tile"><span className="metric_value">{todayCount}</span><span className="metric_label">Today</span></Box></Box></Box><Box className="summary_card"><Typography className="summary_title" component="h2">Filters</Typography><Box className="filter_list">{([['all', 'All notifications'], ['invite', 'Invites'], ['expense', 'Budgets'], ['itinerary', 'Itinerary']] as const).map(([key, label]) => <button className={`filter_item${filter === key ? ' active' : ''}`} key={key} onClick={() => setFilter(key)} type="button"><span>{label}</span><strong>{counts[key]}</strong></button>)}</Box></Box><Box className="summary_card"><Typography className="summary_title" component="h2">Quick Actions</Typography><Box className="filter_list"><Button href="/trips/create" startIcon={<AddIcon />} variant="contained">New Trip</Button><Button href="/trips" startIcon={<NotificationsIcon />} variant="outlined">Review trip activity</Button></Box></Box></Box>
+          <Box className="summary_stack"><Box className="summary_card"><Typography className="summary_title" component="h2">Activity Summary</Typography><Box className="metric_grid"><Box className="metric_tile"><span className="metric_value">{unreadCount}</span><span className="metric_label">Unread</span></Box><Box className="metric_tile"><span className="metric_value">{todayCount}</span><span className="metric_label">Today</span></Box></Box></Box><Box className="summary_card"><Typography className="summary_title" component="h2">Filters</Typography><Box className="filter_list">{([['all', 'All notifications'], ['invite', 'Invites'], ['expense', 'Budgets'], ['itinerary', 'Itinerary']] as const).map(([key, label]) => <button className={`filter_item${filter === key ? ' active' : ''}`} key={key} onClick={() => { setFilter(key); setPage(1); }} type="button"><span>{label}</span><strong>{counts[key]}</strong></button>)}</Box></Box><Box className="summary_card"><Typography className="summary_title" component="h2">Quick Actions</Typography><Box className="filter_list"><Button href="/trips/create" startIcon={<AddIcon />} variant="contained">New Trip</Button><Button href="/trips" startIcon={<NotificationsIcon />} variant="outlined">Review trip activity</Button></Box></Box></Box>
         </Box>
       </Box>
     </NotificationsPageWrapper>

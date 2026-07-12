@@ -1,7 +1,6 @@
 'use client';
 
 import { useGalleryAlbum, useGalleryPhotos } from '@/api/hooks/gallery/useGallery.hooks';
-import AddPhotoModal from '@/components/albums/AddPhotoModal';
 import AppSidebar from '@/components/layout/AppSidebar';
 import AuthTopbar from '@/components/layout/AuthTopbar';
 import { AlbumGalleryPageSkeleton } from '@/components/skeleton';
@@ -15,7 +14,10 @@ import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { useMemo, useState } from 'react';
+
+const AddPhotoModal = dynamic(() => import('@/components/albums/AddPhotoModal'), { ssr: false });
 
 const toPhotos = (value: unknown): IPhoto[] => {
   if (Array.isArray(value)) return value as IPhoto[];

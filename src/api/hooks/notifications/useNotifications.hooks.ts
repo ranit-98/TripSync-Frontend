@@ -31,10 +31,10 @@ const updateCachedNotifications = (
   });
 };
 
-export const useNotificationsList = () => {
+export const useNotificationsList = (search = "", category = "all", page = 1) => {
   return useQuery({
-    queryKey: [listOfQueryKeys.notifications.list],
-    queryFn: notificationsListFn,
+    queryKey: [listOfQueryKeys.notifications.list, search.trim(), category, page],
+    queryFn: () => notificationsListFn({ search: search.trim(), category, page }),
   });
 };
 

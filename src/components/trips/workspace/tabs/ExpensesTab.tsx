@@ -585,7 +585,7 @@ export default function ExpensesTab({ tripId }: { tripId: string }) {
   const currentUser = useAuthStore((state) => state.user);
   const { data: tripResponse } = useTripDetails(tripId);
   const { data: membersResponse } = useTripMembers(tripId);
-  const { data: expensesResponse, isLoading: isExpensesLoading } = useExpensesList(tripId, expensePage);
+  const { data: expensesResponse, isLoading: isExpensesLoading } = useExpensesList(tripId, expensePage, categoryFilter);
   const { data: settlementsResponse, isLoading: isSettlementsLoading } = useExpensesSettlements(tripId);
   const createExpense = useExpensesCreate({ optionalCallback: () => setShowAddExpenseModal(false) });
   const updateExpense = useExpensesUpdate({ optionalCallback: () => setEditingExpense(null) });
@@ -616,13 +616,6 @@ export default function ExpensesTab({ tripId }: { tripId: string }) {
   const settlements = useMemo(
     () => toArray<ISettlement>(settlementsResponse?.data.data),
     [settlementsResponse?.data.data]
-  );
-  const visibleExpenses = useMemo(
-    () =>
-      categoryFilter === 'all'
-        ? expenses
-        : expenses.filter((expense) => normalizeCategory(expense.category) === categoryFilter),
-    [categoryFilter, expenses]
   );
   const totalSpent = expenses.reduce((total, expense) => total + Number(expense.amount || 0), 0);
   const activeSettlement = settlements.find((settlement) => settlement.status === 'pending' && settlement.fromUserId === currentUser?.id);
@@ -750,6 +743,7 @@ export default function ExpensesTab({ tripId }: { tripId: string }) {
                 selected={categoryFilter === 'all'}
                 onClick={() => {
                   setCategoryFilter('all');
+                  setExpensePage(1);
                   setFilterAnchor(null);
                 }}
               >
@@ -761,6 +755,7 @@ export default function ExpensesTab({ tripId }: { tripId: string }) {
                   selected={categoryFilter === category.value}
                   onClick={() => {
                     setCategoryFilter(category.value);
+                    setExpensePage(1);
                     setFilterAnchor(null);
                   }}
                 >
@@ -781,8 +776,8 @@ export default function ExpensesTab({ tripId }: { tripId: string }) {
             </Box>
             {isExpensesLoading ? (
               <Box className="empty_inline">Loading expenses...</Box>
-            ) : visibleExpenses.length ? (
-              visibleExpenses.map((expense) => {
+            ) : expenses.length ? (
+              expenses.map((expense) => {
                 const category = getCategoryMeta(expense.category);
                 const Icon = category.icon;
                 const paidBy = getExpensePaidBy(expense, membersById, currentUser?.id);

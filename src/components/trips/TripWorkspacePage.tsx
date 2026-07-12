@@ -21,13 +21,15 @@ import DialogTitle from "@mui/material/DialogTitle";
 import IconButton from "@mui/material/IconButton";
 import Typography from "@mui/material/Typography";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { useParams, useRouter } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import ActiveTab from "./workspace/ActiveTab";
-import InviteModal from "./workspace/InviteModal";
 import TripHero from "./workspace/TripHero";
 import TripTabBar from "./workspace/TripTabBar";
 import type { TripWorkspaceTab } from "./workspace/shared";
+
+const InviteModal = dynamic(() => import("./workspace/InviteModal"), { ssr: false });
 
 export default function TripWorkspacePage({
   activeTab,

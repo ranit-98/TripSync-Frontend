@@ -16,9 +16,11 @@ import IconButton from '@mui/material/IconButton';
 import Stack from '@mui/material/Stack';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
+import dynamic from 'next/dynamic';
 import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
-import VoiceNoteAttachment from './VoiceNoteAttachment';
-import VoiceRecorderComposer from './VoiceRecorderComposer';
+
+const VoiceNoteAttachment = dynamic(() => import('./VoiceNoteAttachment'), { ssr: false });
+const VoiceRecorderComposer = dynamic(() => import('./VoiceRecorderComposer'), { ssr: false });
 
 export type ReusableChatUser = {
   avatarUrl?: string | null;
@@ -49,10 +51,13 @@ type ReusableChatProps = {
   fallbackAvatar: string;
   isLoading?: boolean;
   isSending?: boolean;
+  hasOlderMessages?: boolean;
+  isLoadingOlderMessages?: boolean;
   members: ReusableChatUser[];
   messages: ReusableChatMessage[];
   onDeleteMessage?: (message: ReusableChatMessage) => void;
   onInviteMember?: () => void;
+  onLoadOlderMessages?: () => void;
   onReactMessage?: (messageId: string, emoji: string) => void;
   onSendMessage: (body: string, files?: File[]) => Promise<void> | void;
   onTyping?: () => void;
@@ -140,10 +145,13 @@ export default function ReusableChat({
   fallbackAvatar,
   isLoading = false,
   isSending = false,
+  hasOlderMessages = false,
+  isLoadingOlderMessages = false,
   members,
   messages,
   onDeleteMessage,
   onInviteMember,
+  onLoadOlderMessages,
   onReactMessage,
   onSendMessage,
   onTyping,
@@ -157,8 +165,6 @@ export default function ReusableChat({
   const [showEmojiMenu, setShowEmojiMenu] = useState(false);
   const [showMentionMenu, setShowMentionMenu] = useState(false);
   const [mentionQuery, setMentionQuery] = useState('');
-  const [visibleMessageCount, setVisibleMessageCount] = useState(30);
-  const [isLoadingOlderMessages, setIsLoadingOlderMessages] = useState(false);
   const [replyTo, setReplyTo] = useState<ReusableChatMessage | null>(null);
   const [reactions, setReactions] = useState<Record<string, string[]>>({});
   const [showVoiceRecorder, setShowVoiceRecorder] = useState(false);
@@ -166,12 +172,7 @@ export default function ReusableChat({
   const imageInputRef = useRef<HTMLInputElement | null>(null);
   const pendingFilesRef = useRef<PendingFile[]>([]);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
-  const olderMessagesTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const visibleMessages = useMemo(
-    () => messages.slice(Math.max(messages.length - visibleMessageCount, 0)),
-    [messages, visibleMessageCount]
-  );
-  const hasOlderMessages = visibleMessageCount < messages.length;
+  const visibleMessages = messages;
   const groupedMessages = useMemo(() => {
     return visibleMessages.reduce<Array<{ date: string; items: ReusableChatMessage[] }>>((groups, message) => {
       const date = formatDateChip(message.createdAt);
@@ -199,10 +200,6 @@ export default function ReusableChat({
   }, [messages.length]);
 
   useEffect(() => {
-    setVisibleMessageCount((current) => Math.min(Math.max(current, 30), Math.max(messages.length, 30)));
-  }, [messages.length]);
-
-  useEffect(() => {
     pendingFilesRef.current = pendingFiles;
   }, [pendingFiles]);
 
@@ -211,18 +208,13 @@ export default function ReusableChat({
       pendingFilesRef.current.forEach((item) => {
         if (item.previewUrl) URL.revokeObjectURL(item.previewUrl);
       });
-      if (olderMessagesTimeoutRef.current) clearTimeout(olderMessagesTimeoutRef.current);
     };
   }, []);
 
   const loadOlderMessages = () => {
     if (!hasOlderMessages || isLoadingOlderMessages) return;
 
-    setIsLoadingOlderMessages(true);
-    olderMessagesTimeoutRef.current = setTimeout(() => {
-      setVisibleMessageCount((current) => Math.min(current + 30, messages.length));
-      setIsLoadingOlderMessages(false);
-    }, 260);
+    onLoadOlderMessages?.();
   };
 
   const addFiles = (files: FileList | File[]) => {

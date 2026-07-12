@@ -8,6 +8,16 @@ export interface BaseApiResponse<T = unknown> {
   status?: boolean;
   statusCode?: number;
   pagination?: IPagination;
+  notificationCounts?: INotificationCounts;
+}
+
+export interface INotificationCounts {
+  all: number;
+  invite: number;
+  expense: number;
+  itinerary: number;
+  unread: number;
+  today: number;
 }
 
 export interface IPagination {

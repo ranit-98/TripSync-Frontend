@@ -5,8 +5,8 @@ import {
   useExpensesConfirmSettlementPaid,
   useExpensesDelete,
   useExpensesList,
+  useExpensesInfiniteList,
   useExpensesMarkSettlementPaid,
-  useExpensesSendSettlementReminders,
   useExpensesSettlements,
   useExpensesUpdate,
 } from '@/api/hooks/expenses/useExpenses.hooks';
@@ -26,7 +26,6 @@ import type {
 import { yupResolver } from '@hookform/resolvers/yup';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import AddIcon from '@mui/icons-material/Add';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CloseIcon from '@mui/icons-material/Close';
 import DeleteIcon from '@mui/icons-material/Delete';
 import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
@@ -34,14 +33,15 @@ import EditIcon from '@mui/icons-material/Edit';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import FlightIcon from '@mui/icons-material/Flight';
 import HotelIcon from '@mui/icons-material/Hotel';
-import InsightsIcon from '@mui/icons-material/Insights';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import PaymentsIcon from '@mui/icons-material/Payments';
 import RestaurantIcon from '@mui/icons-material/Restaurant';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import Box from '@mui/material/Box';
+import Autocomplete from '@mui/material/Autocomplete';
 import Button from '@mui/material/Button';
+import Drawer from '@mui/material/Drawer';
 import IconButton from '@mui/material/IconButton';
 import InputAdornment from '@mui/material/InputAdornment';
 import Menu from '@mui/material/Menu';
@@ -50,6 +50,7 @@ import Pagination from '@mui/material/Pagination';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
+import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { Controller, type SubmitHandler, useForm, useWatch } from 'react-hook-form';
 import {
@@ -62,6 +63,13 @@ type MemberOption = {
   avatar: string;
   label: string;
   userId: ApiId;
+};
+
+type ExpenseShareRow = {
+  amount: number;
+  direction: 'pay' | 'receive';
+  expense: IExpense;
+  person: MemberOption;
 };
 
 const fallbackAvatar = tripItineraryAssets.profile;
@@ -93,6 +101,21 @@ const formatMoney = (amount = 0, currency = 'USD') =>
     maximumFractionDigits: 2,
     style: 'currency',
   }).format(amount);
+
+const buildEqualSplitAmounts = (ids: string[], total: number): Record<string, number> => {
+  if (!ids.length) return {};
+
+  const totalInCents = Math.round(total * 100);
+  const baseShareInCents = Math.floor(totalInCents / ids.length);
+  const remainderInCents = totalInCents % ids.length;
+
+  return Object.fromEntries(
+    ids.map((id, index) => [
+      id,
+      (baseShareInCents + (index < remainderInCents ? 1 : 0)) / 100,
+    ])
+  );
+};
 
 const formatExpenseDate = (value?: string) => {
   const date = value ? new Date(value) : null;
@@ -220,8 +243,13 @@ const getSettlementText = (
 };
 
 const isSettlementPaid = (settlement: ISettlement) => settlement.isPaid || settlement.status === 'paid';
-const isSettlementOutstanding = (settlement: ISettlement) =>
-  !isSettlementPaid(settlement) && Number(settlement.amount || 0) > 0.005;
+const getExpenseListSummaryAmount = (value: unknown) => {
+  if (!value || typeof value !== 'object') return null;
+
+  const amount = (value as { totalAmount?: unknown }).totalAmount;
+
+  return typeof amount === 'number' && Number.isFinite(amount) ? amount : null;
+};
 
 function AddExpenseModal({
   currency,
@@ -243,27 +271,11 @@ function AddExpenseModal({
   const defaultMemberIds = members.map((member) => member.userId);
   const initialSplitIds = initialExpense?.splits?.map((split) => split.userId) ?? defaultMemberIds;
 
-  const buildEqualAmounts = (ids: string[], total: number): Record<string, number> => {
-    if (!ids.length) return {};
-    const each = Number((total / ids.length).toFixed(2));
-    const result: Record<string, number> = {};
-    let assigned = 0;
-    ids.forEach((id, i) => {
-      if (i === ids.length - 1) {
-        result[id] = Number((total - assigned).toFixed(2));
-      } else {
-        result[id] = each;
-        assigned += each;
-      }
-    });
-    return result;
-  };
-
   const initialSplitAmounts: Record<string, number> = (() => {
     if (initialExpense?.splits?.length) {
       return Object.fromEntries(initialExpense.splits.map((s) => [s.userId, s.amount]));
     }
-    return buildEqualAmounts(initialSplitIds.length ? initialSplitIds : defaultMemberIds, initialExpense?.amount ?? 0);
+    return buildEqualSplitAmounts(initialSplitIds.length ? initialSplitIds : defaultMemberIds, initialExpense?.amount ?? 0);
   })();
 
   const {
@@ -295,7 +307,7 @@ function AddExpenseModal({
     const ids = getValues('splitWith');
     const total = getValues('amount');
     if (!ids?.length || !total) return;
-    setValue('splitAmounts', buildEqualAmounts(ids, total));
+    setValue('splitAmounts', buildEqualSplitAmounts(ids, total));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [watchedSplitWith, watchedAmount]);
 
@@ -573,7 +585,7 @@ function AddExpenseModal({
   );
 }
 
-export default function ExpensesTab({ tripId }: { tripId: string }) {
+export default function ExpensesTab({ initialView = 'expenses', tripId }: { initialView?: 'expenses' | 'settlements' | 'insights'; tripId: string }) {
   const [showBudget, setShowBudget] = useState(true);
   const [showAddExpenseModal, setShowAddExpenseModal] = useState(false);
   const [selectedExpense, setSelectedExpense] = useState<IExpense | null>(null);
@@ -582,10 +594,24 @@ export default function ExpensesTab({ tripId }: { tripId: string }) {
   const [filterAnchor, setFilterAnchor] = useState<null | HTMLElement>(null);
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [expensePage, setExpensePage] = useState(1);
+  const expenseView = initialView;
+  const [balanceExpenseFilter, setBalanceExpenseFilter] = useState('all');
+  const [balancePersonFilter, setBalancePersonFilter] = useState('all');
+  const [balanceDirectionFilter, setBalanceDirectionFilter] = useState('all');
+  const [balanceStatusFilter, setBalanceStatusFilter] = useState('all');
+  const [balancePage, setBalancePage] = useState(1);
+  const [selectedSettlement, setSelectedSettlement] = useState<ISettlement | null>(null);
+  const [selectedPaymentShare, setSelectedPaymentShare] = useState<ExpenseShareRow | null>(null);
   const currentUser = useAuthStore((state) => state.user);
   const { data: tripResponse } = useTripDetails(tripId);
   const { data: membersResponse } = useTripMembers(tripId);
   const { data: expensesResponse, isLoading: isExpensesLoading } = useExpensesList(tripId, expensePage, categoryFilter);
+  const {
+    data: balanceExpensesResponse,
+    fetchNextPage: fetchNextExpensePage,
+    hasNextPage: hasNextExpensePage,
+    isFetchingNextPage: isFetchingNextExpensePage,
+  } = useExpensesInfiniteList(tripId);
   const { data: settlementsResponse, isLoading: isSettlementsLoading } = useExpensesSettlements(tripId);
   const createExpense = useExpensesCreate({ optionalCallback: () => setShowAddExpenseModal(false) });
   const updateExpense = useExpensesUpdate({ optionalCallback: () => setEditingExpense(null) });
@@ -597,7 +623,6 @@ export default function ExpensesTab({ tripId }: { tripId: string }) {
   });
   const markSettlementPaid = useExpensesMarkSettlementPaid({ optionalCallback: () => undefined });
   const confirmSettlementPaid = useExpensesConfirmSettlementPaid({ optionalCallback: () => undefined });
-  const sendReminders = useExpensesSendSettlementReminders({ optionalCallback: () => undefined });
   const trip = tripResponse?.data.data ?? null;
   const currency = trip?.currency || 'USD';
   const members = useMemo(
@@ -612,25 +637,104 @@ export default function ExpensesTab({ tripId }: { tripId: string }) {
     () => toArray<IExpense>(expensesResponse?.data.data),
     [expensesResponse?.data.data]
   );
+  const balanceExpenses = useMemo(
+    () => balanceExpensesResponse?.pages.flatMap((page) => toArray<IExpense>(page.data.data)) ?? [],
+    [balanceExpensesResponse?.pages]
+  );
   const expensePagination = expensesResponse?.data.pagination;
   const settlements = useMemo(
     () => toArray<ISettlement>(settlementsResponse?.data.data),
     [settlementsResponse?.data.data]
   );
-  const totalSpent = expenses.reduce((total, expense) => total + Number(expense.amount || 0), 0);
-  const activeSettlement = settlements.find((settlement) => settlement.status === 'pending' && settlement.fromUserId === currentUser?.id);
-  const pendingConfirmation = settlements.find((settlement) => settlement.status === 'payment_declared' && settlement.toUserId === currentUser?.id);
-  const hasOutstandingSettlement = Boolean(activeSettlement || pendingConfirmation);
-  const netBalance = settlements.reduce((total, settlement) => {
-    if (!isSettlementOutstanding(settlement)) return total;
+  const expenseCount = expensePagination?.total ?? expenses.length;
+  const summaryTotal = getExpenseListSummaryAmount(expensesResponse?.data.summary);
+  const loadedExpenseTotal = balanceExpenses.reduce(
+    (total, expense) => total + Number(expense.amount || 0),
+    0
+  );
+  const hasCompleteExpenseList = Boolean(balanceExpensesResponse) && hasNextExpensePage === false;
+  const totalSpent = summaryTotal !== null && (summaryTotal > 0 || expenseCount === 0)
+    ? summaryTotal
+    : hasCompleteExpenseList
+      ? loadedExpenseTotal
+      : null;
+  const canShowSpendSummary = totalSpent !== null;
+  const mySettlements = settlements.filter(
+    (settlement) =>
+      settlement.fromUserId === currentUser?.id || settlement.toUserId === currentUser?.id
+  );
+  const actionableSettlements = mySettlements.filter(
+    (settlement) =>
+      !isSettlementPaid(settlement) &&
+      !(settlement.fromUserId === currentUser?.id && settlement.status === 'payment_declared')
+  );
+  const expenseShareRows = useMemo(() => {
+    return balanceExpenses.flatMap<ExpenseShareRow>((expense) => {
+      const paidBy = getExpensePaidBy(expense, membersById, currentUser?.id);
 
-    const amount = Number(settlement.amount || 0);
+      return (expense.splits ?? []).flatMap<ExpenseShareRow>((split) => {
+        if (split.userId === expense.paidByUserId) return [];
 
-    if (settlement.toUserId === currentUser?.id) return total + amount;
-    if (settlement.fromUserId === currentUser?.id) return total - amount;
+        if (expense.paidByUserId === currentUser?.id) {
+          const person = membersById.get(split.userId) ?? getMemberOptionFromUser(split.user, currentUser?.id);
+          if (!person) return [];
+          return [{ amount: Number(split.amount || 0), direction: 'receive' as const, expense, person }];
+        }
 
-    return total;
-  }, 0);
+        if (split.userId === currentUser?.id) {
+          return [{ amount: Number(split.amount || 0), direction: 'pay' as const, expense, person: paidBy }];
+        }
+
+        return [];
+      });
+    });
+  }, [balanceExpenses, currentUser?.id, membersById]);
+  const getRowSettlement = (row: ExpenseShareRow) => settlements.find((settlement) => {
+    if (row.direction === 'pay') {
+      return settlement.fromUserId === currentUser?.id && settlement.toUserId === row.person.userId;
+    }
+
+    return settlement.toUserId === currentUser?.id && settlement.fromUserId === row.person.userId;
+  });
+  const getRowStatus = (row: ExpenseShareRow) => {
+    const settlement = getRowSettlement(row);
+
+    if (!settlement || isSettlementPaid(settlement)) return 'settled';
+    if (settlement.status === 'payment_declared') return 'awaiting';
+    return 'pending';
+  };
+  const filteredExpenseShares = expenseShareRows.filter(
+    (row) => {
+      const status = getRowStatus(row);
+
+      return (
+        (balanceExpenseFilter === 'all' || row.expense.id === balanceExpenseFilter) &&
+        (balancePersonFilter === 'all' || row.person.userId === balancePersonFilter) &&
+        (balanceDirectionFilter === 'all' || row.direction === balanceDirectionFilter) &&
+        (balanceStatusFilter === 'all' || status === balanceStatusFilter)
+      );
+    }
+  );
+  const balanceRowsPerPage = 8;
+  const balancePageCount = Math.max(1, Math.ceil(filteredExpenseShares.length / balanceRowsPerPage));
+  const paginatedExpenseShares = filteredExpenseShares.slice(
+    (balancePage - 1) * balanceRowsPerPage,
+    balancePage * balanceRowsPerPage
+  );
+  const selectedPerson = membersById.get(balancePersonFilter);
+  const selectedPersonRows = expenseShareRows.filter((row) => row.person.userId === balancePersonFilter);
+  const selectedPersonPayTotal = selectedPersonRows
+    .filter((row) => row.direction === 'pay')
+    .reduce((total, row) => total + row.amount, 0);
+  const selectedPersonReceiveTotal = selectedPersonRows
+    .filter((row) => row.direction === 'receive')
+    .reduce((total, row) => total + row.amount, 0);
+  const categoryTotals = balanceExpenses.reduce<Record<string, number>>((totals, expense) => {
+    const category = normalizeCategory(expense.category);
+    totals[category] = (totals[category] ?? 0) + Number(expense.amount || 0);
+    return totals;
+  }, {});
+  const maxCategoryTotal = Math.max(1, ...Object.values(categoryTotals));
   const topCategory = useMemo(() => {
     const totals = expenses.reduce<Record<string, number>>((result, expense) => {
       const category = normalizeCategory(expense.category);
@@ -642,13 +746,21 @@ export default function ExpensesTab({ tripId }: { tripId: string }) {
     return Object.entries(totals).sort((a, b) => b[1] - a[1])[0]?.[0];
   }, [expenses]);
 
+  useEffect(() => {
+    setBalancePage(1);
+  }, [balanceDirectionFilter, balanceExpenseFilter, balancePersonFilter, balanceStatusFilter]);
+
+  useEffect(() => {
+    if (balancePage > balancePageCount) setBalancePage(balancePageCount);
+  }, [balancePage, balancePageCount]);
+
   if (isExpensesLoading && isSettlementsLoading) {
     return <ExpensesSkeleton />;
   }
 
   const getExpensePayload = (values: AddExpenseFormValues): ICreateExpensePayload => {
     // Use custom split amounts; fall back to equal split if amounts map is empty
-    const equalAmount = Number((values.amount / values.splitWith.length).toFixed(2));
+    const equalAmounts = buildEqualSplitAmounts(values.splitWith, values.amount);
 
     return {
       amount: values.amount,
@@ -659,7 +771,7 @@ export default function ExpensesTab({ tripId }: { tripId: string }) {
       notes: values.notes.trim() || undefined,
       paidByUserId: values.paidBy,
       splits: values.splitWith.map((userId) => ({
-        amount: Number(values.splitAmounts?.[userId] ?? equalAmount),
+        amount: Number(values.splitAmounts?.[userId] ?? equalAmounts[userId]),
         userId,
       })),
     };
@@ -685,7 +797,7 @@ export default function ExpensesTab({ tripId }: { tripId: string }) {
 
   return (
     <Box className="tab_page padded_page">
-      {showBudget ? (
+      {canShowSpendSummary && showBudget ? (
         <Box className="budget_banner" component="section">
           <IconButton
             className="banner_toggle"
@@ -700,22 +812,13 @@ export default function ExpensesTab({ tripId }: { tripId: string }) {
               <Stack className="budget_amount" direction="row">
                 <Typography component="h2">{formatMoney(totalSpent, currency)}</Typography>
                 <span>
-                  / {expenses.length} recorded expense{expenses.length === 1 ? '' : 's'}
+                  / {expensePagination?.total ?? expenses.length} recorded expense{(expensePagination?.total ?? expenses.length) === 1 ? '' : 's'}
                 </span>
               </Stack>
             </Box>
-            <Box className="budget_progress">
-              <Stack direction="row">
-                <span>Spending activity</span>
-                <strong>Live</strong>
-              </Stack>
-              <Box className="progress_track">
-                <span style={{ width: '100%' }} />
-              </Box>
-            </Box>
           </Stack>
         </Box>
-      ) : (
+      ) : canShowSpendSummary ? (
         <Button
           className="budget_restore"
           onClick={() => setShowBudget(true)}
@@ -723,10 +826,40 @@ export default function ExpensesTab({ tripId }: { tripId: string }) {
         >
           Show Budget Banner
         </Button>
-      )}
+      ) : null}
 
-      <Box className="expense_grid">
-        <Box className="expense_list">
+      <Box className="expense_view_tabs" role="tablist" aria-label="Expense workspace views">
+        <Button
+          aria-selected={expenseView === 'expenses'}
+          className={expenseView === 'expenses' ? 'active' : ''}
+          component={Link}
+          href={`/trips/${tripId}/expenses`}
+          role="tab"
+        >
+          Expenses ({expensePagination?.total ?? expenses.length})
+        </Button>
+        <Button
+          aria-selected={expenseView === 'settlements'}
+          className={expenseView === 'settlements' ? 'active' : ''}
+          component={Link}
+          href={`/trips/${tripId}/expenses/balances`}
+          role="tab"
+        >
+          Balances ({mySettlements.length})
+        </Button>
+        <Button
+          aria-selected={expenseView === 'insights'}
+          className={expenseView === 'insights' ? 'active' : ''}
+          component={Link}
+          href={`/trips/${tripId}/expenses/insights`}
+          role="tab"
+        >
+          Insights
+        </Button>
+      </Box>
+
+      <Box className="expense_grid tabbed">
+        {expenseView === 'expenses' && <Box className="expense_list">
           <Stack className="section_row" direction="row">
             <Typography className="section_heading" component="h2">
               Recent Expenses
@@ -831,74 +964,160 @@ export default function ExpensesTab({ tripId }: { tripId: string }) {
             )}
           </Box>
           {expensePagination && expensePagination.totalPages > 1 && (
-            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-              <Pagination count={expensePagination.totalPages} page={expensePage} onChange={(_, page) => setExpensePage(page)} />
+            <Box className="expense_list_pagination">
+              <Pagination boundaryCount={1} count={expensePagination.totalPages} page={expensePage} onChange={(_, page) => setExpensePage(page)} siblingCount={0} />
             </Box>
           )}
-        </Box>
+        </Box>}
 
-        <Box className="settlement_summary">
+        {expenseView === 'settlements' && <Box className="settlement_summary">
           <Typography className="section_heading" component="h2">
             Settlement Summary
           </Typography>
           <Box className="summary_panel">
-            {isSettlementsLoading ? (
-              <Box className="empty_inline">Loading settlements...</Box>
-            ) : settlements.length ? (
-              settlements.map((settlement) => {
-                const settlementText = getSettlementText(settlement, membersById, currentUser?.id);
-                const positive = settlement.toUserId === currentUser?.id;
-                const isPaid = isSettlementPaid(settlement);
-                const isOutstanding = isSettlementOutstanding(settlement);
+            {false && actionableSettlements.length > 0 && (
+              <Box className="settlement_actions_panel">
+                <Box className="settlement_actions_heading"><strong>Payments requiring action</strong><span>Complete or confirm outstanding balances.</span></Box>
+                <Box className="settlement_action_cards">
+                  {actionableSettlements.map((settlement) => {
+                    const details = getSettlementText(settlement, membersById, currentUser?.id);
+                    const isOutgoing = settlement.fromUserId === currentUser?.id;
 
-                return (
-                  <Box className={`balance_item ${isPaid ? 'settled' : positive ? 'positive' : 'warning'}`} key={settlement.id}>
-                    <ImageComp alt="" className="person_avatar" isAvatar src={settlementText.avatar} />
-                    <Box className="balance_copy">
-                      <strong>{settlementText.title}</strong>
-                      <span>{isPaid ? 'Settled' : isOutstanding ? 'Pending settlement' : 'No payment due'}</span>
-                    </Box>
-                    <Box className={`balance_amount${isPaid ? ' settled' : positive ? '' : ' warning'}`}>
-                      <strong>{formatMoney(settlement.amount || 0, settlement.currency || currency)}</strong>
-                      <span>{isPaid ? 'Paid' : isOutstanding ? 'Due' : 'Clear'}</span>
-                    </Box>
-                    {settlement.status === 'pending' && settlement.fromUserId === currentUser?.id && <Button className="settlement_card_action" onClick={() => markSettlementPaid.mutate({ tripId, settlementId: settlement.id })} startIcon={<CheckCircleIcon />} variant="contained">Declare payment sent</Button>}
-                    {settlement.status === 'payment_declared' && settlement.toUserId === currentUser?.id && <Button className="settlement_card_action" onClick={() => confirmSettlementPaid.mutate({ tripId, settlementId: settlement.id })} startIcon={<CheckCircleIcon />} variant="contained">Confirm you received it</Button>}
-                    {settlement.status === 'pending' && settlement.toUserId === currentUser?.id && <Button className="settlement_card_action reminder" onClick={() => sendReminders.mutate({ tripId, settlementId: settlement.id })} variant="outlined">Send payment reminder</Button>}
-                  </Box>
-                );
-              })
-            ) : (
-              <Box className="empty_inline">No settlements to show.</Box>
-            )}
-            <Box className="net_balance">
-              <span>Net Balance</span>
-              <strong>
-                {netBalance >= 0 ? '+' : '-'}
-                {formatMoney(Math.abs(netBalance), currency)}
-              </strong>
-            </Box>
-            {!hasOutstandingSettlement && (
-              <Box className="settlement_complete">
-                <CheckCircleIcon />
-                <Box><strong>All settled</strong><span>No outstanding balances or reminders.</span></Box>
+                    return (
+                      <Box className={isOutgoing ? 'pay' : 'receive'} key={settlement.id}>
+                        <ImageComp alt="" className="person_avatar" isAvatar src={details.avatar} />
+                        <Box><strong>{details.title}</strong><span>{formatMoney(settlement.amount || 0, settlement.currency || currency)}</span></Box>
+                        <Button onClick={() => setSelectedSettlement(settlement)}>{isOutgoing ? 'Pay' : 'Mark received'}</Button>
+                      </Box>
+                    );
+                  })}
+                </Box>
               </Box>
             )}
+            <Box className="balance_explorer">
+              <Box className="balance_explorer_heading">
+                <Box>
+                  <strong>Where does my balance come from?</strong>
+                  <span>Filter by an expense or a person to see exactly what you pay or receive.</span>
+                </Box>
+                {(balanceExpenseFilter !== 'all' || balancePersonFilter !== 'all' || balanceDirectionFilter !== 'all' || balanceStatusFilter !== 'all') && (
+                  <Button onClick={() => {
+                    setBalanceExpenseFilter('all');
+                    setBalancePersonFilter('all');
+                    setBalanceDirectionFilter('all');
+                    setBalanceStatusFilter('all');
+                  }}>Clear filters</Button>
+                )}
+              </Box>
+              <Box className="balance_filters">
+                <Autocomplete
+                  getOptionLabel={(option) => option.description}
+                  loading={isFetchingNextExpensePage}
+                  onChange={(_, expense) => setBalanceExpenseFilter(expense?.id ?? 'all')}
+                  options={balanceExpenses}
+                  renderInput={(params) => <TextField {...params} label="Expense" placeholder="All expenses" size="small" />}
+                  slotProps={{
+                    listbox: {
+                      onScroll: (event) => {
+                        const list = event.currentTarget;
+                        const isNearBottom = list.scrollTop + list.clientHeight >= list.scrollHeight - 24;
+                        if (isNearBottom && hasNextExpensePage && !isFetchingNextExpensePage) void fetchNextExpensePage();
+                      },
+                    },
+                  }}
+                  value={balanceExpenses.find((expense) => expense.id === balanceExpenseFilter) ?? null}
+                />
+                <TextField
+                  label="Person"
+                  onChange={(event) => setBalancePersonFilter(event.target.value)}
+                  select
+                  size="small"
+                  value={balancePersonFilter}
+                >
+                  <MenuItem value="all">All people</MenuItem>
+                  {members.filter((member) => member.userId !== currentUser?.id).map((member) => (
+                    <MenuItem key={member.userId} value={member.userId}>{member.label}</MenuItem>
+                  ))}
+                </TextField>
+                <TextField label="Direction" onChange={(event) => setBalanceDirectionFilter(event.target.value)} select size="small" value={balanceDirectionFilter}>
+                  <MenuItem value="all">Pay and receive</MenuItem><MenuItem value="pay">I need to pay</MenuItem><MenuItem value="receive">I need to receive</MenuItem>
+                </TextField>
+                <TextField label="Status" onChange={(event) => setBalanceStatusFilter(event.target.value)} select size="small" value={balanceStatusFilter}>
+                  <MenuItem value="all">All statuses</MenuItem><MenuItem value="pending">Pending</MenuItem><MenuItem value="awaiting">Awaiting confirmation</MenuItem><MenuItem value="settled">Settled</MenuItem>
+                </TextField>
+              </Box>
+              {selectedPerson && (
+                <Box className="person_balance_summary">
+                  <Box className="person_balance_identity"><ImageComp alt="" className="person_avatar" isAvatar src={selectedPerson.avatar} /><Box><strong>{selectedPerson.label}</strong><span>Your complete expense history together</span></Box></Box>
+                  <Box className="person_balance_stat pay"><span>You pay</span><strong>{formatMoney(selectedPersonPayTotal, currency)}</strong></Box>
+                  <Box className="person_balance_stat receive"><span>You receive</span><strong>{formatMoney(selectedPersonReceiveTotal, currency)}</strong></Box>
+                </Box>
+              )}
+              <Box className="expense_share_results">
+                {paginatedExpenseShares.length ? paginatedExpenseShares.map((row) => (
+                  <Box className={`expense_share_row ${row.direction}`} key={`${row.expense.id}-${row.person.userId}`}>
+                    <ImageComp alt="" className="person_avatar" isAvatar src={row.person.avatar} />
+                    <Box>
+                      <strong>{row.expense.description}</strong>
+                      <span>{row.direction === 'pay' ? `You pay ${row.person.label}` : `${row.person.label} pays you`}</span>
+                    </Box>
+                    <strong className={row.direction}>
+                      {row.direction === 'pay' ? '-' : '+'}{formatMoney(row.amount, row.expense.currency || currency)}
+                    </strong>
+                    {(() => {
+                      const settlement = getRowSettlement(row);
+                      const isFirstRowForSettlement = settlement && filteredExpenseShares.find(
+                        (candidate) => getRowSettlement(candidate)?.id === settlement.id
+                      ) === row;
+                      const canSettle = isFirstRowForSettlement && !isSettlementPaid(settlement);
+
+                      return (
+                        <Button
+                          className={canSettle ? `share_payment_action ${row.direction}` : 'share_payment_action view'}
+                          onClick={() => {
+                            setSelectedPaymentShare(row);
+                            setSelectedSettlement(settlement ?? null);
+                          }}
+                        >
+                          {canSettle
+                            ? row.direction === 'pay'
+                              ? 'Pay balance'
+                              : settlement.status === 'payment_declared'
+                                ? 'Confirm received'
+                                : 'Mark received'
+                            : 'View'}
+                        </Button>
+                      );
+                    })()}
+                  </Box>
+                )) : (
+                  <Box className="balance_group_empty">No matching expense shares.</Box>
+                )}
+                {balancePageCount > 1 && <Box className="settlement_pagination"><span>Showing {(balancePage - 1) * balanceRowsPerPage + 1}–{Math.min(balancePage * balanceRowsPerPage, filteredExpenseShares.length)} of {filteredExpenseShares.length}</span><Pagination count={balancePageCount} page={balancePage} onChange={(_, page) => setBalancePage(page)} size="small" /></Box>}
+              </Box>
+            </Box>
+
           </Box>
-          <Box className="insight_card">
-            <span>
-              <InsightsIcon />
-            </span>
-            <Box>
-              <strong>Spending Insight</strong>
-              <p>
-                {topCategory
-                  ? `${getCategoryMeta(topCategory).label} is currently your top spending category.`
-                  : 'Add expenses to unlock spending insights.'}
-              </p>
+        </Box>}
+
+        {expenseView === 'insights' && <Box className="spending_insights_view">
+          <Typography className="section_heading" component="h2">Spending Insights</Typography>
+          <Box className="insights_summary_grid">
+            <Box><span>Total spent</span><strong>{formatMoney(balanceExpenses.reduce((total, expense) => total + Number(expense.amount || 0), 0), currency)}</strong></Box>
+            <Box><span>Expenses</span><strong>{balanceExpenses.length}</strong></Box>
+            <Box><span>Top category</span><strong>{topCategory ? getCategoryMeta(topCategory).label : 'No data'}</strong></Box>
+          </Box>
+          <Box className="spending_chart_card">
+            <Box><strong>Spending by category</strong><span>Compare where the trip budget is going.</span></Box>
+            <Box className="category_bar_chart">
+              {Object.entries(categoryTotals).sort(([, a], [, b]) => b - a).map(([category, amount]) => (
+                <Box className="category_bar_row" key={category}>
+                  <span>{getCategoryMeta(category).label}</span><Box><i style={{ width: `${(amount / maxCategoryTotal) * 100}%` }} /></Box><strong>{formatMoney(amount, currency)}</strong>
+                </Box>
+              ))}
             </Box>
           </Box>
-        </Box>
+        </Box>}
       </Box>
       <IconButton
         className="round_fab"
@@ -908,6 +1127,106 @@ export default function ExpensesTab({ tripId }: { tripId: string }) {
       >
         <AddIcon />
       </IconButton>
+      <Drawer
+        anchor="right"
+        ModalProps={{ disablePortal: true }}
+        onClose={() => { setSelectedSettlement(null); setSelectedPaymentShare(null); }}
+        open={Boolean(selectedPaymentShare)}
+      >
+        {selectedPaymentShare && (() => {
+          const isOutgoing = selectedPaymentShare.direction === 'pay';
+          const otherUserId = selectedPaymentShare.person.userId;
+          const person = otherUserId ? membersById.get(otherUserId) : undefined;
+          const selectedExpense = selectedPaymentShare.expense;
+          const selectedExpenseCurrency = selectedExpense.currency || selectedSettlement?.currency || currency;
+          const selectedExpensePaidBy = selectedExpense
+            ? getExpensePaidBy(selectedExpense, membersById, currentUser?.id)
+            : null;
+          const selectedExpenseSplits = selectedExpense?.splits ?? [];
+          const paidByShare = selectedExpenseSplits.find((split) => split.userId === selectedExpense?.paidByUserId);
+          const remainingSplits = selectedExpenseSplits.filter((split) => split.userId !== selectedExpense?.paidByUserId);
+          const selectedSplitAmount = Number(selectedPaymentShare?.amount || 0);
+          const othersShare = Math.max(0, Number(selectedExpense?.amount || 0) - selectedSplitAmount);
+          const selectedPaymentLabel = isOutgoing
+            ? `You pay ${person?.label ?? 'trip member'}`
+            : `${person?.label ?? 'Trip member'} pays you`;
+          const settlementStatus = !selectedSettlement
+            ? 'Settled by balance'
+            : isSettlementPaid(selectedSettlement)
+            ? 'Settled'
+            : selectedSettlement.status === 'payment_declared'
+              ? 'Awaiting confirmation'
+              : 'Payment pending';
+
+          return (
+            <Box className="payment_details_drawer">
+              <Box className="payment_drawer_header">
+                <Box><Typography component="h3">{isOutgoing ? 'Pay combined balance' : 'Confirm combined balance'}</Typography><span>This action settles the net balance with this member, including the related shares shown above.</span></Box>
+                <IconButton aria-label="Close payment details" onClick={() => { setSelectedSettlement(null); setSelectedPaymentShare(null); }}><CloseIcon /></IconButton>
+              </Box>
+              {selectedPaymentShare && (
+                <Box className="selected_payment_purpose">
+                  <span>Payment purpose</span>
+                  <strong>{selectedPaymentShare.expense.description}</strong>
+                  <p>{getCategoryMeta(selectedPaymentShare.expense.category).label} · {formatExpenseDate(selectedPaymentShare.expense.expenseDate)}</p>
+                </Box>
+              )}
+              <Box className={`payment_drawer_amount ${isOutgoing ? 'pay' : 'receive'}`}><span>{selectedPaymentLabel}</span><strong>{formatMoney(selectedSplitAmount, selectedExpenseCurrency)}</strong></Box>
+              <Box className="payment_drawer_meta"><Box><span>Originally paid by</span><strong>{selectedExpensePaidBy?.label ?? (isOutgoing ? person?.label : 'You')}</strong></Box><Box><span>Total expense</span><strong>{formatMoney(selectedExpense?.amount || 0, selectedExpenseCurrency)}</strong></Box><Box><span>This share</span><strong>{formatMoney(selectedSplitAmount, selectedExpenseCurrency)}</strong></Box><Box><span>Rest of split</span><strong>{formatMoney(othersShare, selectedExpenseCurrency)}</strong></Box></Box>
+              <Box className="payment_split_breakdown">
+                <Box className="payment_split_heading">
+                  <strong>Split breakdown</strong>
+                  <span>{selectedExpenseSplits.length || 1} participant{(selectedExpenseSplits.length || 1) === 1 ? '' : 's'} · {settlementStatus}</span>
+                </Box>
+                {selectedExpensePaidBy && (
+                  <Box className="payment_split_row paid">
+                    <ImageComp alt={selectedExpensePaidBy.label} className="person_avatar" isAvatar src={selectedExpensePaidBy.avatar} />
+                    <Box>
+                      <strong>{selectedExpensePaidBy.label}</strong>
+                      <span>Paid upfront for {selectedExpense?.description || 'this expense'}</span>
+                    </Box>
+                    <strong>{formatMoney(paidByShare?.amount ?? 0, selectedExpenseCurrency)}</strong>
+                  </Box>
+                )}
+                {remainingSplits.map((split) => {
+                  const splitMember = membersById.get(split.userId) ?? getMemberOptionFromUser(split.user, currentUser?.id);
+                  const isCurrentPaymentMember = split.userId === (isOutgoing ? currentUser?.id : otherUserId);
+                  const splitLabel = split.userId === currentUser?.id
+                    ? `You owe ${selectedExpensePaidBy?.label ?? 'the payer'}`
+                    : `${splitMember?.label ?? 'Trip member'} owes ${selectedExpensePaidBy?.label ?? 'the payer'}`;
+
+                  return (
+                    <Box className={`payment_split_row${isCurrentPaymentMember ? ' current' : ''}`} key={split.userId}>
+                      <ImageComp alt={splitMember?.label ?? 'Trip member'} className="person_avatar" isAvatar src={splitMember?.avatar || fallbackAvatar} />
+                      <Box>
+                        <strong>{splitMember?.label ?? 'Trip member'}</strong>
+                        <span>{isCurrentPaymentMember ? `${splitLabel} · current payment` : splitLabel}</span>
+                      </Box>
+                      <strong>{formatMoney(split.amount, selectedExpenseCurrency)}</strong>
+                    </Box>
+                  );
+                })}
+              </Box>
+              <Button
+                className={isOutgoing ? 'confirm_payment pay' : 'confirm_payment receive'}
+                disabled={!selectedSettlement || isSettlementPaid(selectedSettlement) || markSettlementPaid.isPending || confirmSettlementPaid.isPending}
+                onClick={() => {
+                  if (!selectedSettlement) return;
+                  if (isOutgoing) markSettlementPaid.mutate({ tripId, settlementId: selectedSettlement.id });
+                  else confirmSettlementPaid.mutate({ tripId, settlementId: selectedSettlement.id });
+                  setSelectedSettlement(null);
+                  setSelectedPaymentShare(null);
+                }}
+                variant="contained"
+              >
+                {!selectedSettlement || isSettlementPaid(selectedSettlement)
+                  ? 'Already settled'
+                  : `${isOutgoing ? 'Pay / mark sent' : 'Mark as received'} ${formatMoney(selectedSettlement.amount || 0, selectedExpenseCurrency)}`}
+              </Button>
+            </Box>
+          );
+        })()}
+      </Drawer>
       {showAddExpenseModal && (
         <AddExpenseModal
           currency={currency}
@@ -930,44 +1249,45 @@ export default function ExpensesTab({ tripId }: { tripId: string }) {
         />
       )}
       {selectedExpense && (
-        <Box className="expense_modal_overlay">
-          <Box className="expense_modal details_modal">
-            <Box className="expense_modal_header">
-              <Box>
-                <Typography component="h3">{selectedExpense.description}</Typography>
-                <Typography>{getCategoryMeta(selectedExpense.category).label}</Typography>
-              </Box>
+        <Drawer
+          anchor="right"
+          ModalProps={{ disablePortal: true }}
+          onClose={() => setSelectedExpense(null)}
+          open
+        >
+          <Box className="payment_details_drawer">
+            <Box className="payment_drawer_header">
+              <Box><Typography component="h3">Expense details</Typography><span>Review the recorded expense and its split.</span></Box>
               <IconButton aria-label="Close expense details" onClick={() => setSelectedExpense(null)}>
                 <CloseIcon />
               </IconButton>
             </Box>
-            <Box className="detail_body">
-              <Box className="detail_row">
-                <span>Amount</span>
-                <strong>{formatMoney(selectedExpense.amount, selectedExpense.currency || currency)}</strong>
-              </Box>
-              <Box className="detail_row">
-                <span>Paid By</span>
-                <strong>{getExpensePaidBy(selectedExpense, membersById, currentUser?.id).label}</strong>
-              </Box>
-              <Box className="detail_row">
-                <span>Date</span>
-                <strong>{formatExpenseDate(selectedExpense.expenseDate)}</strong>
-              </Box>
-              <Box className="detail_row">
-                <span>Split With</span>
-                <strong>
-                  {getExpenseSplits(selectedExpense, membersById, currentUser?.id)
-                    .map((member) => member.label)
-                    .join(', ') || 'No split members'}
-                </strong>
-              </Box>
-              <Box className="detail_row">
-                <span>Notes</span>
-                <strong>{selectedExpense.notes || 'No notes added'}</strong>
-              </Box>
+            <Box className="selected_payment_purpose">
+              <span>{getCategoryMeta(selectedExpense.category).label}</span>
+              <strong>{selectedExpense.description}</strong>
+              <p>{formatExpenseDate(selectedExpense.expenseDate)}</p>
             </Box>
-            <Box className="expense_modal_footer">
+            <Box className="payment_drawer_amount receive"><span>Total expense</span><strong>{formatMoney(selectedExpense.amount, selectedExpense.currency || currency)}</strong></Box>
+            <Box className="payment_drawer_meta">
+              <Box><span>Paid by</span><strong>{getExpensePaidBy(selectedExpense, membersById, currentUser?.id).label}</strong></Box>
+              <Box><span>Date</span><strong>{formatExpenseDate(selectedExpense.expenseDate)}</strong></Box>
+              <Box><span>Participants</span><strong>{selectedExpense.splits?.length || 0}</strong></Box>
+              <Box><span>Currency</span><strong>{selectedExpense.currency || currency}</strong></Box>
+            </Box>
+            <Box className="payment_split_breakdown">
+              <Box className="payment_split_heading"><strong>Split breakdown</strong><span>{selectedExpense.notes || 'No notes added'}</span></Box>
+              {(selectedExpense.splits ?? []).map((split) => {
+                const member = membersById.get(split.userId) ?? getMemberOptionFromUser(split.user, currentUser?.id);
+                return (
+                  <Box className="payment_split_row" key={split.userId}>
+                    <ImageComp alt={member?.label ?? 'Trip member'} className="person_avatar" isAvatar src={member?.avatar || fallbackAvatar} />
+                    <Box><strong>{member?.label ?? 'Trip member'}</strong><span>Expense share</span></Box>
+                    <strong>{formatMoney(split.amount, selectedExpense.currency || currency)}</strong>
+                  </Box>
+                );
+              })}
+            </Box>
+            <Stack direction="row" spacing={1}>
               <Button
                 onClick={() => {
                   setEditingExpense(selectedExpense);
@@ -988,9 +1308,9 @@ export default function ExpensesTab({ tripId }: { tripId: string }) {
               >
                 Delete
               </Button>
-            </Box>
+            </Stack>
           </Box>
-        </Box>
+        </Drawer>
       )}
       {deleteExpenseCandidate && (
         <Box className="expense_modal_overlay">

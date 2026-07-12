@@ -8,6 +8,7 @@ export interface BaseApiResponse<T = unknown> {
   status?: boolean;
   statusCode?: number;
   pagination?: IPagination;
+  summary?: Record<string, unknown>;
   notificationCounts?: INotificationCounts;
 }
 

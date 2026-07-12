@@ -14,12 +14,25 @@ import {
 import type { IMutationHookOptions } from "@/api/hooks/types";
 import { isSuccessResponse } from "@/api/hooks/types";
 import { listOfQueryKeys } from "@/lib/functions/listOfQueryKeys";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-export const useExpensesList = (tripId?: string, page = 1, category = "all") => {
+export const useExpensesList = (tripId?: string, page = 1, category = "all", limit = 10) => {
   return useQuery({
-    queryKey: [listOfQueryKeys.expenses.list, tripId, page, category],
-    queryFn: () => expensesListFn({ tripId: tripId ?? "", page, category: category === "all" ? undefined : category }),
+    queryKey: [listOfQueryKeys.expenses.list, tripId, page, category, limit],
+    queryFn: () => expensesListFn({ tripId: tripId ?? "", page, limit, category: category === "all" ? undefined : category }),
+    enabled: Boolean(tripId),
+  });
+};
+
+export const useExpensesInfiniteList = (tripId?: string, limit = 20) => {
+  return useInfiniteQuery({
+    queryKey: [listOfQueryKeys.expenses.list, tripId, "infinite", limit],
+    queryFn: ({ pageParam }) => expensesListFn({ tripId: tripId ?? "", page: pageParam, limit }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => {
+      const pagination = lastPage.data.pagination;
+      return pagination?.hasNextPage ? pagination.page + 1 : undefined;
+    },
     enabled: Boolean(tripId),
   });
 };

@@ -11,15 +11,17 @@ const PlaceholderTab = lazy(() => import("./tabs/PlaceholderTab"));
 
 export default function ActiveTab({
   activeTab,
+  expensesView,
   onInvite,
   tripId,
 }: {
   activeTab: TripWorkspaceTab;
+  expensesView?: "expenses" | "settlements" | "insights";
   onInvite?: () => void;
   tripId: string;
 }) {
   if (activeTab === "Itinerary") return <ItineraryTab tripId={tripId} />;
-  if (activeTab === "Expenses") return <ExpensesTab tripId={tripId} />;
+  if (activeTab === "Expenses") return <ExpensesTab initialView={expensesView} tripId={tripId} />;
   // if (activeTab === "Map") return <MapTab />;
   if (activeTab === "Chat")
     return <ChatTab onInvite={onInvite} tripId={tripId} />;

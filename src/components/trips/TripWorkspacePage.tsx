@@ -5,13 +5,18 @@ import {
   useTripMembers,
   useTripsArchive,
 } from "@/api/hooks/trips/useTrips.hooks";
+import { useExpensesSettlements } from "@/api/hooks/expenses/useExpenses.hooks";
 import AppSidebar from "@/components/layout/AppSidebar";
 import ErrorBoundary from "@/components/errors/ErrorBoundary";
 import { PageLoader } from "@/components/skeleton";
 import { useTripWorkspaceUiStore } from "@/store";
+import { useAuthStore } from "@/store/auth/auth.store";
+import type { ISettlement } from "@/typescript/interface/api";
 import { TripItineraryWrapper } from "@/styles/trips/itinerary.styles";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import CloseIcon from "@mui/icons-material/Close";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
+import PaymentsIcon from "@mui/icons-material/Payments";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Dialog from "@mui/material/Dialog";
@@ -33,8 +38,10 @@ const InviteModal = dynamic(() => import("./workspace/InviteModal"), { ssr: fals
 
 export default function TripWorkspacePage({
   activeTab,
+  expensesView,
 }: {
   activeTab: TripWorkspaceTab;
+  expensesView?: "expenses" | "settlements" | "insights";
 }) {
   const params = useParams<{ tripId?: string }>();
   const router = useRouter();
@@ -47,12 +54,30 @@ export default function TripWorkspacePage({
   );
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isPaymentBannerDismissed, setIsPaymentBannerDismissed] = useState(false);
   const [isHeroMounted, setIsHeroMounted] = useState(showHero);
+  const currentUser = useAuthStore((state) => state.user);
   const { data: tripResponse, isLoading: isTripLoading } =
     useTripDetails(tripId);
   const { data: membersResponse } = useTripMembers(tripId);
+  const { data: settlementsResponse } = useExpensesSettlements(tripId);
   const trip = tripResponse?.data.data ?? null;
   const members = membersResponse?.data.data ?? [];
+  const settlementData = settlementsResponse?.data.data;
+  const settlements = Array.isArray(settlementData)
+    ? (settlementData as ISettlement[])
+    : [];
+  const paymentsDue = settlements.filter(
+    (settlement) =>
+      settlement.fromUserId === currentUser?.id &&
+      settlement.status === "pending" &&
+      Number(settlement.amount || 0) > 0.005,
+  );
+  const totalPaymentDue = paymentsDue.reduce(
+    (total, settlement) => total + Number(settlement.amount || 0),
+    0,
+  );
+  const paymentCurrency = paymentsDue[0]?.currency || trip?.currency || "USD";
   const archiveTrip = useTripsArchive({ optionalCallback: () => router.push("/trips") });
 
   useEffect(() => {
@@ -113,10 +138,37 @@ export default function TripWorkspacePage({
           </Box>
         )}
         <TripTabBar activeTab={activeTab} tripId={tripId} />
+        {paymentsDue.length > 0 && !isPaymentBannerDismissed && (
+          <Box className="payment_due_banner" role="alert">
+            <Box className="payment_due_icon"><PaymentsIcon /></Box>
+            <Box className="payment_due_copy">
+              <strong>You have a payment due</strong>
+              <span>
+                You need to pay {new Intl.NumberFormat("en-US", { currency: paymentCurrency, style: "currency" }).format(totalPaymentDue)} across {paymentsDue.length} {paymentsDue.length === 1 ? "balance" : "balances"}.
+              </span>
+            </Box>
+            <Button
+              className="payment_due_action"
+              component={Link}
+              href={`/trips/${tripId}/expenses/balances`}
+              variant="contained"
+            >
+              Review payment
+            </Button>
+            <IconButton
+              aria-label="Close payment due banner"
+              className="payment_due_close"
+              onClick={() => setIsPaymentBannerDismissed(true)}
+            >
+              <CloseIcon fontSize="small" />
+            </IconButton>
+          </Box>
+        )}
         <ErrorBoundary fallbackClassName="trip_tab_error">
           <Suspense fallback={<PageLoader wrapperCls="page-loader" />}>
             <ActiveTab
               activeTab={activeTab}
+              expensesView={expensesView}
               onInvite={() => setShowInviteModal(true)}
               tripId={tripId}
             />

@@ -19,6 +19,7 @@ import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import Typography from "@mui/material/Typography";
 import Link from "next/link";
 import dynamic from "next/dynamic";
+import { Cell } from "recharts";
 import { useMemo, useState } from "react";
 
 const Area = dynamic(() => import("recharts").then((module) => module.Area), { ssr: false });
@@ -26,7 +27,6 @@ const AreaChart = dynamic(() => import("recharts").then((module) => module.AreaC
 const Bar = dynamic(() => import("recharts").then((module) => module.Bar), { ssr: false });
 const BarChart = dynamic(() => import("recharts").then((module) => module.BarChart), { ssr: false });
 const CartesianGrid = dynamic(() => import("recharts").then((module) => module.CartesianGrid), { ssr: false });
-const Cell = dynamic(() => import("recharts").then((module) => module.Cell), { ssr: false });
 const Pie = dynamic(() => import("recharts").then((module) => module.Pie), { ssr: false });
 const PieChart = dynamic(() => import("recharts").then((module) => module.PieChart), { ssr: false });
 const ResponsiveContainer = dynamic(() => import("recharts").then((module) => module.ResponsiveContainer), { ssr: false });

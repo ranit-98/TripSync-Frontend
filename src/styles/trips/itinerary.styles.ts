@@ -2146,6 +2146,7 @@ export const TripItineraryWrapper = styled(Box)`
     text-transform: none;
     &.pay { background: rgba(176, 64, 42, 0.1); color: #a13f27; }
     &.receive { background: rgba(0, 131, 120, 0.1); color: #007b70; }
+    &.pending.Mui-disabled { background: rgba(184, 126, 20, 0.1); color: #95660f; }
   }
 
   .share_settled_label {

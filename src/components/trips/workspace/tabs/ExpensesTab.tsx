@@ -1069,20 +1069,38 @@ export default function ExpensesTab({ initialView = 'expenses', tripId }: { init
                       const isFirstRowForSettlement = settlement && filteredExpenseShares.find(
                         (candidate) => getRowSettlement(candidate)?.id === settlement.id
                       ) === row;
-                      const canSettle = isFirstRowForSettlement && !isSettlementPaid(settlement);
+                      const isAwaitingConfirmation = Boolean(
+                        isFirstRowForSettlement &&
+                        row.direction === 'pay' &&
+                        settlement?.status === 'payment_declared'
+                      );
+                      const canSettle = Boolean(
+                        isFirstRowForSettlement &&
+                        settlement &&
+                        !isSettlementPaid(settlement) &&
+                        !isAwaitingConfirmation
+                      );
 
                       return (
                         <Button
-                          className={canSettle ? `share_payment_action ${row.direction}` : 'share_payment_action view'}
+                          className={isAwaitingConfirmation
+                            ? 'share_payment_action pending'
+                            : canSettle
+                              ? `share_payment_action ${row.direction}`
+                              : 'share_payment_action view'}
+                          disabled={isAwaitingConfirmation}
                           onClick={() => {
+                            if (isAwaitingConfirmation) return;
                             setSelectedPaymentShare(row);
                             setSelectedSettlement(settlement ?? null);
                           }}
                         >
-                          {canSettle
+                          {isAwaitingConfirmation
+                            ? 'Pending'
+                            : canSettle
                             ? row.direction === 'pay'
                               ? 'Pay balance'
-                              : settlement.status === 'payment_declared'
+                              : settlement?.status === 'payment_declared'
                                 ? 'Confirm received'
                                 : 'Mark received'
                             : 'View'}
@@ -1209,7 +1227,7 @@ export default function ExpensesTab({ initialView = 'expenses', tripId }: { init
               </Box>
               <Button
                 className={isOutgoing ? 'confirm_payment pay' : 'confirm_payment receive'}
-                disabled={!selectedSettlement || isSettlementPaid(selectedSettlement) || markSettlementPaid.isPending || confirmSettlementPaid.isPending}
+                disabled={!selectedSettlement || isSettlementPaid(selectedSettlement) || (isOutgoing && selectedSettlement.status === 'payment_declared') || markSettlementPaid.isPending || confirmSettlementPaid.isPending}
                 onClick={() => {
                   if (!selectedSettlement) return;
                   if (isOutgoing) markSettlementPaid.mutate({ tripId, settlementId: selectedSettlement.id });
@@ -1221,6 +1239,8 @@ export default function ExpensesTab({ initialView = 'expenses', tripId }: { init
               >
                 {!selectedSettlement || isSettlementPaid(selectedSettlement)
                   ? 'Already settled'
+                  : isOutgoing && selectedSettlement.status === 'payment_declared'
+                    ? 'Pending confirmation'
                   : `${isOutgoing ? 'Pay / mark sent' : 'Mark as received'} ${formatMoney(selectedSettlement.amount || 0, selectedExpenseCurrency)}`}
               </Button>
             </Box>

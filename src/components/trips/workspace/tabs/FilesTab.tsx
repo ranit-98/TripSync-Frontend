@@ -95,6 +95,7 @@ function DeleteFolderModal({ folder, isDeleting, onClose, onConfirm }: { folder:
 export default function FilesTab({ tripId }: { tripId: string }) {
   const [activeFolderId, setActiveFolderId] = useState<string>();
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [mobileView, setMobileView] = useState<'folders' | 'files'>('folders');
   const [folderParent, setFolderParent] = useState<IFolder | null | undefined>();
   const [folderToDelete, setFolderToDelete] = useState<IFolder | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -112,7 +113,11 @@ export default function FilesTab({ tripId }: { tripId: string }) {
   const signUpload = useUploadsSign({ optionalCallback: () => undefined });
 
   const childrenByParent = useMemo(() => folders.reduce<Record<string, IFolder[]>>((result, folder) => { const key = folder.parentId || 'root'; (result[key] ||= []).push(folder); return result; }, {}), [folders]);
-  const selectFolder = (folder: IFolder) => { setActiveFolderId(folder.id); setExpanded((current) => new Set(current).add(folder.id)); };
+  const selectFolder = (folder: IFolder) => {
+    setActiveFolderId(folder.id);
+    setExpanded((current) => new Set(current).add(folder.id));
+    setMobileView('files');
+  };
   const toggleFolder = (id: string) => setExpanded((current) => { const next = new Set(current); if (next.has(id)) next.delete(id); else next.add(id); return next; });
   const uploadFiles = async (files: FileList | File[]) => {
     if (!activeFolder) return toast.error('Create or select a folder first.');
@@ -164,8 +169,12 @@ export default function FilesTab({ tripId }: { tripId: string }) {
         </Box>
         <Button startIcon={<CreateNewFolderIcon />} variant="outlined" onClick={() => setFolderParent(null)}>New Folder</Button>
       </Box>
+      <Box aria-label="Document browser" className="mobile_files_switch" role="tablist">
+        <Button aria-selected={mobileView === 'folders'} className={mobileView === 'folders' ? 'active' : ''} onClick={() => setMobileView('folders')} role="tab" startIcon={<FolderIcon />}>Folders ({folders.length})</Button>
+        <Button aria-selected={mobileView === 'files'} className={mobileView === 'files' ? 'active' : ''} disabled={!activeFolder} onClick={() => setMobileView('files')} role="tab" startIcon={<DescriptionIcon />}>Files ({documents.length})</Button>
+      </Box>
       <Box className="files_grid">
-        <Box className="folder_panel">
+        <Box className={`folder_panel${mobileView === 'folders' ? '' : ' mobile_files_hidden'}`}>
           <Box className="folder_panel_header">
             <Typography component="h3">Folders</Typography>
             <span>{folders.length} folders</span>
@@ -176,7 +185,7 @@ export default function FilesTab({ tripId }: { tripId: string }) {
             <Box className="folder_tree">{renderFolders(null)}</Box>
           )}
         </Box>
-        <Box className="documents_panel">
+        <Box className={`documents_panel${mobileView === 'files' ? '' : ' mobile_files_hidden'}`}>
           {!activeFolder ? (
             <Box className="documents_no_selection">
               <FolderOpenIcon />

@@ -124,6 +124,10 @@ export const TripItineraryWrapper = styled(Box)`
     flex-direction: column;
     overflow-x: hidden;
     overflow-y: auto;
+
+    @media (max-width: 899px) {
+      margin-bottom: calc(67px + env(safe-area-inset-bottom));
+    }
   }
 
   .hero {
@@ -708,7 +712,7 @@ export const TripItineraryWrapper = styled(Box)`
     overflow-x: hidden;
 
     @media (max-width: 599px) {
-      padding: 14px 16px 96px;
+      padding: 14px 16px 32px;
     }
   }
 
@@ -1031,6 +1035,9 @@ export const TripItineraryWrapper = styled(Box)`
       }
     }
 
+  }
+
+  .activity_actions {
     @media (max-width: 599px) {
       position: static;
       grid-column: 3;
@@ -1234,6 +1241,7 @@ export const TripItineraryWrapper = styled(Box)`
     box-shadow: 0 18px 34px rgba(0, 104, 95, 0.28);
 
     @media (max-width: 899px) {
+      bottom: calc(84px + env(safe-area-inset-bottom));
       display: inline-flex;
     }
   }
@@ -1250,7 +1258,7 @@ export const TripItineraryWrapper = styled(Box)`
     padding: 32px;
 
     @media (max-width: 599px) {
-      padding: 20px 16px calc(156px + env(safe-area-inset-bottom));
+      padding: 20px 16px 40px;
     }
   }
 
@@ -1563,6 +1571,12 @@ export const TripItineraryWrapper = styled(Box)`
 
     > * {
       padding: 0 24px;
+    }
+
+    > .row_actions {
+      min-width: 0;
+      flex-wrap: nowrap;
+      padding: 0 4px;
     }
 
     &:last-child {
@@ -1992,10 +2006,26 @@ export const TripItineraryWrapper = styled(Box)`
     align-items: center;
     gap: 10px;
 
+    > div {
+      min-width: 0;
+    }
+
+    .person_avatar {
+      width: 42px;
+      height: 42px;
+      min-width: 42px;
+      flex: 0 0 42px;
+      aspect-ratio: 1;
+    }
+
     strong,
     span { display: block; }
     strong { font-size: 14px; }
     span { color: #687572; font-size: 11px; }
+
+    @media (max-width: 599px) {
+      grid-column: 1 / -1;
+    }
   }
 
   .person_balance_stat {
@@ -3079,7 +3109,6 @@ export const TripItineraryWrapper = styled(Box)`
 
     @media (max-width: 899px) {
       flex-direction: column;
-      margin-bottom: calc(76px + env(safe-area-inset-bottom));
       overflow-y: auto;
     }
   }
@@ -4561,6 +4590,10 @@ export const TripItineraryWrapper = styled(Box)`
     gap: 24px;
   }
 
+  .mobile_files_switch {
+    display: none;
+  }
+
   .folder_panel,
   .documents_panel {
     display: flex;
@@ -5561,6 +5594,89 @@ export const TripItineraryWrapper = styled(Box)`
       flex-direction: column;
     }
 
+    .files_header {
+      gap: 16px;
+      margin-bottom: 18px;
+
+      > .MuiButton-root {
+        width: 100%;
+      }
+    }
+
+    .files_grid {
+      gap: 16px;
+    }
+
+    .mobile_files_switch {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 12px;
+      padding: 4px;
+      border: 1px solid rgba(188, 201, 198, 0.42);
+      border-radius: 12px;
+      background-color: #eef4f2;
+
+      .MuiButton-root {
+        min-width: 0;
+        flex: 1;
+        border-radius: 9px;
+        color: #5f6d69;
+        font-size: 12px;
+        font-weight: 800;
+        text-transform: none;
+
+        &.active {
+          background-color: #ffffff;
+          color: ${({ theme }) => theme.palette.primary.main};
+          box-shadow: 0 3px 10px rgba(23, 29, 28, 0.08);
+        }
+      }
+    }
+
+    .mobile_files_hidden {
+      display: none;
+    }
+
+    .folder_panel {
+      height: auto;
+      max-height: 340px;
+    }
+
+    .folder_panel_header,
+    .documents_header {
+      padding: 16px;
+    }
+
+    .folder_tree {
+      max-height: 270px;
+      flex: 0 1 auto;
+      padding: 8px;
+    }
+
+    .folder_tree_row {
+      min-height: 40px;
+    }
+
+    .documents_panel {
+      height: auto;
+      overflow: visible;
+    }
+
+    .documents_panel_body {
+      overflow: visible;
+    }
+
+    .documents_actions {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      width: 100%;
+
+      .MuiButton-root {
+        min-width: 0;
+        white-space: nowrap;
+      }
+    }
+
     .files_actions {
       flex-direction: column;
 
@@ -5579,7 +5695,46 @@ export const TripItineraryWrapper = styled(Box)`
     }
 
     .scan_dropzone {
-      align-items: flex-start;
+      display: none;
+    }
+
+    .document_table {
+      overflow: visible;
+      border-top: 0;
+    }
+
+    .document_head {
+      display: none;
+    }
+
+    .document_row:not(.document_head) {
+      grid-template-columns: minmax(0, 1fr) auto;
+      min-width: 0;
+      min-height: 0;
+      padding: 14px 12px;
+
+      > * {
+        padding: 0;
+      }
+
+      .document_name {
+        grid-column: 1;
+        grid-row: 1;
+      }
+
+      .document_file_meta {
+        grid-column: 1 / -1;
+        grid-row: 2;
+        min-width: 0;
+        padding: 8px 0 0 54px;
+      }
+
+      .document_actions {
+        grid-column: 2;
+        grid-row: 1;
+        align-self: center;
+        padding-left: 8px;
+      }
     }
   }
 

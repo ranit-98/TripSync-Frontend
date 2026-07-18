@@ -4,10 +4,10 @@ import { useAuthRegister } from "@/api/hooks/auth/useAuth.hooks";
 import FormTextField from "@/components/Forms/FormTextField";
 import { LoginFormWrapper } from "@/styles/auth/login.styles";
 import type { IRegisterPayload } from "@/typescript/interface/api";
-import GoogleIcon from "@mui/icons-material/Google";
-import Box from "@mui/material/Box";
+// import GoogleIcon from "@mui/icons-material/Google";
+// import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
-import Divider from "@mui/material/Divider";
+// import Divider from "@mui/material/Divider";
 import Link from "@mui/material/Link";
 import Typography from "@mui/material/Typography";
 import { useRouter } from "next/navigation";
@@ -106,6 +106,7 @@ export default function RegistrationForm() {
         {isPending ? "Creating Account..." : "Create Account"}
       </Button>
 
+      {/* Google sign-up is hidden until OAuth integration is available.
       <Box className="auth_divider_wrap">
         <Divider className="auth_divider">
           <Typography className="auth_divider_text">
@@ -123,6 +124,7 @@ export default function RegistrationForm() {
       >
         Google
       </Button>
+      */}
 
       <Typography className="auth_signup_text">
         Already have an account?{" "}

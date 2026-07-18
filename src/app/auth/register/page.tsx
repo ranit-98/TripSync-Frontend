@@ -1,6 +1,7 @@
 import RegistrationForm from "@/components/auth/RegistrationForm";
 import { authAssets } from "@/json/assets";
 import { LoginCardWrapper, LoginPageWrapper } from "@/styles/auth/login.styles";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
@@ -8,7 +9,7 @@ import Typography from "@mui/material/Typography";
 export default function Register() {
   return (
     <LoginPageWrapper>
-      <Box className="auth_main" component="main">
+      <Box className="auth_main auth_main_full" component="main">
         <Box aria-hidden className="auth_hero_bg">
           <Box
             alt=""
@@ -31,6 +32,19 @@ export default function Register() {
             </Box>
 
             <RegistrationForm />
+            <Box className="auth_quick_panel">
+              <Typography component="h2">With your account</Typography>
+              {[
+                "Plan trips together in one workspace",
+                "Keep documents, photos, and updates organized",
+                "Track shared expenses and settle balances",
+              ].map((item) => (
+                <Box className="auth_quick_item" key={item}>
+                  <CheckCircleIcon />
+                  <span>{item}</span>
+                </Box>
+              ))}
+            </Box>
           </Stack>
         </LoginCardWrapper>
       </Box>

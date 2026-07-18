@@ -20,6 +20,10 @@ export const LoginPageWrapper = styled(Box)`
     align-items: center;
     justify-content: center;
     padding: 28px 16px;
+
+    &.auth_main_full {
+      min-height: 100svh;
+    }
   }
 
   .auth_hero_bg {

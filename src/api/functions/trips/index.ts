@@ -132,6 +132,12 @@ export const tripsRemoveMemberFn = async ({ memberId, tripId }: IWithMemberId): 
   return res;
 };
 
+export const tripsLeaveFn = async ({ tripId }: IWithTripId): ApiMutationResponse => {
+  const res = await axiosInstance.delete(endpoints.trips.leave("v1", tripId));
+
+  return res;
+};
+
 export const tripsAcceptInviteFn = async ({ inviteId }: IWithInviteId): ApiMutationResponse => {
   const res = await axiosInstance.post(endpoints.trips.acceptInvite("v1", inviteId));
 

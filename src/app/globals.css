@@ -45,3 +45,15 @@ body {
 .mobile_navigation_content .nav_link.active { background: rgba(0, 131, 120, .11); color: #00685f; }
 .mobile_navigation_content .new_trip_btn { min-height: 52px; border-radius: 8px; background: #00685f; color: #fff; font-weight: 800; text-transform: none; }
 @media (max-width: 899px) { .mobile_menu_trigger { position: fixed; top: 12px; right: 12px; z-index: 1201; display: inline-flex; background: #fff; color: #00685f; box-shadow: 0 4px 14px rgba(23,29,28,.14); } }
+
+.expense_modal .MuiSelect-select {
+  display: flex;
+  align-items: center;
+}
+
+.expense_select_option {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  line-height: 1.2;
+}

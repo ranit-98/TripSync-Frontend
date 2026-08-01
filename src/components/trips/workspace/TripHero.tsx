@@ -6,6 +6,7 @@ import { useAuthStore } from '@/store/auth/auth.store';
 import type { ITrip, ITripMember } from '@/typescript/interface/api';
 import AddIcon from '@mui/icons-material/Add';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import ExitToAppIcon from '@mui/icons-material/ExitToApp';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import LogoutIcon from '@mui/icons-material/Logout';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
@@ -176,16 +177,18 @@ const membersPopoverSx: SxProps<Theme> = {
 };
 
 type TripHeroProps = {
+  canManage: boolean;
   isLoading?: boolean;
   members: ITripMember[];
   onCollapse: () => void;
   onDelete: () => void;
   onEdit: () => void;
   onInvite: () => void;
+  onLeave: () => void;
   trip?: ITrip | null;
 };
 
-export default function TripHero({ isLoading = false, members, onCollapse, onDelete, onEdit, onInvite, trip }: TripHeroProps) {
+export default function TripHero({ canManage, isLoading = false, members, onCollapse, onDelete, onEdit, onInvite, onLeave, trip }: TripHeroProps) {
   const router = useRouter();
   const currentUser = useAuthStore((state) => state.user);
   const logout = useAuthLogout({ optionalCallback: () => router.replace('/login') });
@@ -209,6 +212,7 @@ export default function TripHero({ isLoading = false, members, onCollapse, onDel
   const visibleMembers = sortedMembers.slice(0, 2);
   const extraMembers = Math.max(members.length - visibleMembers.length, 0);
   const hasMembers = sortedMembers.length > 0;
+  const isOwner = trip?.ownerId === currentUser?.id;
 
   return (
     <Box className="hero" component="header">
@@ -325,16 +329,28 @@ export default function TripHero({ isLoading = false, members, onCollapse, onDel
                 )}
               </Box>
             </Popover>
-            <Button className="invite_btn" onClick={onInvite} startIcon={<PersonAddIcon />}>
-              Invite
-            </Button>
-            <IconButton className="glass_icon_btn" aria-label="Trip settings" onClick={(event) => setSettingsAnchor(event.currentTarget)}>
-              <SettingsIcon />
-            </IconButton>
-            <Menu anchorEl={settingsAnchor} anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }} onClose={() => setSettingsAnchor(null)} open={Boolean(settingsAnchor)} transformOrigin={{ horizontal: 'right', vertical: 'top' }}>
-              <MenuItem onClick={() => { setSettingsAnchor(null); onEdit(); }}>Edit trip</MenuItem>
-              <MenuItem onClick={() => { setSettingsAnchor(null); onDelete(); }}>Delete trip</MenuItem>
-            </Menu>
+            <>
+              {canManage && (
+                <Button className="invite_btn" onClick={onInvite} startIcon={<PersonAddIcon />}>
+                  Invite
+                </Button>
+              )}
+              <IconButton className="glass_icon_btn" aria-label="Trip settings" onClick={(event) => setSettingsAnchor(event.currentTarget)}>
+                <SettingsIcon />
+              </IconButton>
+              <Menu anchorEl={settingsAnchor} anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }} onClose={() => setSettingsAnchor(null)} open={Boolean(settingsAnchor)} transformOrigin={{ horizontal: 'right', vertical: 'top' }}>
+                {canManage && (
+                  <>
+                  <MenuItem onClick={() => { setSettingsAnchor(null); onEdit(); }}>Edit trip</MenuItem>
+                  <MenuItem onClick={() => { setSettingsAnchor(null); onDelete(); }}>Delete trip</MenuItem>
+                  </>
+                )}
+                {!isOwner && <MenuItem onClick={() => { setSettingsAnchor(null); onLeave(); }}>
+                  <ExitToAppIcon fontSize="small" />
+                  Leave trip
+                </MenuItem>}
+              </Menu>
+            </>
           </Stack>
         </Stack>
       </Box>

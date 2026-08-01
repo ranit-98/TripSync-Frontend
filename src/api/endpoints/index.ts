@@ -101,6 +101,9 @@ export const endpoints = {
     removeMember: (version: TAPIVersions, tripId: string, memberId: string) => {
       return `${version}/trips/${tripId}/members/${memberId}`;
     },
+    leave: (version: TAPIVersions, tripId: string) => {
+      return `${version}/trips/${tripId}/members/me`;
+    },
     acceptInvite: (version: TAPIVersions, inviteId: string) => {
       return `${version}/invites/${inviteId}/accept`;
     },

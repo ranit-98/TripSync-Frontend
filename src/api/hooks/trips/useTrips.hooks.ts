@@ -7,6 +7,7 @@ import {
   tripsDeclineInviteFn,
   tripsDetailsFn,
   tripsInviteFn,
+  tripsLeaveFn,
   tripsListFn,
   tripsMembersFn,
   tripsPendingInvitesFn,
@@ -151,6 +152,21 @@ export const useTripsRemoveMember = ({ optionalCallback }: IMutationHookOptions)
     mutationFn: tripsRemoveMemberFn,
     onSuccess: (res) => {
       if (isSuccessResponse(res?.data.statusCode)) {
+        optionalCallback();
+      }
+    },
+  });
+};
+
+export const useTripsLeave = ({ optionalCallback }: IMutationHookOptions) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationKey: [listOfQueryKeys.trips.members, "leave"],
+    mutationFn: tripsLeaveFn,
+    onSuccess: (res) => {
+      if (isSuccessResponse(res?.data.statusCode)) {
+        queryClient.invalidateQueries({ queryKey: [listOfQueryKeys.trips.list] });
         optionalCallback();
       }
     },

@@ -3,6 +3,7 @@ import type { IUser } from "./users.interface";
 
 export interface ITrip {
   id: ApiId;
+  ownerId?: ApiId;
   title: string;
   destination: string;
   startDate: string;

@@ -92,7 +92,7 @@ function DeleteFolderModal({ folder, isDeleting, onClose, onConfirm }: { folder:
   </Box></Box>;
 }
 
-export default function FilesTab({ tripId }: { tripId: string }) {
+export default function FilesTab({ canEdit, tripId }: { canEdit: boolean; tripId: string }) {
   const [activeFolderId, setActiveFolderId] = useState<string>();
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [mobileView, setMobileView] = useState<'folders' | 'files'>('folders');
@@ -120,6 +120,7 @@ export default function FilesTab({ tripId }: { tripId: string }) {
   };
   const toggleFolder = (id: string) => setExpanded((current) => { const next = new Set(current); if (next.has(id)) next.delete(id); else next.add(id); return next; });
   const uploadFiles = async (files: FileList | File[]) => {
+    if (!canEdit) return;
     if (!activeFolder) return toast.error('Create or select a folder first.');
     const selected = Array.from(files);
     if (!selected.length) return;
@@ -146,12 +147,12 @@ export default function FilesTab({ tripId }: { tripId: string }) {
           <Button onClick={() => selectFolder(folder)} startIcon={open ? <FolderOpenIcon /> : <FolderIcon />} title={folder.name}>
             <span className="folder_tree_name">{folder.name}</span>
           </Button>
-          <IconButton className="folder_action" aria-label={`Create folder inside ${folder.name}`} onClick={() => setFolderParent(folder)}>
+          {canEdit && <IconButton className="folder_action" aria-label={`Create folder inside ${folder.name}`} onClick={() => setFolderParent(folder)}>
             <CreateNewFolderIcon fontSize="small" />
-          </IconButton>
-          <IconButton className="folder_action" aria-label={`Delete ${folder.name}`} color="error" onClick={() => setFolderToDelete(folder)}>
+          </IconButton>}
+          {canEdit && <IconButton className="folder_action" aria-label={`Delete ${folder.name}`} color="error" onClick={() => setFolderToDelete(folder)}>
             <DeleteIcon fontSize="small" />
-          </IconButton>
+          </IconButton>}
         </Box>
         <Collapse in={open} timeout={180} unmountOnExit>
           {renderFolders(folder.id, depth + 1)}
@@ -167,7 +168,7 @@ export default function FilesTab({ tripId }: { tripId: string }) {
           <Typography className="section_heading" component="h2">Trip Documents</Typography>
           <Typography className="files_subtitle">Organize nested folders and upload multiple files into any folder.</Typography>
         </Box>
-        <Button startIcon={<CreateNewFolderIcon />} variant="outlined" onClick={() => setFolderParent(null)}>New Folder</Button>
+        {canEdit && <Button startIcon={<CreateNewFolderIcon />} variant="outlined" onClick={() => setFolderParent(null)}>New Folder</Button>}
       </Box>
       <Box aria-label="Document browser" className="mobile_files_switch" role="tablist">
         <Button aria-selected={mobileView === 'folders'} className={mobileView === 'folders' ? 'active' : ''} onClick={() => setMobileView('folders')} role="tab" startIcon={<FolderIcon />}>Folders ({folders.length})</Button>
@@ -190,8 +191,8 @@ export default function FilesTab({ tripId }: { tripId: string }) {
             <Box className="documents_no_selection">
               <FolderOpenIcon />
               <Typography component="h3">Choose a folder first</Typography>
-              <Typography>Select a folder from the left to view its files, add subfolders, or upload documents.</Typography>
-              <Button startIcon={<CreateNewFolderIcon />} variant="contained" onClick={() => setFolderParent(null)}>Create a Folder</Button>
+              <Typography>{canEdit ? 'Select a folder from the left to view its files, add subfolders, or upload documents.' : 'Select a folder from the left to view its files.'}</Typography>
+              {canEdit && <Button startIcon={<CreateNewFolderIcon />} variant="contained" onClick={() => setFolderParent(null)}>Create a Folder</Button>}
             </Box>
           ) : (
             <>
@@ -200,13 +201,13 @@ export default function FilesTab({ tripId }: { tripId: string }) {
                   <Typography component="h3">{activeFolder?.name || 'Select a folder'}</Typography>
                   <Typography>{documents.length} files in this folder</Typography>
                 </Box>
-                <Box className="documents_actions">
+                {canEdit && <Box className="documents_actions">
                   <Button disabled={!activeFolder} startIcon={<CreateNewFolderIcon />} variant="outlined" onClick={() => setFolderParent(activeFolder)}>Add Subfolder</Button>
                   <Button disabled={!activeFolder} startIcon={<CloudUploadIcon />} variant="contained" onClick={() => inputRef.current?.click()}>Upload Files</Button>
-                </Box>
+                </Box>}
               </Box>
               <Box className="documents_panel_body">
-                <Box
+                {canEdit && <Box
                   aria-disabled={!activeFolder}
                   className={`scan_dropzone${isDragging ? ' is_dragging' : ''}${!activeFolder ? ' is_disabled' : ''}`}
                   onDragEnter={() => activeFolder && setIsDragging(true)}
@@ -222,7 +223,7 @@ export default function FilesTab({ tripId }: { tripId: string }) {
                     <strong>Drop multiple documents here</strong>
                     <span>{activeFolder ? `Files will be stored inside ${activeFolder.name}.` : 'Create a folder before uploading files.'}</span>
                   </Box>
-                </Box>
+                </Box>}
                 {Object.entries(uploadProgress).length > 0 && (
                   <Box className="document_upload_progress">
                     {Object.entries(uploadProgress).map(([name, progress]) => (
@@ -236,7 +237,7 @@ export default function FilesTab({ tripId }: { tripId: string }) {
                     ))}
                   </Box>
                 )}
-                <input
+                {canEdit && <input
                   accept=".pdf,.jpg,.jpeg,.png,.webp,.gif,.txt,.csv,.doc,.docx,.xls,.xlsx,.ppt,.pptx"
                   hidden
                   multiple
@@ -246,7 +247,7 @@ export default function FilesTab({ tripId }: { tripId: string }) {
                     if (event.target.files) void uploadFiles(event.target.files);
                     event.target.value = '';
                   }}
-                />
+                />}
                 <Box className="document_table">
                   {documentsLoading ? (
                     <Box className="empty_inline">Loading files...</Box>
@@ -285,11 +286,11 @@ export default function FilesTab({ tripId }: { tripId: string }) {
                     <Box className="documents_empty">
                       <FolderOpenIcon />
                       <Typography component="h4">This folder is empty</Typography>
-                      <Typography>Upload files or create a subfolder to keep this trip organized.</Typography>
-                      <Box>
+                      <Typography>{canEdit ? 'Upload files or create a subfolder to keep this trip organized.' : 'No documents have been added to this folder yet.'}</Typography>
+                      {canEdit && <Box>
                         <Button startIcon={<CreateNewFolderIcon />} variant="outlined" onClick={() => setFolderParent(activeFolder)}>Add Subfolder</Button>
                         <Button startIcon={<CloudUploadIcon />} variant="contained" onClick={() => inputRef.current?.click()}>Upload Files</Button>
-                      </Box>
+                      </Box>}
                     </Box>
                   )}
                 </Box>
@@ -298,8 +299,8 @@ export default function FilesTab({ tripId }: { tripId: string }) {
           )}
         </Box>
       </Box>
-      {folderParent !== undefined && <FolderModal parent={folderParent || undefined} onClose={() => setFolderParent(undefined)} onCreate={(name) => createFolder.mutate({ tripId, body: { name, parentId: folderParent?.id || null } })} />}
-      {folderToDelete && <DeleteFolderModal folder={folderToDelete} isDeleting={deleteFolder.isPending} onClose={() => setFolderToDelete(null)} onConfirm={() => deleteFolder.mutate({ tripId, folderId: folderToDelete.id })} />}
+      {canEdit && folderParent !== undefined && <FolderModal parent={folderParent || undefined} onClose={() => setFolderParent(undefined)} onCreate={(name) => createFolder.mutate({ tripId, body: { name, parentId: folderParent?.id || null } })} />}
+      {canEdit && folderToDelete && <DeleteFolderModal folder={folderToDelete} isDeleting={deleteFolder.isPending} onClose={() => setFolderToDelete(null)} onConfirm={() => deleteFolder.mutate({ tripId, folderId: folderToDelete.id })} />}
       {previewDocument && <DocumentPreviewModal document={previewDocument} onClose={() => setPreviewDocument(null)} />}
     </Box>
   );

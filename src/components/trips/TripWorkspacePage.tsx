@@ -4,6 +4,7 @@ import {
   useTripDetails,
   useTripMembers,
   useTripsArchive,
+  useTripsLeave,
 } from "@/api/hooks/trips/useTrips.hooks";
 import { useExpensesSettlements } from "@/api/hooks/expenses/useExpenses.hooks";
 import AppSidebar from "@/components/layout/AppSidebar";
@@ -11,6 +12,7 @@ import ErrorBoundary from "@/components/errors/ErrorBoundary";
 import { PageLoader } from "@/components/skeleton";
 import { useTripWorkspaceUiStore } from "@/store";
 import { useAuthStore } from "@/store/auth/auth.store";
+import { canManageTrip } from "@/lib/functions/tripPermissions";
 import type { ISettlement } from "@/typescript/interface/api";
 import { TripItineraryWrapper } from "@/styles/trips/itinerary.styles";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
@@ -54,6 +56,7 @@ export default function TripWorkspacePage({
   );
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showLeaveDialog, setShowLeaveDialog] = useState(false);
   const [isPaymentBannerDismissed, setIsPaymentBannerDismissed] = useState(false);
   const [isHeroMounted, setIsHeroMounted] = useState(showHero);
   const currentUser = useAuthStore((state) => state.user);
@@ -63,6 +66,7 @@ export default function TripWorkspacePage({
   const { data: settlementsResponse } = useExpensesSettlements(tripId);
   const trip = tripResponse?.data.data ?? null;
   const members = membersResponse?.data.data ?? [];
+  const canEditTrip = canManageTrip(members, currentUser);
   const settlementData = settlementsResponse?.data.data;
   const settlements = Array.isArray(settlementData)
     ? (settlementData as ISettlement[])
@@ -79,6 +83,20 @@ export default function TripWorkspacePage({
   );
   const paymentCurrency = paymentsDue[0]?.currency || trip?.currency || "USD";
   const archiveTrip = useTripsArchive({ optionalCallback: () => router.push("/trips") });
+  const leaveTrip = useTripsLeave({ optionalCallback: () => router.push("/trips") });
+  const unsettledLeaveBalances = settlements.filter(
+    (settlement) =>
+      (settlement.fromUserId === currentUser?.id || settlement.toUserId === currentUser?.id) &&
+      settlement.status !== "paid" &&
+      !settlement.isPaid &&
+      Number(settlement.amount || 0) > 0.005,
+  );
+  const leaveBlockedAmount = unsettledLeaveBalances.reduce(
+    (total, settlement) => total + Number(settlement.amount || 0),
+    0,
+  );
+  const leaveBlockedCurrency = unsettledLeaveBalances[0]?.currency || trip?.currency || "USD";
+  const isLeaveBlocked = unsettledLeaveBalances.length > 0;
 
   useEffect(() => {
     if (showHero) {
@@ -101,12 +119,14 @@ export default function TripWorkspacePage({
         {isHeroMounted ? (
           <Box className={showHero ? "hero_transition is_expanded" : "hero_transition is_collapsing"}>
             <TripHero
+            canManage={canEditTrip}
             isLoading={isTripLoading}
             members={members}
             onCollapse={() => setTripHeroExpanded(tripId, false)}
             onDelete={() => setShowDeleteDialog(true)}
             onEdit={() => router.push(`/trips/${tripId}/edit`)}
             onInvite={() => setShowInviteModal(true)}
+            onLeave={() => setShowLeaveDialog(true)}
             trip={trip}
           />
           </Box>
@@ -168,15 +188,16 @@ export default function TripWorkspacePage({
           <Suspense fallback={<PageLoader wrapperCls="page-loader" />}>
             <ActiveTab
               activeTab={activeTab}
+              canManage={canEditTrip}
               expensesView={expensesView}
-              onInvite={() => setShowInviteModal(true)}
+              onInvite={canEditTrip ? () => setShowInviteModal(true) : undefined}
               tripId={tripId}
             />
           </Suspense>
         </ErrorBoundary>
       </Box>
 
-      {showInviteModal && (
+      {canEditTrip && showInviteModal && (
         <InviteModal
           members={members}
           onClose={() => setShowInviteModal(false)}
@@ -185,12 +206,43 @@ export default function TripWorkspacePage({
         />
       )}
 
-      <Dialog onClose={() => setShowDeleteDialog(false)} open={showDeleteDialog}>
+      <Dialog onClose={() => setShowDeleteDialog(false)} open={canEditTrip && showDeleteDialog}>
         <DialogTitle>Delete trip?</DialogTitle>
         <DialogContent>This will permanently remove {trip?.title || "this trip"} and its shared trip data.</DialogContent>
         <DialogActions>
           <Button disabled={archiveTrip.isPending} onClick={() => setShowDeleteDialog(false)}>Cancel</Button>
           <Button color="error" disabled={archiveTrip.isPending} onClick={() => archiveTrip.mutate({ tripId })} variant="contained">{archiveTrip.isPending ? "Deleting..." : "Delete trip"}</Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog onClose={() => setShowLeaveDialog(false)} open={showLeaveDialog}>
+        <DialogTitle>{isLeaveBlocked ? "Settle payments first" : "Leave trip?"}</DialogTitle>
+        <DialogContent>
+          {isLeaveBlocked ? (
+            <Box>
+              <Typography>
+                You have {unsettledLeaveBalances.length} unsettled {unsettledLeaveBalances.length === 1 ? "balance" : "balances"} totaling{" "}
+                {new Intl.NumberFormat("en-US", { currency: leaveBlockedCurrency, style: "currency" }).format(leaveBlockedAmount)}.
+                Settle them before leaving {trip?.title || "this trip"}.
+              </Typography>
+            </Box>
+          ) : (
+            <Typography>
+              You will be removed from {trip?.title || "this trip"} and it will no longer appear in your trips.
+            </Typography>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button disabled={leaveTrip.isPending} onClick={() => setShowLeaveDialog(false)}>Cancel</Button>
+          {isLeaveBlocked ? (
+            <Button component={Link} href={`/trips/${tripId}/expenses/balances`} onClick={() => setShowLeaveDialog(false)} variant="contained">
+              Review balances
+            </Button>
+          ) : (
+            <Button color="error" disabled={leaveTrip.isPending} onClick={() => leaveTrip.mutate({ tripId })} variant="contained">
+              {leaveTrip.isPending ? "Leaving..." : "Leave trip"}
+            </Button>
+          )}
         </DialogActions>
       </Dialog>
     </TripItineraryWrapper>

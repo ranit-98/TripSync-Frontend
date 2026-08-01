@@ -243,6 +243,16 @@ const getSettlementText = (
 };
 
 const isSettlementPaid = (settlement: ISettlement) => settlement.isPaid || settlement.status === 'paid';
+const canActOnSettlement = (settlement: ISettlement | null | undefined, currentUserId?: string) => {
+  if (!settlement || !currentUserId || isSettlementPaid(settlement)) return false;
+
+  if (settlement.fromUserId === currentUserId) {
+    return settlement.status !== 'payment_declared';
+  }
+
+  return settlement.toUserId === currentUserId;
+};
+
 const getExpenseListSummaryAmount = (value: unknown) => {
   if (!value || typeof value !== 'object') return null;
 
@@ -585,7 +595,7 @@ function AddExpenseModal({
   );
 }
 
-export default function ExpensesTab({ initialView = 'expenses', tripId }: { initialView?: 'expenses' | 'settlements' | 'insights'; tripId: string }) {
+export default function ExpensesTab({ canEdit, initialView = 'expenses', tripId }: { canEdit: boolean; initialView?: 'expenses' | 'settlements' | 'insights'; tripId: string }) {
   const [showBudget, setShowBudget] = useState(true);
   const [showAddExpenseModal, setShowAddExpenseModal] = useState(false);
   const [selectedExpense, setSelectedExpense] = useState<IExpense | null>(null);
@@ -778,19 +788,20 @@ export default function ExpensesTab({ initialView = 'expenses', tripId }: { init
   };
 
   const handleCreateExpense = (values: AddExpenseFormValues) => {
+    if (!canEdit) return;
     const body = getExpensePayload(values);
 
     createExpense.mutate({ body, tripId });
   };
 
   const handleUpdateExpense = (values: AddExpenseFormValues) => {
-    if (!editingExpense?.id) return;
+    if (!canEdit || !editingExpense?.id) return;
 
     updateExpense.mutate({ body: getExpensePayload(values), expenseId: editingExpense.id, tripId });
   };
 
   const handleConfirmDeleteExpense = () => {
-    if (!deleteExpenseCandidate?.id) return;
+    if (!canEdit || !deleteExpenseCandidate?.id) return;
 
     deleteExpense.mutate({ expenseId: deleteExpenseCandidate.id, tripId });
   };
@@ -943,16 +954,16 @@ export default function ExpensesTab({ initialView = 'expenses', tripId }: { init
                       <IconButton aria-label="View expense" onClick={() => setSelectedExpense(expense)}>
                         <VisibilityIcon fontSize="small" />
                       </IconButton>
-                      <IconButton aria-label="Edit expense" onClick={() => setEditingExpense(expense)}>
+                      {canEdit && <IconButton aria-label="Edit expense" onClick={() => setEditingExpense(expense)}>
                         <EditIcon fontSize="small" />
-                      </IconButton>
-                      <IconButton
+                      </IconButton>}
+                      {canEdit && <IconButton
                         aria-label="Delete expense"
                         disabled={deleteExpense.isPending}
                         onClick={() => setDeleteExpenseCandidate(expense)}
                       >
                         <DeleteIcon fontSize="small" />
-                      </IconButton>
+                      </IconButton>}
                     </Stack>
                   </Box>
                 );
@@ -1077,8 +1088,8 @@ export default function ExpensesTab({ initialView = 'expenses', tripId }: { init
                       const canSettle = Boolean(
                         isFirstRowForSettlement &&
                         settlement &&
-                        !isSettlementPaid(settlement) &&
-                        !isAwaitingConfirmation
+                        !isAwaitingConfirmation &&
+                        canActOnSettlement(settlement, currentUser?.id)
                       );
 
                       return (
@@ -1140,8 +1151,9 @@ export default function ExpensesTab({ initialView = 'expenses', tripId }: { init
       <IconButton
         className="round_fab"
         aria-label="Add expense"
-        disabled={!members.length}
+        disabled={!canEdit || !members.length}
         onClick={() => setShowAddExpenseModal(true)}
+        sx={{ display: canEdit ? undefined : 'none' }}
       >
         <AddIcon />
       </IconButton>
@@ -1225,7 +1237,7 @@ export default function ExpensesTab({ initialView = 'expenses', tripId }: { init
                   );
                 })}
               </Box>
-              <Button
+              {canActOnSettlement(selectedSettlement, currentUser?.id) && <Button
                 className={isOutgoing ? 'confirm_payment pay' : 'confirm_payment receive'}
                 disabled={!selectedSettlement || isSettlementPaid(selectedSettlement) || (isOutgoing && selectedSettlement.status === 'payment_declared') || markSettlementPaid.isPending || confirmSettlementPaid.isPending}
                 onClick={() => {
@@ -1242,12 +1254,12 @@ export default function ExpensesTab({ initialView = 'expenses', tripId }: { init
                   : isOutgoing && selectedSettlement.status === 'payment_declared'
                     ? 'Pending confirmation'
                   : `${isOutgoing ? 'Pay / mark sent' : 'Mark as received'} ${formatMoney(selectedSettlement.amount || 0, selectedExpenseCurrency)}`}
-              </Button>
+              </Button>}
             </Box>
           );
         })()}
       </Drawer>
-      {showAddExpenseModal && (
+      {canEdit && showAddExpenseModal && (
         <AddExpenseModal
           currency={currency}
           isSubmitting={createExpense.isPending}
@@ -1257,7 +1269,7 @@ export default function ExpensesTab({ initialView = 'expenses', tripId }: { init
           tripTitle={trip?.title}
         />
       )}
-      {editingExpense && (
+      {canEdit && editingExpense && (
         <AddExpenseModal
           currency={currency}
           initialExpense={editingExpense}
@@ -1307,7 +1319,7 @@ export default function ExpensesTab({ initialView = 'expenses', tripId }: { init
                 );
               })}
             </Box>
-            <Stack direction="row" spacing={1}>
+            {canEdit && <Stack direction="row" spacing={1}>
               <Button
                 onClick={() => {
                   setEditingExpense(selectedExpense);
@@ -1328,11 +1340,11 @@ export default function ExpensesTab({ initialView = 'expenses', tripId }: { init
               >
                 Delete
               </Button>
-            </Stack>
+            </Stack>}
           </Box>
         </Drawer>
       )}
-      {deleteExpenseCandidate && (
+      {canEdit && deleteExpenseCandidate && (
         <Box className="expense_modal_overlay">
           <Box className="expense_modal confirm_modal">
             <Box className="expense_modal_header">

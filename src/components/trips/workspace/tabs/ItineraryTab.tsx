@@ -155,7 +155,7 @@ const getDayDescription = (day: IItineraryDay) => {
   return `${activityCount} ${activityCount === 1 ? 'activity' : 'activities'}`;
 };
 
-export default function ItineraryTab({ tripId }: { tripId: string }) {
+export default function ItineraryTab({ canEdit, tripId }: { canEdit: boolean; tripId: string }) {
   const [addModal, setAddModal] = useState<{ dayId?: string; mode: AddItineraryMode } | null>(null);
   const [selectedActivity, setSelectedActivity] = useState<IActivity | null>(null);
   const [editingActivity, setEditingActivity] = useState<IActivity | null>(null);
@@ -171,7 +171,7 @@ export default function ItineraryTab({ tripId }: { tripId: string }) {
   });
   const days = normalizeItineraryDays(itineraryResponse?.data.data);
   const handleConfirmDeleteActivity = () => {
-    if (!deleteActivityCandidate?.id) return;
+    if (!canEdit || !deleteActivityCandidate?.id) return;
 
     deleteActivity.mutate({ activityId: deleteActivityCandidate.id, tripId });
   };
@@ -203,7 +203,7 @@ export default function ItineraryTab({ tripId }: { tripId: string }) {
                       </Box>
                     </Stack>
                     <Stack direction="row">
-                      <IconButton aria-label={`Edit ${day.title || `Day ${index + 1}`}`} onClick={(event) => { event.stopPropagation(); setEditingDay(day); }}><EditIcon fontSize="small" /></IconButton>
+                      {canEdit && <IconButton aria-label={`Edit ${day.title || `Day ${index + 1}`}`} onClick={(event) => { event.stopPropagation(); setEditingDay(day); }}><EditIcon fontSize="small" /></IconButton>}
                       <ExpandMoreIcon />
                     </Stack>
                   </Stack>
@@ -217,7 +217,7 @@ export default function ItineraryTab({ tripId }: { tripId: string }) {
 
                       return (
                         <Box className={`activity_card ${activityType}`} key={activity.id}>
-                          <DragIndicatorIcon className="drag_icon" />
+                          {canEdit && <DragIndicatorIcon className="drag_icon" />}
                           <Box className={`activity_icon ${activityType}`}>
                             <TripIcon name={getActivityIcon(activity)} />
                           </Box>
@@ -240,16 +240,16 @@ export default function ItineraryTab({ tripId }: { tripId: string }) {
                             <IconButton aria-label="View activity" onClick={() => setSelectedActivity(activity)}>
                               <VisibilityIcon fontSize="small" />
                             </IconButton>
-                            <IconButton aria-label="Edit activity" onClick={() => setEditingActivity(activity)}>
+                            {canEdit && <IconButton aria-label="Edit activity" onClick={() => setEditingActivity(activity)}>
                               <EditIcon fontSize="small" />
-                            </IconButton>
-                            <IconButton
+                            </IconButton>}
+                            {canEdit && <IconButton
                               aria-label="Delete activity"
                               disabled={deleteActivity.isPending}
                               onClick={() => setDeleteActivityCandidate(activity)}
                             >
                               <DeleteIcon fontSize="small" />
-                            </IconButton>
+                            </IconButton>}
                           </Stack>
                         </Box>
                       );
@@ -257,33 +257,33 @@ export default function ItineraryTab({ tripId }: { tripId: string }) {
                   ) : (
                     <Box className="empty_inline">No activities for this day yet.</Box>
                   )}
-                  <Button
+                  {canEdit && <Button
                     className="add_activity_btn"
                     onClick={() => setAddModal({ dayId: day.id, mode: 'activity' })}
                     startIcon={<AddCircleIcon />}
                   >
                     Add Activity
-                  </Button>
+                  </Button>}
                 </Box>
               )}
                 </Box>
               );
               })}
-              <Button
+              {canEdit && <Button
                 className="add_day_btn"
                 onClick={() => setAddModal({ mode: 'day' })}
                 startIcon={<AddCircleIcon />}
               >
                 Add Day
-              </Button>
+              </Button>}
             </>
           ) : (
             <Box className="empty_panel">
               <Typography className="empty_title">No itinerary days yet</Typography>
-              <Typography className="empty_copy">Add days and activities to start planning this trip.</Typography>
-              <Button onClick={() => setAddModal({ mode: 'day' })} startIcon={<AddCircleIcon />} variant="contained">
+              <Typography className="empty_copy">{canEdit ? 'Add days and activities to start planning this trip.' : 'No itinerary has been added to this trip yet.'}</Typography>
+              {canEdit && <Button onClick={() => setAddModal({ mode: 'day' })} startIcon={<AddCircleIcon />} variant="contained">
                 Add Day
-              </Button>
+              </Button>}
             </Box>
           )}
         </Box>
@@ -320,7 +320,7 @@ export default function ItineraryTab({ tripId }: { tripId: string }) {
         </Box>
       </Box>
       </Box>
-      {addModal && (
+      {canEdit && addModal && (
         <AddItineraryItemModal
           dayId={addModal.dayId}
           mode={addModal.mode}
@@ -328,7 +328,7 @@ export default function ItineraryTab({ tripId }: { tripId: string }) {
           tripId={tripId}
         />
       )}
-      {editingActivity && (
+      {canEdit && editingActivity && (
         <AddItineraryItemModal
           dayId={editingActivity.dayId}
           initialActivity={editingActivity}
@@ -337,7 +337,7 @@ export default function ItineraryTab({ tripId }: { tripId: string }) {
           tripId={tripId}
         />
       )}
-      {editingDay && <AddItineraryItemModal initialDay={editingDay} mode="day" onClose={() => setEditingDay(null)} tripId={tripId} />}
+      {canEdit && editingDay && <AddItineraryItemModal initialDay={editingDay} mode="day" onClose={() => setEditingDay(null)} tripId={tripId} />}
       {selectedActivity && (
         <Box className="expense_modal_overlay">
           <Box className="expense_modal details_modal">
@@ -360,7 +360,7 @@ export default function ItineraryTab({ tripId }: { tripId: string }) {
                 <strong>{selectedActivity.description || 'No notes added'}</strong>
               </Box>
             </Box>
-            <Box className="expense_modal_footer">
+            {canEdit && <Box className="expense_modal_footer">
               <Button
                 onClick={() => {
                   setEditingActivity(selectedActivity);
@@ -381,11 +381,11 @@ export default function ItineraryTab({ tripId }: { tripId: string }) {
               >
                 Delete
               </Button>
-            </Box>
+            </Box>}
           </Box>
         </Box>
       )}
-      {deleteActivityCandidate && (
+      {canEdit && deleteActivityCandidate && (
         <Box className="expense_modal_overlay">
           <Box className="expense_modal confirm_modal">
             <Box className="expense_modal_header">

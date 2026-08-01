@@ -1,11 +1,13 @@
 'use client';
 
-import { useTripDetails, useTripsCreate, useTripsUpdate, useTripsUploadCover } from '@/api/hooks/trips/useTrips.hooks';
+import { useTripDetails, useTripMembers, useTripsCreate, useTripsUpdate, useTripsUploadCover } from '@/api/hooks/trips/useTrips.hooks';
 import FormDatePicker from '@/components/Forms/FormDatePicker';
 import FormFileUpload from '@/components/Forms/FormFileUpload';
 import FormSelect from '@/components/Forms/FormSelect';
 import FormTextField from '@/components/Forms/FormTextField';
 import { CreateTripPageWrapper } from '@/styles/trips/createTrip.styles';
+import { canManageTrip } from '@/lib/functions/tripPermissions';
+import { useAuthStore } from '@/store/auth/auth.store';
 import type { ICreateTripPayload } from '@/typescript/interface/api';
 import { yupResolver } from '@hookform/resolvers/yup';
 import AddAPhotoIcon from '@mui/icons-material/AddAPhoto';
@@ -85,8 +87,12 @@ const defaultValues: TripFormValues = {
 export default function CreateTripFlow({ tripId }: { tripId?: string }) {
   const router = useRouter();
   const isEditing = Boolean(tripId);
+  const currentUser = useAuthStore((state) => state.user);
   const { data: tripResponse, isLoading: isLoadingTrip } = useTripDetails(tripId);
+  const { data: membersResponse, isLoading: isLoadingMembers } = useTripMembers(tripId);
   const trip = tripResponse?.data.data;
+  const members = membersResponse?.data.data ?? [];
+  const canEditTrip = !isEditing || canManageTrip(members, currentUser);
   const { mutateAsync: createTrip, isPending: isCreating } = useTripsCreate({ optionalCallback: () => undefined });
   const { mutateAsync: updateTrip, isPending: isUpdating } = useTripsUpdate({ optionalCallback: () => undefined });
   const { mutateAsync: uploadCover, isPending: isUploadingCover } = useTripsUploadCover({ optionalCallback: () => undefined });
@@ -132,6 +138,7 @@ export default function CreateTripFlow({ tripId }: { tripId?: string }) {
   );
 
   const onSubmit: SubmitHandler<TripFormValues> = async (values) => {
+    if (!canEditTrip) return;
     const payload: ICreateTripPayload = {
       cover: values.coverPhoto ?? undefined,
       currency: values.currency,
@@ -164,6 +171,22 @@ export default function CreateTripFlow({ tripId }: { tripId?: string }) {
     const response = await createTrip(payload);
     router.push(response.data.data?.id ? `/trips/${response.data.data.id}/itinerary` : '/trips');
   };
+
+  if (isEditing && (isLoadingTrip || isLoadingMembers)) {
+    return <Box sx={{ display: 'grid', minHeight: '100vh', placeItems: 'center' }}>Loading trip permissions...</Box>;
+  }
+
+  if (!canEditTrip && tripId) {
+    return (
+      <Box sx={{ display: 'grid', minHeight: '100vh', placeItems: 'center', p: 3 }}>
+        <Box sx={{ maxWidth: 460, textAlign: 'center' }}>
+          <Typography component="h1" sx={{ fontSize: 28, fontWeight: 800 }}>Viewer access</Typography>
+          <Typography sx={{ color: 'text.secondary', mt: 1 }}>You can view this trip and join its conversation, but only collaborators can edit trip details.</Typography>
+          <Button component={Link} href={`/trips/${tripId}/itinerary`} sx={{ mt: 3 }} variant="contained">Back to trip</Button>
+        </Box>
+      </Box>
+    );
+  }
 
   return (
     <CreateTripPageWrapper>

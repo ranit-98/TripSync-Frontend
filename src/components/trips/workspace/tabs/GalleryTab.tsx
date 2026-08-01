@@ -26,7 +26,7 @@ const toPhotos = (value: unknown): IPhoto[] => {
   return [];
 };
 
-export default function GalleryTab({ tripId }: { tripId: string }) {
+export default function GalleryTab({ canEdit, tripId }: { canEdit: boolean; tripId: string }) {
   const [showAddPhotoModal, setShowAddPhotoModal] = useState(false);
   const { data: albumResponse, isLoading: isAlbumLoading } = useGalleryAlbum(tripId);
   const { data: photosResponse, isLoading: isPhotosLoading } = useGalleryPhotos(tripId);
@@ -49,9 +49,9 @@ export default function GalleryTab({ tripId }: { tripId: string }) {
           <span>Trip gallery</span>
           <Typography component="h2">{albumTitle}</Typography>
           <Typography>{photoCount} photo{photoCount === 1 ? '' : 's'} shared with this trip</Typography>
-          <Button startIcon={<AddPhotoAlternateIcon />} variant="contained" onClick={() => setShowAddPhotoModal(true)}>
+          {canEdit && <Button startIcon={<AddPhotoAlternateIcon />} variant="contained" onClick={() => setShowAddPhotoModal(true)}>
             Add Photos
-          </Button>
+          </Button>}
         </Box>
         {photos.length > 1 && (
           <Box className="trip_gallery_strip">
@@ -69,9 +69,9 @@ export default function GalleryTab({ tripId }: { tripId: string }) {
           </Typography>
           <Typography className="files_subtitle">Upload photos directly to this trip gallery.</Typography>
         </Box>
-        <Button startIcon={<CloudUploadIcon />} variant="outlined" onClick={() => setShowAddPhotoModal(true)}>
+        {canEdit && <Button startIcon={<CloudUploadIcon />} variant="outlined" onClick={() => setShowAddPhotoModal(true)}>
           Upload
-        </Button>
+        </Button>}
       </Box>
 
       {photos.length ? (
@@ -89,14 +89,14 @@ export default function GalleryTab({ tripId }: { tripId: string }) {
       ) : (
         <Box className="empty_panel">
           <Typography className="empty_title">No photos yet</Typography>
-          <Typography className="empty_copy">Drop photos here to start collecting memories from this trip.</Typography>
-          <Button startIcon={<AddPhotoAlternateIcon />} variant="contained" onClick={() => setShowAddPhotoModal(true)}>
+          <Typography className="empty_copy">{canEdit ? 'Drop photos here to start collecting memories from this trip.' : 'No photos have been shared with this trip yet.'}</Typography>
+          {canEdit && <Button startIcon={<AddPhotoAlternateIcon />} variant="contained" onClick={() => setShowAddPhotoModal(true)}>
             Add Photos
-          </Button>
+          </Button>}
         </Box>
       )}
 
-      {showAddPhotoModal && (
+      {canEdit && showAddPhotoModal && (
         <AddPhotoModal albumTitle={albumTitle} onClose={() => setShowAddPhotoModal(false)} tripId={tripId} />
       )}
     </Box>

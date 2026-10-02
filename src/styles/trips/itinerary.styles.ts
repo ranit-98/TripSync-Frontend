@@ -4622,11 +4622,18 @@ export const TripItineraryWrapper = styled(Box)`
     background: linear-gradient(180deg, #f7fbfa 0%, #eef6f3 100%);
     flex: 0 0 auto;
 
+    > div:first-of-type {
+      min-width: 0;
+    }
+
     h3 {
+      overflow: hidden;
       color: ${({ theme }) => theme.palette.text.primary};
       font-size: 20px;
       font-weight: 800;
       line-height: 28px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     span,
@@ -4847,6 +4854,10 @@ export const TripItineraryWrapper = styled(Box)`
     background: linear-gradient(135deg, rgba(0, 131, 120, 0.08), rgba(218, 226, 253, 0.32));
     color: ${({ theme }) => theme.palette.primary.main};
 
+    > div {
+      min-width: 0;
+    }
+
     svg {
       width: 34px;
       height: 34px;
@@ -4865,9 +4876,12 @@ export const TripItineraryWrapper = styled(Box)`
     }
 
     span {
+      overflow: hidden;
       color: #6d7a77;
       font-size: 13px;
       line-height: 20px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     &.is_dragging {
@@ -4896,7 +4910,8 @@ export const TripItineraryWrapper = styled(Box)`
     color: #566360;
     font-size: 12px;
 
-    span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    strong { flex: 0 0 auto; }
   }
 
   .document_table {
@@ -4942,6 +4957,13 @@ export const TripItineraryWrapper = styled(Box)`
     align-items: center;
     gap: 12px;
     min-width: 0;
+    overflow: hidden;
+
+    > div {
+      flex: 1 1 auto;
+      min-width: 0;
+      overflow: hidden;
+    }
 
     strong,
     small {
@@ -4959,9 +4981,13 @@ export const TripItineraryWrapper = styled(Box)`
     }
 
     small {
+      width: 100%;
+      overflow: hidden;
       color: #6d7a77;
       font-size: 12px;
       line-height: 18px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
   }
 
@@ -5110,6 +5136,18 @@ export const TripItineraryWrapper = styled(Box)`
   .preview_overlay {
     z-index: 1500;
     padding: 20px;
+
+    &.is_fullscreen {
+      padding: 0;
+
+      .document_preview_modal {
+        width: 100%;
+        height: 100%;
+        max-height: none;
+        border: 0;
+        border-radius: 0;
+      }
+    }
   }
 
   .document_preview_modal {
@@ -5122,9 +5160,19 @@ export const TripItineraryWrapper = styled(Box)`
   .preview_modal_header {
     flex: 0 0 auto;
 
+    .preview_file_details {
+      min-width: 0;
+      flex: 1;
+    }
+
     h3 {
       overflow: hidden;
-      max-width: min(760px, 66vw);
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .preview_file_details > p {
+      overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
     }
@@ -5139,8 +5187,7 @@ export const TripItineraryWrapper = styled(Box)`
 
   /* PDF / video / image / object all fill the preview body */
   .iframe_document_preview,
-  .video_document_preview,
-  .image_document_preview {
+  .video_document_preview {
     display: block;
     width: 100%;
     height: 100%;
@@ -5158,9 +5205,23 @@ export const TripItineraryWrapper = styled(Box)`
     background-color: #ffffff;
   }
 
-  .image_document_preview {
-    object-fit: contain;
+  .image_document_preview_wrap {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    align-items: center;
+    justify-content: center;
+    overflow: auto;
     padding: 20px;
+  }
+
+  .image_document_preview {
+    display: block;
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    transform-origin: center;
+    transition: transform 180ms ease;
   }
 
   .pdf_blob_preview {
@@ -5226,6 +5287,11 @@ export const TripItineraryWrapper = styled(Box)`
     align-items: center;
     gap: 4px;
     flex-shrink: 0;
+
+    .MuiIconButton-root {
+      width: 40px;
+      height: 40px;
+    }
   }
 
   .text_document_preview {
@@ -5589,6 +5655,54 @@ export const TripItineraryWrapper = styled(Box)`
       }
     }
 
+    .preview_overlay {
+      align-items: stretch;
+      padding: 0;
+    }
+
+    .document_preview_modal {
+      width: 100%;
+      height: 100%;
+      max-height: none;
+      border: 0;
+      border-radius: 0;
+    }
+
+    .preview_modal_header {
+      align-items: flex-start;
+      gap: 8px;
+      padding: 12px;
+
+      h3 {
+        font-size: 17px;
+        line-height: 24px;
+      }
+
+      .preview_file_details > p {
+        font-size: 12px;
+      }
+    }
+
+    .preview_header_actions {
+      gap: 0;
+
+      .MuiIconButton-root {
+        width: 36px;
+        height: 36px;
+        padding: 7px;
+      }
+    }
+
+    .preview_modal_footer {
+      display: none;
+    }
+
+    .image_document_preview_wrap,
+    .spreadsheet_table_wrap,
+    .text_document_preview {
+      padding: 12px;
+    }
+
     .files_header,
     .documents_header {
       align-items: stretch;
@@ -5710,6 +5824,7 @@ export const TripItineraryWrapper = styled(Box)`
 
     .document_row:not(.document_head) {
       grid-template-columns: minmax(0, 1fr) auto;
+      column-gap: 8px;
       min-width: 0;
       min-height: 0;
       padding: 14px 12px;
@@ -5734,7 +5849,42 @@ export const TripItineraryWrapper = styled(Box)`
         grid-column: 2;
         grid-row: 1;
         align-self: center;
-        padding-left: 8px;
+        flex: 0 0 auto;
+        padding-left: 0;
+      }
+    }
+  }
+
+  @media (max-width: 480px) {
+    .preview_modal_header {
+      flex-wrap: wrap;
+
+      .preview_file_details {
+        flex-basis: calc(100% - 44px);
+      }
+    }
+
+    .preview_header_actions {
+      width: 100%;
+      justify-content: flex-end;
+    }
+
+    .document_row:not(.document_head) {
+      .document_actions {
+        gap: 0;
+
+        .MuiIconButton-root {
+          width: 32px;
+          height: 32px;
+          padding: 6px;
+        }
+      }
+
+      .document_name strong,
+      .document_name small,
+      .document_file_meta strong {
+        width: 100%;
+        max-width: 100%;
       }
     }
   }

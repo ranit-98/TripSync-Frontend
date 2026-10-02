@@ -1,6 +1,6 @@
 'use client';
 
-import { useFilesCreateDocument, useFilesCreateFolder, useFilesDeleteFolder, useFilesDocuments, useFilesFolders } from '@/api/hooks/files/useFiles.hooks';
+import { useFilesCreateDocument, useFilesCreateFolder, useFilesDeleteDocument, useFilesDeleteFolder, useFilesDocuments, useFilesFolders } from '@/api/hooks/files/useFiles.hooks';
 import { useUploadsSign } from '@/api/hooks/uploads/useUploads.hooks';
 import type { ICloudinaryUploadResponse, IDocument, IFolder, ISignedUpload } from '@/typescript/interface/api';
 import { yupResolver } from '@hookform/resolvers/yup';
@@ -40,6 +40,9 @@ const folderSchema: yup.ObjectSchema<FolderFormValues> = yup.object({
 const uploadFile = async (file: File, signed: ISignedUpload) => {
   if (!signed.uploadUrl) throw new Error('Upload URL missing.');
   if (signed.signature || signed.apiKey) {
+    const uploadUrl = file.type === 'application/pdf'
+      ? signed.uploadUrl.replace('/auto/upload', '/raw/upload')
+      : signed.uploadUrl;
     const data = new FormData();
     data.append('file', file);
     if (signed.apiKey) data.append('api_key', signed.apiKey);
@@ -47,7 +50,7 @@ const uploadFile = async (file: File, signed: ISignedUpload) => {
     if (signed.timestamp) data.append('timestamp', String(signed.timestamp));
     if (signed.folder) data.append('folder', signed.folder);
     if (signed.publicId) data.append('public_id', signed.publicId);
-    const response = await fetch(signed.uploadUrl, { method: 'POST', body: data });
+    const response = await fetch(uploadUrl, { method: 'POST', body: data });
     if (!response.ok) throw new Error('Upload failed.');
     const result = await response.json() as ICloudinaryUploadResponse;
     return result.secure_url || result.url || '';
@@ -92,12 +95,20 @@ function DeleteFolderModal({ folder, isDeleting, onClose, onConfirm }: { folder:
   </Box></Box>;
 }
 
+function DeleteDocumentModal({ document, isDeleting, onClose, onConfirm }: { document: IDocument; isDeleting: boolean; onClose: () => void; onConfirm: () => void }) {
+  return <Box className="document_modal_overlay"><Box className="document_modal confirm_delete_modal">
+    <Box className="document_modal_header"><Box><Typography component="h3">Delete file?</Typography><Typography>{document.displayName} will be permanently removed from this trip.</Typography></Box><IconButton aria-label="Close delete file dialog" disabled={isDeleting} onClick={onClose}><CloseIcon /></IconButton></Box>
+    <Box className="document_modal_footer"><Button disabled={isDeleting} onClick={onClose}>Cancel</Button><Button color="error" disabled={isDeleting} onClick={onConfirm} variant="contained">{isDeleting ? 'Deleting...' : 'Delete File'}</Button></Box>
+  </Box></Box>;
+}
+
 export default function FilesTab({ canEdit, tripId }: { canEdit: boolean; tripId: string }) {
   const [activeFolderId, setActiveFolderId] = useState<string>();
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [mobileView, setMobileView] = useState<'folders' | 'files'>('folders');
   const [folderParent, setFolderParent] = useState<IFolder | null | undefined>();
   const [folderToDelete, setFolderToDelete] = useState<IFolder | null>(null);
+  const [documentToDelete, setDocumentToDelete] = useState<IDocument | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [previewDocument, setPreviewDocument] = useState<IDocument | null>(null);
   const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
@@ -110,6 +121,12 @@ export default function FilesTab({ canEdit, tripId }: { canEdit: boolean; tripId
   const createFolder = useFilesCreateFolder({ optionalCallback: () => setFolderParent(undefined) });
   const deleteFolder = useFilesDeleteFolder({ optionalCallback: () => { setActiveFolderId(undefined); setFolderToDelete(null); } });
   const createDocument = useFilesCreateDocument({ optionalCallback: () => undefined });
+  const deleteDocument = useFilesDeleteDocument({
+    optionalCallback: () => {
+      setDocumentToDelete(null);
+      toast.success('File deleted.');
+    },
+  });
   const signUpload = useUploadsSign({ optionalCallback: () => undefined });
 
   const childrenByParent = useMemo(() => folders.reduce<Record<string, IFolder[]>>((result, folder) => { const key = folder.parentId || 'root'; (result[key] ||= []).push(folder); return result; }, {}), [folders]);
@@ -278,6 +295,9 @@ export default function FilesTab({ canEdit, tripId }: { canEdit: boolean; tripId
                             <IconButton aria-label={`Download ${document.displayName}`} component="a" download={document.originalFileName} href={document.url} target="_blank">
                               <DownloadIcon fontSize="small" />
                             </IconButton>
+                            {canEdit && <IconButton aria-label={`Delete ${document.displayName}`} color="error" onClick={() => setDocumentToDelete(document)}>
+                              <DeleteIcon fontSize="small" />
+                            </IconButton>}
                           </Box>
                         </Box>
                       ))}
@@ -301,6 +321,7 @@ export default function FilesTab({ canEdit, tripId }: { canEdit: boolean; tripId
       </Box>
       {canEdit && folderParent !== undefined && <FolderModal parent={folderParent || undefined} onClose={() => setFolderParent(undefined)} onCreate={(name) => createFolder.mutate({ tripId, body: { name, parentId: folderParent?.id || null } })} />}
       {canEdit && folderToDelete && <DeleteFolderModal folder={folderToDelete} isDeleting={deleteFolder.isPending} onClose={() => setFolderToDelete(null)} onConfirm={() => deleteFolder.mutate({ tripId, folderId: folderToDelete.id })} />}
+      {canEdit && documentToDelete && <DeleteDocumentModal document={documentToDelete} isDeleting={deleteDocument.isPending} onClose={() => setDocumentToDelete(null)} onConfirm={() => deleteDocument.mutate({ tripId, documentId: documentToDelete.id })} />}
       {previewDocument && <DocumentPreviewModal document={previewDocument} onClose={() => setPreviewDocument(null)} />}
     </Box>
   );

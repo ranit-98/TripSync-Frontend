@@ -66,7 +66,10 @@ export default function TripWorkspacePage({
   const { data: settlementsResponse } = useExpensesSettlements(tripId);
   const trip = tripResponse?.data.data ?? null;
   const members = membersResponse?.data.data ?? [];
-  const canEditTrip = canManageTrip(members, currentUser);
+  const isTripOwner = Boolean(
+    trip?.ownerId && currentUser?.id && trip.ownerId === currentUser.id,
+  );
+  const canEditTrip = isTripOwner || canManageTrip(members, currentUser);
   const settlementData = settlementsResponse?.data.data;
   const settlements = Array.isArray(settlementData)
     ? (settlementData as ISettlement[])

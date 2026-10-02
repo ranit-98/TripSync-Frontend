@@ -3,13 +3,20 @@
 import CloseIcon from '@mui/icons-material/Close';
 import DescriptionIcon from '@mui/icons-material/Description';
 import DownloadIcon from '@mui/icons-material/Download';
+import FullscreenIcon from '@mui/icons-material/Fullscreen';
+import FullscreenExitIcon from '@mui/icons-material/FullscreenExit';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import ZoomInIcon from '@mui/icons-material/ZoomIn';
+import ZoomOutIcon from '@mui/icons-material/ZoomOut';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
 import IconButton from '@mui/material/IconButton';
+import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
-import { useEffect, useRef, useState } from 'react';
+import useMediaQuery from '@mui/material/useMediaQuery';
+import { useTheme } from '@mui/material/styles';
+import { useEffect, useState } from 'react';
 import DocumentPreviewFallback from './DocumentPreviewFallback';
 
 export type PreviewDocument = {
@@ -112,46 +119,43 @@ const formatFileSize = (size?: number) => {
 };
 
 // ─── PDF Preview ──────────────────────────────────────────────────────────────
-// Fetches PDF as a Blob → creates a blob: URL → renders in <object> with
-// an <iframe> fallback. This is the most reliable cross-browser approach and
-// avoids Content-Security-Policy restrictions that block proxy iframes.
+// Match the working Mawai document viewer: fetch the file URL directly, create
+// an application/pdf object URL, and render that blob URL in an iframe.
 
 function PdfPreview({ document }: { document: PreviewDocument }) {
-  const [blobUrl, setBlobUrl] = useState<string | null>(null);
-  const [error, setError] = useState('');
+  const [pdfPreviewUrl, setPdfPreviewUrl] = useState('');
+  const [pdfError, setPdfError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
-  const [useIframeFallback, setUseIframeFallback] = useState(false);
-  const prevBlobUrl = useRef<string | null>(null);
+  const fileUrl = document.url;
 
   useEffect(() => {
-    const controller = new AbortController();
+    let objectUrl = '';
+    let isActive = true;
 
     const loadPdf = async () => {
-      setError('');
+      setPdfPreviewUrl('');
+      setPdfError('');
       setIsLoading(true);
-      setBlobUrl(null);
 
       try {
-        const response = await fetch(getProxyUrl({ ...document, mimeType: 'application/pdf' }), {
-          signal: controller.signal,
-        });
+        const response = await fetch(fileUrl);
 
         if (!response.ok) {
-          throw new Error(`HTTP ${response.status}`);
+          throw new Error('Unable to load PDF');
         }
 
         const blob = await response.blob();
-        const pdfBlob = blob.type === 'application/pdf' ? blob : new Blob([blob], { type: 'application/pdf' });
-        const url = URL.createObjectURL(pdfBlob);
+        objectUrl = window.URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }));
 
-        prevBlobUrl.current = url;
-        setBlobUrl(url);
-      } catch (loadError) {
-        if ((loadError as Error).name !== 'AbortError') {
-          setError('Could not load the PDF file.');
+        if (isActive) {
+          setPdfPreviewUrl(objectUrl);
+        }
+      } catch {
+        if (isActive) {
+          setPdfError('PDF preview failed. Open it in a new tab or download it.');
         }
       } finally {
-        if (!controller.signal.aborted) {
+        if (isActive) {
           setIsLoading(false);
         }
       }
@@ -160,13 +164,13 @@ function PdfPreview({ document }: { document: PreviewDocument }) {
     void loadPdf();
 
     return () => {
-      controller.abort();
-      if (prevBlobUrl.current) {
-        URL.revokeObjectURL(prevBlobUrl.current);
-        prevBlobUrl.current = null;
+      isActive = false;
+
+      if (objectUrl) {
+        window.URL.revokeObjectURL(objectUrl);
       }
     };
-  }, [document]);
+  }, [fileUrl]);
 
   if (isLoading) {
     return (
@@ -177,39 +181,21 @@ function PdfPreview({ document }: { document: PreviewDocument }) {
     );
   }
 
-  if (error || !blobUrl) {
-    return <DocumentPreviewFallback document={document} title={error || 'Could not load PDF'} />;
-  }
-
-  // Try <object> first; if that fails (some browsers / CSP), switch to <iframe>
-  if (useIframeFallback) {
+  if (pdfError || !pdfPreviewUrl) {
     return (
-      <iframe
-        className="iframe_document_preview pdf_blob_preview"
-        src={blobUrl}
-        title={document.displayName}
+      <DocumentPreviewFallback
+        document={document}
+        title={pdfError || 'PDF preview is not available.'}
       />
     );
   }
 
   return (
-    <object
+    <iframe
       className="iframe_document_preview pdf_blob_preview"
-      data={blobUrl}
-      type="application/pdf"
-      onError={() => setUseIframeFallback(true)}
-    >
-      {/* Native PDF viewer unavailable – switch to iframe */}
-      <iframe
-        className="iframe_document_preview pdf_blob_preview"
-        src={blobUrl}
-        title={document.displayName}
-        onLoad={() => {
-          // If the iframe loaded but shows no content, it likely means the browser
-          // blocked it. We expose the open-in-new-tab button via the fallback instead.
-        }}
-      />
-    </object>
+      src={`${pdfPreviewUrl}#toolbar=1&navpanes=0`}
+      title={document.displayName}
+    />
   );
 }
 
@@ -401,7 +387,7 @@ function SpreadsheetPreview({ document }: { document: PreviewDocument }) {
 }
 
 // ─── PreviewContent ───────────────────────────────────────────────────────────
-function PreviewContent({ document }: { document: PreviewDocument }) {
+function PreviewContent({ document, zoom }: { document: PreviewDocument; zoom: number }) {
   if (!document.url?.trim()) {
     return <DocumentPreviewFallback document={document} title="File URL missing" />;
   }
@@ -415,7 +401,17 @@ function PreviewContent({ document }: { document: PreviewDocument }) {
   }
 
   if (isImageDocument(document)) {
-    return <Box alt={document.displayName} className="image_document_preview" component="img" src={getProxyUrl(document)} />;
+    return (
+      <Box className="image_document_preview_wrap">
+        <Box
+          alt={document.displayName}
+          className="image_document_preview"
+          component="img"
+          src={getProxyUrl(document)}
+          sx={{ transform: `scale(${zoom})` }}
+        />
+      </Box>
+    );
   }
 
   if (isVideoDocument(document)) {
@@ -440,31 +436,82 @@ type DocumentPreviewModalProps = {
 };
 
 export default function DocumentPreviewModal({ document, onClose }: DocumentPreviewModalProps) {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const [isFullScreen, setIsFullScreen] = useState(false);
+  const [zoom, setZoom] = useState(1);
+  const isImage = isImageDocument(document);
+
+  const handleClose = () => {
+    setIsFullScreen(false);
+    setZoom(1);
+    onClose();
+  };
+
   return (
-    <Box className="document_modal_overlay preview_overlay">
+    <Box
+      aria-label={`Preview ${document.displayName}`}
+      aria-modal="true"
+      className={`document_modal_overlay preview_overlay${isFullScreen ? ' is_fullscreen' : ''}`}
+      role="dialog"
+    >
       <Box className="document_modal document_preview_modal">
         <Box className="document_modal_header preview_modal_header">
-          <Box>
-            <Typography component="h3">{document.displayName}</Typography>
-            <Typography>{document.originalFileName} · {formatFileSize(document.size)}</Typography>
+          <Box className="preview_file_details">
+            <Typography component="h3" title={document.displayName}>{document.displayName}</Typography>
+            <Typography title={document.originalFileName}>{document.originalFileName} · {formatFileSize(document.size)}</Typography>
           </Box>
           <Box className="preview_header_actions">
-            <IconButton aria-label="Open in new tab" component="a" href={document.url} target="_blank">
-              <OpenInNewIcon />
-            </IconButton>
-            <IconButton aria-label="Close document preview" onClick={onClose}>
-              <CloseIcon />
-            </IconButton>
+            {isImage && (
+              <>
+                <Tooltip title="Zoom out">
+                  <span>
+                    <IconButton aria-label="Zoom out" disabled={zoom <= 0.5} onClick={() => setZoom((value) => Math.max(0.5, value - 0.1))}>
+                      <ZoomOutIcon />
+                    </IconButton>
+                  </span>
+                </Tooltip>
+                <Tooltip title="Zoom in">
+                  <span>
+                    <IconButton aria-label="Zoom in" disabled={zoom >= 2} onClick={() => setZoom((value) => Math.min(2, value + 0.1))}>
+                      <ZoomInIcon />
+                    </IconButton>
+                  </span>
+                </Tooltip>
+              </>
+            )}
+            <Tooltip title="Open in new tab">
+              <IconButton aria-label="Open in new tab" component="a" href={document.url} rel="noopener noreferrer" target="_blank">
+                <OpenInNewIcon />
+              </IconButton>
+            </Tooltip>
+            {!isMobile && (
+              <Tooltip title={isFullScreen ? 'Exit full screen' : 'Full screen'}>
+                <IconButton aria-label={isFullScreen ? 'Exit full screen' : 'Full screen'} onClick={() => setIsFullScreen((value) => !value)}>
+                  {isFullScreen ? <FullscreenExitIcon /> : <FullscreenIcon />}
+                </IconButton>
+              </Tooltip>
+            )}
+            <Tooltip title="Download">
+              <IconButton aria-label="Download document" component="a" download={document.originalFileName} href={document.url}>
+                <DownloadIcon />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Close">
+              <IconButton aria-label="Close document preview" onClick={handleClose}>
+                <CloseIcon />
+              </IconButton>
+            </Tooltip>
           </Box>
         </Box>
         <Box className="document_preview_body">
-          <PreviewContent document={document} />
+          <PreviewContent document={document} zoom={zoom} />
         </Box>
         <Box className="document_modal_footer preview_modal_footer">
           <Button component="a" download={document.originalFileName} href={document.url} startIcon={<DownloadIcon />} target="_blank">
             Download
           </Button>
-          <Button onClick={onClose} variant="contained">Done</Button>
+          <Button onClick={handleClose} variant="contained">Done</Button>
         </Box>
       </Box>
     </Box>

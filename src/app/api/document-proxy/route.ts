@@ -56,10 +56,12 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    const range = request.headers.get('range');
     const upstream = await fetch(parsedUrl.toString(), {
       cache: 'no-store',
       headers: {
         Accept: '*/*',
+        ...(range ? { Range: range } : {}),
         'User-Agent': 'Mozilla/5.0 (compatible; TripSync/1.0)',
       },
     });
@@ -101,7 +103,18 @@ export async function GET(request: NextRequest) {
       headers['Content-Length'] = upstreamLength;
     }
 
-    return new Response(body, { headers });
+    const acceptRanges = upstream.headers.get('accept-ranges');
+    const contentRange = upstream.headers.get('content-range');
+
+    if (acceptRanges) {
+      headers['Accept-Ranges'] = acceptRanges;
+    }
+
+    if (contentRange) {
+      headers['Content-Range'] = contentRange;
+    }
+
+    return new Response(body, { headers, status: upstream.status });
   } catch {
     return new Response('Unable to load document.', { status: 502 });
   }

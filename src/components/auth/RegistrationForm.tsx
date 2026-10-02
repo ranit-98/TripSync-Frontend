@@ -2,8 +2,12 @@
 
 import { useAuthRegister } from "@/api/hooks/auth/useAuth.hooks";
 import FormTextField from "@/components/Forms/FormTextField";
+import {
+  type RegistrationFormValues,
+  registrationSchema,
+} from "@/lib/validation/auth";
 import { LoginFormWrapper } from "@/styles/auth/login.styles";
-import type { IRegisterPayload } from "@/typescript/interface/api";
+import { zodResolver } from "@hookform/resolvers/zod";
 // import GoogleIcon from "@mui/icons-material/Google";
 // import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -16,12 +20,13 @@ import { useForm } from "react-hook-form";
 export default function RegistrationForm() {
   const router = useRouter();
 
-  const { control, handleSubmit } = useForm<IRegisterPayload>({
+  const { control, handleSubmit } = useForm<RegistrationFormValues>({
     defaultValues: {
       name: "",
       email: "",
       password: "",
     },
+    resolver: zodResolver(registrationSchema),
   });
 
   const { mutate: signUpMutation, isPending } = useAuthRegister({
@@ -42,13 +47,6 @@ export default function RegistrationForm() {
         labelName="Full Name"
         name="name"
         placeHolder="Aarav Sharma"
-        rules={{
-          required: "Full name is required",
-          minLength: {
-            value: 2,
-            message: "Full name must be at least 2 characters",
-          },
-        }}
         textFieldProps={{
           autoComplete: "name",
           className: "auth_input",
@@ -61,13 +59,6 @@ export default function RegistrationForm() {
         labelName="Email Address"
         name="email"
         placeHolder="alex@traveler.com"
-        rules={{
-          required: "Email address is required",
-          pattern: {
-            value: /^\S+@\S+\.\S+$/,
-            message: "Enter a valid email address",
-          },
-        }}
         textFieldProps={{
           autoComplete: "email",
           className: "auth_input",
@@ -82,13 +73,6 @@ export default function RegistrationForm() {
         labelName="Password"
         name="password"
         placeHolder="StrongPass123"
-        rules={{
-          required: "Password is required",
-          minLength: {
-            value: 8,
-            message: "Password must be at least 8 characters",
-          },
-        }}
         textFieldProps={{
           autoComplete: "new-password",
           className: "auth_input",

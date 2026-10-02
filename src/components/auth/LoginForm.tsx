@@ -6,17 +6,17 @@ import {
   consumeAuthRedirectPath,
   isSafeInternalPath,
 } from "@/lib/authRedirect";
+import {
+  type LoginFormValues,
+  loginSchema,
+} from "@/lib/validation/auth";
 import { LoginFormWrapper } from "@/styles/auth/login.styles";
+import { zodResolver } from "@hookform/resolvers/zod";
 import Button from "@mui/material/Button";
 import Link from "@mui/material/Link";
 import Typography from "@mui/material/Typography";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
-
-type LoginFormValues = {
-  email: string;
-  password: string;
-};
 
 const getLoginRedirectPath = () => {
   const savedPath = consumeAuthRedirectPath();
@@ -41,6 +41,7 @@ export default function LoginForm() {
       email: "",
       password: "",
     },
+    resolver: zodResolver(loginSchema),
   });
 
   const { mutate: loginMutation, isPending } = useAuthLogin({
@@ -60,13 +61,6 @@ export default function LoginForm() {
         labelName="Email Address"
         name="email"
         placeHolder="alex@traveler.com"
-        rules={{
-          required: "Email address is required",
-          pattern: {
-            value: /^\S+@\S+\.\S+$/,
-            message: "Enter a valid email address",
-          },
-        }}
         textFieldProps={{
           autoComplete: "email",
           className: "auth_input",
@@ -86,9 +80,6 @@ export default function LoginForm() {
         labelName="Password"
         name="password"
         placeHolder="Enter your password"
-        rules={{
-          required: "Password is required",
-        }}
         textFieldProps={{
           autoComplete: "current-password",
           className: "auth_input",

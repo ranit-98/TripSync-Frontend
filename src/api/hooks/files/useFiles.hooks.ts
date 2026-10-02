@@ -107,11 +107,13 @@ export const useFilesUpdateDocument = ({ optionalCallback }: IMutationHookOption
 };
 
 export const useFilesDeleteDocument = ({ optionalCallback }: IMutationHookOptions) => {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationKey: [listOfQueryKeys.files.documents, "delete"],
     mutationFn: filesDeleteDocumentFn,
-    onSuccess: (res) => {
+    onSuccess: (res, variables) => {
       if (isSuccessResponse(res?.data.statusCode)) {
+        queryClient.invalidateQueries({ queryKey: [listOfQueryKeys.files.documents, variables.tripId] });
         optionalCallback();
       }
     },
